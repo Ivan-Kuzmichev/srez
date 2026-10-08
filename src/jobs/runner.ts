@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import type { Db } from '@/db/client';
+import type { Logger } from '@/server/logger';
 import {
   claimNext,
   completeJob,
@@ -10,17 +11,14 @@ import {
   type ScheduleDef,
 } from './queue';
 
-export interface JobLog {
-  info(context: Record<string, unknown>, message: string): void;
-  error(context: Record<string, unknown>, message: string): void;
-}
-
 export interface JobContext<P> {
   db: Db;
   job: Job;
   payload: P;
   /** Correlates every record written while handling this job. */
   jobId: string;
+  /** Child logger with `jobId` bound. */
+  log: Logger;
 }
 
 export interface JobDefinition<P = unknown> {
@@ -40,7 +38,8 @@ export interface WorkerOptions {
   workerId: string;
   definitions: readonly JobDefinition<never>[];
   schedules: readonly ScheduleDef[];
-  log: JobLog;
+  /** Logger with source `jobs`. */
+  log: Logger;
   pollMs?: number;
 }
 
@@ -61,16 +60,17 @@ export async function runOnce(options: WorkerOptions, now = new Date()): Promise
 
   const def = byName.get(job.name)!;
   const jobId = jobIdOf(job);
+  const jobLog = log.child({ jobId });
   const started = Date.now();
   try {
     const payload = def.payload.parse(job.payload);
-    await def.handler({ db, job, payload, jobId });
+    await def.handler({ db, job, payload, jobId, log: jobLog });
     completeJob(db, job.id);
-    log.info({ jobId, job: job.name, attempt: job.attempt, durationMs: Date.now() - started }, 'Job done');
+    jobLog.debug({ job: job.name, attempt: job.attempt, durationMs: Date.now() - started }, 'Job done');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const retry = failJob(db, job, message);
-    log.error({ jobId, job: job.name, attempt: job.attempt, retry, err }, 'Job failed');
+    jobLog.error({ job: job.name, attempt: job.attempt, retry, err }, 'Job failed');
   }
   return true;
 }

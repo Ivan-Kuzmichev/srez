@@ -2,11 +2,9 @@ import { hostname } from 'node:os';
 import { db } from '@/db/client';
 import { jobDefinitions, schedules } from '@/jobs';
 import { startWorker } from '@/jobs/runner';
+import { flushLogs, logger } from '@/server/logger';
 
-const log = {
-  info: (context: Record<string, unknown>, message: string) => console.log(message, context),
-  error: (context: Record<string, unknown>, message: string) => console.error(message, context),
-};
+const log = logger('jobs');
 
 const worker = startWorker({
   db: db(),
@@ -23,6 +21,7 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   log.info({ signal }, 'Worker stopping');
   await worker.stop();
+  flushLogs();
   db().$client.close();
   process.exit(0);
 }
