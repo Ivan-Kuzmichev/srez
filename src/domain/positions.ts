@@ -121,7 +121,8 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
           currency: op.currency,
         }),
       );
-      if (c.lots.some((l) => l.currency !== op.currency)) issues.push({ operationId: op.id, code: 'MIXED_CURRENCY' });
+      if (c.lots.some((l) => l.currency !== op.currency))
+        issues.push({ operationId: op.id, code: 'MIXED_CURRENCY' });
       if (op.type === 'buy' && !c.firstBuyAt) c.firstBuyAt = op.executedAt;
     } else if (SELL.has(op.type)) {
       const proceeds = op.quantity.times(op.price).minus(ctx.deductFees ? op.fee : ZERO);

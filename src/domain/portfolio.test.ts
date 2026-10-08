@@ -119,3 +119,91 @@ describe('external flows', () => {
     expect(externalFlows(ops, ctxs, scopeOf([]), rub)).toEqual([]);
   });
 });
+
+describe('external flows: transfers, fees and accounts without context', () => {
+  const ctx: LedgerContext = {
+    tagRules: new Map(),
+    accountDefaultTagId: null,
+    cashInstrumentId: (c) => `cash-${c}`,
+    deductFees: true,
+  };
+  const base = {
+    accountId: 'a1',
+    createdAt: new Date(0),
+    currency: 'RUB',
+    amount: D(0),
+    fee: D(0),
+    tax: D(0),
+    accruedInterest: D(0),
+    tagId: null,
+    voided: false,
+  };
+  const ops: FlowOperation[] = [
+    {
+      ...base,
+      id: 't1',
+      type: 'transfer_in',
+      executedAt: new Date(1),
+      instrumentId: 'sber',
+      quantity: D(10),
+      price: D(300),
+    },
+    {
+      ...base,
+      id: 't2',
+      type: 'transfer_out',
+      executedAt: new Date(2),
+      instrumentId: 'sber',
+      quantity: D(4),
+      price: D(310),
+    },
+    {
+      ...base,
+      id: 'f',
+      type: 'fee',
+      executedAt: new Date(3),
+      instrumentId: 'sber',
+      quantity: D(0),
+      price: D(0),
+      amount: D(-50),
+      tagId: 'p',
+    },
+    {
+      ...base,
+      id: 'v',
+      type: 'deposit',
+      executedAt: new Date(4),
+      instrumentId: null,
+      quantity: D(0),
+      price: D(0),
+      amount: D(5),
+      voided: true,
+    },
+    {
+      ...base,
+      id: 'x',
+      type: 'deposit',
+      accountId: 'other',
+      executedAt: new Date(5),
+      instrumentId: null,
+      quantity: D(0),
+      price: D(0),
+      amount: D(7),
+    },
+  ];
+  it('values transfers at their price, counts fees charged outside a tag, skips voided and unknown accounts', () => {
+    const all = externalFlows(ops, new Map([['a1', ctx]]), everything, () => D(1));
+    expect(all.map((f) => [f.operationId, f.amountRub.toFixed()])).toEqual([
+      ['t1', '3000'],
+      ['t2', '-1240'],
+    ]);
+    const tag = externalFlows(
+      ops,
+      new Map([['a1', ctx]]),
+      scopeOf([{ accountId: 'a1', mode: 'tag', tagId: 'p' }]),
+      () => D(1),
+    );
+    expect(tag.map((f) => [f.operationId, f.amountRub.toFixed()])).toEqual([['f', '50']]);
+    expect(invested(all, new Date(1)).toFixed()).toBe('3000');
+  });
+});

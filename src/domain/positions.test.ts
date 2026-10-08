@@ -223,7 +223,14 @@ describe('currencies of cost', () => {
     const l = buildLedger(
       [
         op('buy', { instrumentId: 'btc', qty: '0.01', price: 6000000 }),
-        op('buy', { id: 'usd-buy', instrumentId: 'btc', qty: '0.01', price: 80000, currency: 'USD', amount: -800 }),
+        op('buy', {
+          id: 'usd-buy',
+          instrumentId: 'btc',
+          qty: '0.01',
+          price: 80000,
+          currency: 'USD',
+          amount: -800,
+        }),
       ],
       ctx(),
     );
