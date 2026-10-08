@@ -40,18 +40,26 @@ export function Field({ label, hint, error, className, children }: FieldProps) {
   );
 }
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   tone?: ControlTone;
   invalid?: boolean;
   /** Numbers, tickers, dates: monospace with tabular digits. */
   mono?: boolean;
+  /** Main fields of a form (sign-in): taller, stronger border. */
+  size?: 'md' | 'lg';
 }
 
-export function Input({ tone = 'card', invalid, mono, className, ...props }: InputProps) {
+export function Input({ tone = 'card', invalid, mono, size = 'md', className, ...props }: InputProps) {
   return (
     <input
       aria-invalid={invalid || undefined}
-      className={cn(controlClass(tone, invalid), mono && 'num', className)}
+      className={cn(
+        controlClass(tone, invalid),
+        size === 'lg' && 'min-h-12 px-3.5 text-body',
+        size === 'lg' && !invalid && 'border-border-strong',
+        mono && 'num',
+        className,
+      )}
       {...props}
     />
   );

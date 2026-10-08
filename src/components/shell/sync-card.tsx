@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { ru } from '@/lib/i18n/ru';
 
@@ -11,13 +12,15 @@ export interface SyncSummary {
 
 const dot = { ok: 'bg-gain', error: 'bg-loss', running: 'bg-accent', none: 'bg-border-strong' } as const;
 
-/** Sidebar footer card: source status now, user and «Выйти» from phase 1. */
+/** Sidebar footer card: source status, then the user row passed as children. */
 export function SyncCard({
   summary,
   variant = 'sidebar',
+  children,
 }: {
   summary: SyncSummary | null;
   variant?: 'sidebar' | 'card';
+  children?: ReactNode;
 }) {
   return (
     <div
@@ -39,6 +42,7 @@ export function SyncCard({
           {ru.shell.connectSource}
         </Link>
       )}
+      {children}
     </div>
   );
 }

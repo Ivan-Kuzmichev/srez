@@ -7,6 +7,7 @@ import { db, type Db } from '@/db/client';
 import * as schema from '@/db/schema';
 import { APP_NAME } from '@/lib/app';
 import { uuidv7 } from '@/lib/uuid';
+import { createAuthHooks, loginMethodForPath } from './auth-hooks';
 import { authSecret, env, trustedProxyList } from './env';
 
 export const PASSWORD_MIN_LENGTH = 12;
@@ -28,6 +29,17 @@ export function createAuth(config: AuthConfig) {
     secret: config.secret,
     trustedOrigins: [url.origin],
     database: drizzleAdapter(config.db, { provider: 'sqlite', schema }),
+    hooks: createAuthHooks({ db: config.db, trustedProxies: config.trustedProxies }),
+    databaseHooks: {
+      session: {
+        create: {
+          // How the session was obtained, for the sessions table in settings.
+          before: async (session, ctx) => ({
+            data: { ...session, loginMethod: loginMethodForPath(ctx?.path) },
+          }),
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,

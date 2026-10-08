@@ -1,10 +1,34 @@
+import { getSessionCookie } from 'better-auth/cookies';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export const REQUEST_ID_HEADER = 'x-request-id';
 
-/** Gives every request an id that server code puts into its log records. */
+/** Reachable without a session. Everything else needs one. */
+const PUBLIC_PREFIXES = ['/login', '/api/auth', '/api/health', '/dev/ui'];
+
+function isPublic(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Assigns a request id and sends visitors without a session cookie to the sign-in page.
+ * This is only a shortcut: pages and server actions verify the session themselves.
+ */
 export function proxy(request: NextRequest) {
   const requestId = `req_${crypto.randomUUID()}`;
+  const { pathname, search } = request.nextUrl;
+
+  if (!isPublic(pathname) && !getSessionCookie(request, { cookiePrefix: 'srez' })) {
+    // Server action POSTs carry their own check and answer with a refusal, not a redirect.
+    if (request.method === 'GET' && !pathname.startsWith('/api/')) {
+      const login = new URL('/login', request.url);
+      if (pathname !== '/') login.searchParams.set('next', `${pathname}${search}`);
+      const response = NextResponse.redirect(login);
+      response.headers.set(REQUEST_ID_HEADER, requestId);
+      return response;
+    }
+  }
+
   const headers = new Headers(request.headers);
   headers.set(REQUEST_ID_HEADER, requestId);
   const response = NextResponse.next({ request: { headers } });

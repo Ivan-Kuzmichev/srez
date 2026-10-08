@@ -1,3 +1,12 @@
+/** Russian plural form: 1 попытка, 2 попытки, 5 попыток. */
+export function plural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
 /** All interface strings. Screens and components read text from here, never inline. */
 export const ru = {
   nav: {
@@ -59,10 +68,62 @@ export const ru = {
     onboarding: 'Первый запуск',
   },
   more: {
+    loginMethod: {
+      password: 'Вход по паролю',
+      password_totp: 'Вход по паролю и коду',
+      password_backup: 'Вход по паролю и резервному коду',
+      passkey: 'Вход по пасскею',
+    } as Record<string, string>,
     analytics: 'Аналитика',
     data: 'Данные',
     portfoliosAndAccounts: 'Портфели и счета',
     settings: 'Настройки',
+  },
+  auth: {
+    loginTitle: 'Вход',
+    username: 'Логин',
+    password: 'Пароль',
+    remember: 'Запомнить это устройство на 30 дней',
+    signIn: 'Войти',
+    or: 'или',
+    signInPasskey: 'Войти с пасскеем',
+    forgot: 'Забыли пароль? Его сбрасывает администратор командой на сервере.',
+    invalidCredentials: 'Неверный логин или пароль.',
+    attemptsLeft: (n: number) =>
+      `Осталось ${n} ${plural(n, 'попытка', 'попытки', 'попыток')}, после этого вход по паролю закроется на 15 минут.`,
+    rateLimited: 'Слишком много попыток с этого адреса. Подождите минуту.',
+    secondFactorReset: 'Код так и не подошёл. Войдите заново.',
+    lockedTitle: 'Вход по паролю закрыт',
+    lockedText: 'Пять неудачных попыток подряд. Пароль снова можно будет ввести, когда выйдет время.',
+    lockedWait: 'Осталось ждать',
+    lockedHint:
+      'Пасскей работает и во время блокировки. Если пароль подбирали не вы, после входа смените его и проверьте активные сессии.',
+    lockedRetry: 'Ввести пароль',
+    passkeyTitle: 'Подтвердите вход',
+    passkeyText:
+      'Браузер откроет своё окно. Приложите палец, посмотрите в камеру или вставьте ключ безопасности. Пароль и код не нужны.',
+    passkeyWaiting: 'Ждём ответа устройства',
+    passkeyRetry: 'Показать окно ещё раз',
+    passkeyFailed: 'Пасскей не подошёл или окно закрыли. Попробуйте ещё раз.',
+    passkeyBack: 'Войти по логину и паролю',
+    passkeyNone: 'На этом устройстве ещё нет пасскея? Войдите по паролю и добавьте его в настройках.',
+    twoFactorTitle: 'Код подтверждения',
+    twoFactorText: 'Пароль верный. Введите 6 цифр из приложения-аутентификатора.',
+    twoFactorBackupText: 'Пароль верный. Введите один из резервных кодов.',
+    codeLabel: 'Код из приложения',
+    backupLabel: 'Резервный код',
+    trust: 'Не спрашивать код здесь 30 дней',
+    confirm: 'Подтвердить',
+    useBackup: 'Ввести резервный код',
+    useTotp: 'Ввести код из приложения',
+    confirmPasskey: 'Подтвердить пасскеем',
+    otherUser: 'Войти под другим логином',
+    codeWrong: (n: number) => `Код не подошёл. Осталось ${n} ${plural(n, 'попытка', 'попытки', 'попыток')}.`,
+    backupWrong: (n: number) =>
+      `Резервный код не подошёл или уже использован. Осталось ${n} ${plural(n, 'попытка', 'попытки', 'попыток')}.`,
+    codeHint:
+      'Код живёт 30 секунд: дождитесь нового. Если не подходит снова, проверьте, что время на телефоне выставляется автоматически.',
+    codeFormat: 'Нужно 6 цифр',
   },
   users: {
     usernameRule: 'Логин: 3–32 символа, латиница, цифры, точка, дефис, подчёркивание',

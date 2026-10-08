@@ -1,7 +1,7 @@
 import type { SVGProps } from 'react';
 
 /** Stroke icons from the mockups. Decorative: always aria-hidden. */
-type IconProps = Omit<SVGProps<SVGSVGElement>, 'width' | 'height'> & { size?: number };
+type IconProps = Omit<SVGProps<SVGSVGElement>, 'width' | 'height'> & { size?: number; weight?: number };
 
 function Stroke({ size = 18, weight = 1.8, children, ...props }: IconProps & { weight?: number }) {
   return (
@@ -98,5 +98,17 @@ export const IconCheck = ({ size = 16, ...p }: IconProps) => (
 export const IconClose = ({ size = 16, ...p }: IconProps) => (
   <Stroke size={size} weight={2} {...p}>
     <path d="M6 6l12 12M18 6L6 18" />
+  </Stroke>
+);
+export const IconKey = (p: IconProps) => (
+  <Stroke {...p}>
+    <circle cx="8" cy="15" r="4" />
+    <path d="M11 12l9-9M16 7l3 3M13.5 9.5l2 2" />
+  </Stroke>
+);
+export const IconLock = (p: IconProps) => (
+  <Stroke {...p}>
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
   </Stroke>
 );

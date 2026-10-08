@@ -1,10 +1,12 @@
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { z } from 'zod';
 
 const emptyToUndefined = (v: unknown) => (v === '' ? undefined : v);
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  DATABASE_PATH: z.string().min(1).default('./data/srez.db'),
+  DATABASE_PATH: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   APP_URL: z.preprocess(emptyToUndefined, z.url().default('http://localhost:3000')),
   APP_SECRET_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
   AUTH_SECRET: z.preprocess(emptyToUndefined, z.string().min(32).optional()),
@@ -13,12 +15,23 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 });
 
-export type Env = z.infer<typeof EnvSchema>;
+export type Env = z.infer<typeof EnvSchema> & { DATABASE_PATH: string };
 
 let cached: Env | undefined;
 
+/**
+ * Development keeps the database outside the project: Turbopack watches the whole project tree and
+ * reloads the page on every write to a file inside it. Production (Docker) uses ./data via compose.
+ */
+function defaultDatabasePath(nodeEnv: string): string {
+  return nodeEnv === 'production' ? './data/srez.db' : join(homedir(), '.srez', 'dev.db');
+}
+
 export function env(): Env {
-  cached ??= EnvSchema.parse(process.env);
+  if (!cached) {
+    const parsed = EnvSchema.parse(process.env);
+    cached = { ...parsed, DATABASE_PATH: parsed.DATABASE_PATH ?? defaultDatabasePath(parsed.NODE_ENV) };
+  }
   return cached;
 }
 
