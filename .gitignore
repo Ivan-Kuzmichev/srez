@@ -10,3 +10,13 @@ dist/
 
 # OS
 .DS_Store
+
+# local database
+data/
+!data/.gitkeep
+
+# test output
+playwright-report/
+test-results/
+*.tsbuildinfo
+next-env.d.ts

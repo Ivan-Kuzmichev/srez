@@ -1,0 +1,7 @@
+design/
+docs/
+pnpm-lock.yaml
+drizzle/
+.next/
+dist/
+*.md
