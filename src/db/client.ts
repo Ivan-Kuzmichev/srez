@@ -23,7 +23,12 @@ export function openDb(path: string): Db {
   sqlite.function('ulower', { deterministic: true }, (value: unknown) =>
     value == null ? null : String(value).toLocaleLowerCase('ru'),
   );
-  return drizzle({ client: sqlite, schema });
+  const database = drizzle({ client: sqlite, schema });
+  // Writers take the write lock at BEGIN. A deferred transaction that reads first fails at once with
+  // SQLITE_BUSY_SNAPSHOT when web and worker write at the same time; an immediate one waits busy_timeout.
+  const begin = database.transaction.bind(database);
+  database.transaction = ((fn, config) => begin(fn, { behavior: 'immediate', ...config })) as typeof database.transaction;
+  return database;
 }
 
 const globalForDb = globalThis as unknown as { srezDb?: Db };
