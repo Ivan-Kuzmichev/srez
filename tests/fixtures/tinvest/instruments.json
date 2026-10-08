@@ -133,7 +133,13 @@
    "instrumentType": "currency",
    "instrumentKind": "INSTRUMENT_TYPE_CURRENCY",
    "positionUid": "",
-   "countryOfRisk": "RU"
+   "countryOfRisk": "RU",
+   "isoCurrencyName": "usd",
+   "nominal": {
+    "currency": "usd",
+    "units": "1",
+    "nano": 0
+   }
   }
  ]
 }

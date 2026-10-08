@@ -177,6 +177,8 @@ export const operations = sqliteTable(
       .notNull()
       .references(() => sources.id, { onDelete: 'restrict' }),
     externalId: text('external_id'),
+    /** Imported operations: survives a change of the broker's id (docs/05-integrations.md). */
+    fingerprint: text('fingerprint'),
     raw: text('raw', { mode: 'json' }),
     voidedAt: timestamp('voided_at'),
     createdAt: createdAt(),
@@ -186,6 +188,9 @@ export const operations = sqliteTable(
     uniqueIndex('operations_source_external_idx')
       .on(t.sourceId, t.externalId)
       .where(sql`${t.externalId} is not null`),
+    index('operations_source_fingerprint_idx')
+      .on(t.sourceId, t.fingerprint)
+      .where(sql`${t.fingerprint} is not null`),
     index('operations_account_executed_idx').on(t.accountId, t.executedAt),
     index('operations_instrument_executed_idx').on(t.instrumentId, t.executedAt),
     index('operations_user_executed_idx').on(t.userId, t.executedAt),

@@ -130,12 +130,14 @@ describe('T-Invest client', () => {
     expect(err).toMatchObject({ code: 'UNAUTHENTICATED', status: 401, apiCode: '40003', retryable: false });
     expect(String((err as Error).message)).not.toContain('wrong-token');
 
+    // Without waiting out the limit, to see the error itself.
+    const impatient = new TinvestClient(MOCK_TOKEN, { baseUrl: mock.url, rateLimitRetries: 0 });
     mock.failNext(
       { status: 429, code: '80002', resetSeconds: 17 },
       { status: 403, code: '40002' },
       { status: 503 },
     );
-    await expect(client.getAccounts()).rejects.toMatchObject({
+    await expect(impatient.getAccounts()).rejects.toMatchObject({
       code: 'RATE_LIMIT',
       retryAfter: 17,
       retryable: true,

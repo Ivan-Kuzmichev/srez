@@ -35,7 +35,7 @@ describe('T-Invest operation mapping', () => {
     expect(str(lkoh.quantity)).toBe('1');
     expect(str(lkoh.amount)).toBe('-5402.7');
     const cancelled = items.find((o) => o.state === 'OPERATION_STATE_CANCELED')!;
-    expect(operations.some((m) => m.externalId === cancelled.id)).toBe(false);
+    expect(operations.some((m) => m.raw.some((r) => r.id === cancelled.id))).toBe(false);
   });
 
   it('keeps accrued interest of a bond purchase', () => {
@@ -73,6 +73,13 @@ describe('T-Invest operation mapping', () => {
     expect(out.type).toBe('withdrawal');
     expect(str(out.amount)).toBe('-1200');
     expect(out.fingerprint).not.toBe(div.fingerprint);
+  });
+
+  it('scopes ids to the account: both sides of a transfer share the broker id', () => {
+    const sides = operations.filter((m) => m.type === 'transfer_in' || m.type === 'transfer_out');
+    expect(new Set(sides.map((m) => m.raw[0]!.id)).size).toBeLessThan(sides.length);
+    expect(new Set(operations.map((m) => m.externalId)).size).toBe(operations.length);
+    expect(operations[0]!.externalId).toMatch(/^\d+:\d+$/);
   });
 
   it('reads transfers between own accounts by the sign of the payment', () => {
@@ -144,6 +151,9 @@ describe('T-Invest operation mapping', () => {
     const fee = items.find((o) => o.type === 'OPERATION_TYPE_BROKER_FEE')!;
     const { operations: alone } = mapOperations([fee]);
     expect(alone).toHaveLength(1);
-    expect(alone[0]).toMatchObject({ type: 'fee', parentExternalId: fee.parentOperationId });
+    expect(alone[0]).toMatchObject({
+      type: 'fee',
+      parentExternalId: `${fee.brokerAccountId}:${fee.parentOperationId}`,
+    });
   });
 });

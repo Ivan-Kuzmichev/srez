@@ -89,9 +89,15 @@ export function retryDelayMs(attempt: number): number {
   return Math.min(attempt * attempt * 10_000, 3_600_000);
 }
 
-/** Returns true when the job will be retried. */
-export function failJob(database: Executor, job: Job, error: string, now = new Date()): boolean {
-  const retry = job.attempt < job.maxAttempts;
+/** Returns true when the job will be retried. `retryable: false` ends it at once (a revoked token). */
+export function failJob(
+  database: Executor,
+  job: Job,
+  error: string,
+  now = new Date(),
+  retryable = true,
+): boolean {
+  const retry = retryable && job.attempt < job.maxAttempts;
   database
     .update(jobs)
     .set(

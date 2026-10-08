@@ -23,7 +23,10 @@ export interface InstrumentRef {
 }
 
 export interface MappedOperation {
-  /** The broker's operation id; entries derived from one operation get a suffix (`:card`). */
+  /**
+   * `<broker account>:<operation id>`: broker ids are unique per account only (both sides of a
+   * transfer between own accounts share one). Entries derived from one operation get a suffix (`:card`).
+   */
   externalId: string;
   /** Stable across a change of the broker's id: account, time, type, instrument, payment, quantity. */
   fingerprint: string;
@@ -135,13 +138,16 @@ export function fingerprint(o: OperationItem, suffix = ''): string {
   return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 32);
 }
 
+export const externalIdOf = (o: Pick<OperationItem, 'brokerAccountId' | 'id'>, suffix = '') =>
+  `${o.brokerAccountId}:${o.id}${suffix ? `:${suffix}` : ''}`;
+
 function entry(
   o: OperationItem,
   type: OperationType,
   fields: Partial<MappedOperation> = {},
 ): MappedOperation {
   return {
-    externalId: o.id,
+    externalId: externalIdOf(o),
     fingerprint: fingerprint(o),
     brokerAccountId: o.brokerAccountId,
     type,
@@ -239,12 +245,22 @@ export function mapOperations(items: OperationItem[]): {
   // Broker fees go into the trade they belong to.
   for (const f of fees) {
     const amount = quotation(f.payment);
-    const parent = byExternalId.get(f.parentOperationId);
+    const parent = byExternalId.get(
+      externalIdOf({ brokerAccountId: f.brokerAccountId, id: f.parentOperationId }),
+    );
     if (parent && parent.raw[0]!.brokerAccountId === f.brokerAccountId) {
       parent.fee = parent.fee.minus(amount);
       parent.amount = parent.amount.plus(amount);
       parent.raw.push(f);
-    } else push(entry(f, 'fee', { fee: amount.neg(), parentExternalId: f.parentOperationId || null }));
+    } else
+      push(
+        entry(f, 'fee', {
+          fee: amount.neg(),
+          parentExternalId: f.parentOperationId
+            ? externalIdOf({ brokerAccountId: f.brokerAccountId, id: f.parentOperationId })
+            : null,
+        }),
+      );
   }
 
   // Coupon and dividend taxes come without a link: the payout of the same security that day, nearest in time.
@@ -278,7 +294,7 @@ export function mapOperations(items: OperationItem[]): {
     const o = d.raw[0]!;
     push(
       entry(o, 'withdrawal', {
-        externalId: `${o.id}:card`,
+        externalId: externalIdOf(o, 'card'),
         fingerprint: fingerprint(o, 'card'),
         instrument: null,
         amount: d.amount.neg(),

@@ -104,6 +104,7 @@
 | `origin` | enum | `tinvest` \| `chain` \| `manual` \| `reconcile` |
 | `source_id` | uuid | |
 | `external_id` | text, nullable | Идентификатор во внешней системе |
+| `fingerprint` | text, nullable | Отпечаток импортированной операции: счёт, время, тип, бумага, сумма, количество. Если брокер сменил номер операции, по нему находится прежняя запись (`05-integrations.md`, раздел 1) |
 | `raw` | jsonb, nullable | Сырой ответ, только в режиме отладки, без секретов |
 | `voided_at` | timestamptz, nullable | Отмена исправления сверки |
 | `created_at`, `updated_at` | | |
@@ -112,7 +113,7 @@
 
 Инварианты:
 
-- Уникальность `(source_id, external_id)` там, где `external_id` не пуст.
+- Уникальность `(source_id, external_id)` там, где `external_id` не пуст. У Т-Инвестиций `external_id` — `<счёт брокера>:<номер операции>`: номер уникален только внутри счёта.
 - Операции с `origin` из `tinvest` и `chain` не редактируются, кроме `tag_id` и `note`.
 - Отменённые (`voided_at` не пуст) не участвуют в расчётах.
 - Индексы: `(account_id, executed_at)`, `(instrument_id, executed_at)`, `(user_id, executed_at desc)`.

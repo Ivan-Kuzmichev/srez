@@ -221,12 +221,19 @@ export interface TinvestClientOptions {
   baseUrl?: string;
   transport?: Transport;
   timeoutMs?: number;
+  /** Waits out a rate limit (429) this many times before giving up. */
+  rateLimitRetries?: number;
+  sleep?: (ms: number) => Promise<void>;
 }
+
+const Currency = Instrument.extend({ isoCurrencyName: z.string().default('') });
 
 export class TinvestClient {
   private readonly baseUrl: string;
   private readonly transport: Transport;
   private readonly timeoutMs: number;
+  private readonly rateLimitRetries: number;
+  private readonly sleep: (ms: number) => Promise<void>;
 
   constructor(
     // Kept out of enumerable fields so that logging the client never prints the token.
@@ -237,11 +244,31 @@ export class TinvestClient {
     this.baseUrl = (opts.baseUrl ?? TINVEST_API_URL).replace(/\/$/, '');
     this.transport = opts.transport ?? nodeTransport();
     this.timeoutMs = opts.timeoutMs ?? 30_000;
+    this.rateLimitRetries = opts.rateLimitRetries ?? 3;
+    this.sleep = opts.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   }
 
   declare private readonly token: string;
 
   private async call<T extends z.ZodType>(
+    service: string,
+    method: string,
+    body: object,
+    schema: T,
+  ): Promise<z.infer<T>> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.callOnce(service, method, body, schema);
+      } catch (err) {
+        if (!(err instanceof TinvestError) || err.code !== 'RATE_LIMIT' || attempt >= this.rateLimitRetries)
+          throw err;
+        // The limit window resets within a minute; the header says when.
+        await this.sleep(Math.min(Math.max(err.retryAfter ?? 1, 1), 60) * 1000);
+      }
+    }
+  }
+
+  private async callOnce<T extends z.ZodType>(
     service: string,
     method: string,
     body: object,
@@ -358,6 +385,13 @@ export class TinvestClient {
   async getBond(uid: string): Promise<Bond> {
     const body = { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid };
     return (await this.call('InstrumentsService', 'BondBy', body, z.object({ instrument: Bond }))).instrument;
+  }
+
+  /** A currency with its ISO code: an operation's dollar purchase needs to find our USD cash. */
+  async getCurrency(uid: string): Promise<z.infer<typeof Currency>> {
+    const body = { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid };
+    return (await this.call('InstrumentsService', 'CurrencyBy', body, z.object({ instrument: Currency })))
+      .instrument;
   }
 
   async findInstrument(query: string): Promise<InstrumentShort[]> {

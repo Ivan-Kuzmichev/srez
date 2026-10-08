@@ -204,6 +204,21 @@ export const ru = {
       INVALID_INPUT: 'Проверьте поля.',
     } as Record<string, string>,
   },
+  tinvest: {
+    sourceName: 'Т-Инвестиции',
+    accountKinds: { broker: 'Брокерский счёт', iis: 'ИИС', investBox: 'Инвесткопилка' },
+    /** docs/05-integrations.md, «Ошибки для интерфейса». */
+    errors: {
+      UNAUTHENTICATED: 'Токен не найден или отозван. Выпустите новый',
+      PERMISSION: 'У токена нет доступа к этому счёту',
+      RATE_LIMIT: 'Слишком много запросов, повторим позже',
+      UNAVAILABLE: (minutes: number) => `Т-Инвестиции не отвечают, повторим через ${minutes} мин`,
+      NOT_FOUND: 'Т-Инвестиции не нашли запрошенные данные',
+      BAD_REQUEST: 'Т-Инвестиции отклонили запрос',
+      BAD_RESPONSE: 'Т-Инвестиции ответили в неожиданном формате',
+      INTERNAL: 'Синхронизация прервалась из-за внутренней ошибки, подробности в журнале',
+    },
+  },
   overview: {
     allPortfolios: 'Все портфели',
     portfolioFilter: 'Портфель',

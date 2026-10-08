@@ -5,3 +5,4 @@ export * from './auth';
 export * from './login';
 export * from './ledger';
 export * from './market';
+export * from './sync';

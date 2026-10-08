@@ -597,7 +597,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000012",
+   "id": "80000000009",
    "parentOperationId": "",
    "name": "Сбер Банк",
    "date": "2023-07-05T20:59:00Z",
@@ -651,7 +651,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000013",
+   "id": "80000000010",
    "parentOperationId": "",
    "name": "ОФЗ 29014",
    "date": "2023-07-05T20:59:00Z",
@@ -705,7 +705,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000014",
+   "id": "80000000011",
    "parentOperationId": "",
    "name": "",
    "date": "2023-07-05T20:59:00Z",

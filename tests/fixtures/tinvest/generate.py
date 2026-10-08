@@ -46,9 +46,10 @@ held = {}
 NO_CASH = {"DIV_EXT"}
 
 
-def op(acc, date, typ, name, payment, inst=NONE, qty=0, rest=0, price=0, parent="", state="EXECUTED", accrued=0, cur='rub', desc=None):
+def op(acc, date, typ, name, payment, inst=NONE, qty=0, rest=0, price=0, parent="", state="EXECUTED", accrued=0, cur='rub', desc=None, same_id=None):
+    # Broker ids are unique per account only: both sides of a transfer share one (seen in real data).
     item = {
-        "cursor": "", "brokerAccountId": acc, "id": str(80000000000 + len(ops) + 1), "parentOperationId": parent,
+        "cursor": "", "brokerAccountId": acc, "id": same_id or str(80000000000 + len(ops) + 1), "parentOperationId": parent,
         "name": name, "date": date, "type": "OPERATION_TYPE_" + typ, "description": desc or name,
         "state": "OPERATION_STATE_" + state, "instrumentUid": inst["uid"], "figi": inst["figi"],
         "instrumentType": inst["type"], "instrumentKind": inst["kind"], "positionUid": "", "ticker": inst["ticker"],
@@ -86,15 +87,15 @@ trade(A3, "2020-02-03T08:00:00Z", "BUY", OFZ29, 20, 1012.5, 3.04, accrued=40.2)
 op(A3, "2020-07-15T06:00:00Z", "COUPON", "Выплата купонов", 310.4, OFZ29)
 op(A3, "2020-07-15T06:00:00Z", "BOND_TAX", "Удержание налога по купонам", -40, OFZ29)
 op(A3, "2021-03-02T10:00:00Z", "TRACK_MFEE", "Комиссия за управление по стратегии автоследования", -120.5)
-op(A3, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "Сбер Банк", -15600, SBER, 60, price=260, desc="Перевод 60 акций Сбер Банк")
-op(A3, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "ОФЗ 29014", -20250, OFZ29, 20, price=1012.5, desc="Перевод 20 облигаций ОФЗ 29014")
+t1 = op(A3, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "Сбер Банк", -15600, SBER, 60, price=260, desc="Перевод 60 акций Сбер Банк")
+t2 = op(A3, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "ОФЗ 29014", -20250, OFZ29, 20, price=1012.5, desc="Перевод 20 облигаций ОФЗ 29014")
 moved = cash[(A3, 'rub')]
-op(A3, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "", -moved, desc="Перевод денежных средств")
+t3 = op(A3, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "", -moved, desc="Перевод денежных средств")
 
 # Broker account.
-op(A1, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "Сбер Банк", 15600, SBER, 60, price=260, desc="Перевод 60 акций Сбер Банк")
-op(A1, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "ОФЗ 29014", 20250, OFZ29, 20, price=1012.5, desc="Перевод 20 облигаций ОФЗ 29014")
-op(A1, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "", moved, desc="Перевод денежных средств")
+op(A1, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "Сбер Банк", 15600, SBER, 60, price=260, desc="Перевод 60 акций Сбер Банк", same_id=t1)
+op(A1, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "ОФЗ 29014", 20250, OFZ29, 20, price=1012.5, desc="Перевод 20 облигаций ОФЗ 29014", same_id=t2)
+op(A1, "2023-07-05T20:59:00Z", "TRANS_IIS_BS", "", moved, desc="Перевод денежных средств", same_id=t3)
 op(A1, "2023-07-10T09:12:00Z", "INPUT", "Пополнение брокерского счёта", 300000)
 trade(A1, "2023-07-11T07:30:11Z", "BUY", SBER, 40, 250, 7.5)
 trade(A1, "2023-08-01T08:05:42Z", "BUY", OFZ, 10, 605.5, 1.82, accrued=85.9)
@@ -164,7 +165,7 @@ dump('instruments.json', {"instruments": [
     ins(OFZ29, "ОФЗ 29014", "RU000A101N52", 1, bond(0, "2026-03-25T00:00:00Z")),
     ins(TMOS, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
     ins(TMOS_AT, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
-    ins(USD, "Доллар США", "", 1000),
+    ins(USD, "Доллар США", "", 1000, {"isoCurrencyName": "usd", "nominal": mv(1, "usd")}),
 ]})
 
 by_ticker = {i["ticker"]: i for i in [SBER, LKOH, OFZ, OFZ29, TMOS, USD]}

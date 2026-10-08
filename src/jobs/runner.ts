@@ -69,7 +69,9 @@ export async function runOnce(options: WorkerOptions, now = new Date()): Promise
     jobLog.debug({ job: job.name, attempt: job.attempt, durationMs: Date.now() - started }, 'Job done');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const retry = failJob(db, job, message);
+    // Errors that say so (TinvestError: a revoked token, no access) are not worth another attempt.
+    const retryable = !(err instanceof Error && 'retryable' in err && err.retryable === false);
+    const retry = failJob(db, job, message, new Date(), retryable);
     jobLog.error({ job: job.name, attempt: job.attempt, retry, err }, 'Job failed');
   }
   return true;
