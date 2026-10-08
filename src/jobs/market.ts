@@ -226,6 +226,7 @@ export function updateSnapshots(db: Db, now = new Date(), force = false): number
 
 export const refreshPricesJob = defineJob({
   name: PRICES_JOB,
+  lane: 'slow',
   payload: z.null(),
   lockMs: 10 * 60_000,
   async handler({ db, log }) {
@@ -239,6 +240,7 @@ export const refreshPricesJob = defineJob({
 
 export const snapshotJob = defineJob({
   name: SNAPSHOT_JOB,
+  lane: 'slow',
   payload: z.null(),
   lockMs: 30 * 60_000,
   async handler({ db, log }) {

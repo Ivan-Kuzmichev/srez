@@ -336,6 +336,7 @@ export async function syncSource(
 
 export const syncTinvest = defineJob({
   name: SYNC_JOB,
+  lane: 'slow',
   payload: z.object({ sourceId: z.string().min(1), trigger: z.enum(SYNC_TRIGGERS) }),
   async handler({ db, job, payload, log }) {
     const client = tinvestClient(tinvestToken(db, payload.sourceId));

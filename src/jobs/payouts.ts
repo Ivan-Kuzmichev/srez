@@ -140,6 +140,7 @@ export async function refreshPayouts(
 
 export const refreshPayoutsJob = defineJob({
   name: PAYOUTS_JOB,
+  lane: 'slow',
   payload: z.null(),
   async handler({ db, log }) {
     const client = tinvestForPrices(db);

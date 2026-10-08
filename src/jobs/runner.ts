@@ -26,6 +26,11 @@ export interface JobDefinition<P = unknown> {
   payload: z.ZodType<P>;
   /** How long a claimed job stays locked before another worker may take it over. */
   lockMs?: number;
+  /**
+   * `slow` jobs (network, minutes long) run in their own lane, so a first sync does not hold up
+   * position recalculation after the owner edits an operation.
+   */
+  lane?: 'slow';
   handler(ctx: JobContext<P>): Promise<void> | void;
 }
 
@@ -82,22 +87,28 @@ export function startWorker(options: WorkerOptions): { stop(): Promise<void> } {
   syncSchedules(options.db, options.schedules);
 
   let stopping = false;
-  const loop = (async () => {
-    while (!stopping) {
-      let worked = false;
-      try {
-        worked = await runOnce(options);
-      } catch (err) {
-        options.log.error({ err }, 'Worker loop error');
+  const lanes = [
+    options.definitions.filter((d) => d.lane !== 'slow'),
+    options.definitions.filter((d) => d.lane === 'slow'),
+  ].filter((defs) => defs.length > 0);
+  const loops = lanes.map((definitions) =>
+    (async () => {
+      while (!stopping) {
+        let worked = false;
+        try {
+          worked = await runOnce({ ...options, definitions });
+        } catch (err) {
+          options.log.error({ err }, 'Worker loop error');
+        }
+        if (!worked && !stopping) await new Promise((r) => setTimeout(r, pollMs));
       }
-      if (!worked && !stopping) await new Promise((r) => setTimeout(r, pollMs));
-    }
-  })();
+    })(),
+  );
 
   return {
     async stop() {
       stopping = true;
-      await loop;
+      await Promise.all(loops);
     },
   };
 }

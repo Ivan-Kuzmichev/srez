@@ -6,7 +6,7 @@ import { jobs, logs } from '@/db/schema';
 import { createTestDb } from '@/db/test-db';
 import { createLogger } from '@/server/logger';
 import { enqueue } from './queue';
-import { defineJob, runOnce, type JobDefinition } from './runner';
+import { defineJob, runOnce, startWorker, type JobDefinition } from './runner';
 import { heartbeat } from './system';
 
 const silent = new Writable({ write: (_c, _e, cb) => cb() });
@@ -49,5 +49,46 @@ describe('runOnce', () => {
   it('returns false when nothing is due', async () => {
     const { db, log } = setup();
     expect(await runOnce({ db, workerId: 'w', definitions: [], schedules: [], log })).toBe(false);
+  });
+});
+
+describe('startWorker lanes', () => {
+  it('runs a quick job while a slow one is still busy', async () => {
+    const { db, log } = setup();
+    let release!: () => void;
+    const slowDone = new Promise<void>((r) => (release = r));
+    const order: string[] = [];
+    const slow = defineJob({
+      name: 'test.slow',
+      payload: z.null(),
+      lane: 'slow',
+      async handler() {
+        order.push('slow started');
+        await slowDone;
+        order.push('slow finished');
+      },
+    });
+    const quick = defineJob({
+      name: 'test.quick',
+      payload: z.null(),
+      handler() {
+        order.push('quick');
+      },
+    });
+    enqueue(db, slow.name, null);
+    const worker = startWorker({
+      db: db as Db,
+      workerId: 'w',
+      definitions: [slow, quick] as JobDefinition<never>[],
+      schedules: [],
+      log,
+      pollMs: 5,
+    });
+    await vi.waitFor(() => expect(order).toEqual(['slow started']));
+    enqueue(db, quick.name, null);
+    await vi.waitFor(() => expect(order).toEqual(['slow started', 'quick']));
+    release();
+    await vi.waitFor(() => expect(order).toEqual(['slow started', 'quick', 'slow finished']));
+    await worker.stop();
   });
 });
