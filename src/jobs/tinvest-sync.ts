@@ -8,6 +8,7 @@ import { heldQuantity } from '@/domain/holdings';
 import { TinvestClient, TinvestError, type OperationItem } from '@/integrations/tinvest/client';
 import { mapOperations, type MappedOperation } from '@/integrations/tinvest/map';
 import { ru } from '@/lib/i18n/ru';
+import { enqueuePayouts } from './payouts';
 import { enqueueRecalc } from './positions';
 import { enqueue, retryDelayMs } from './queue';
 import { defineJob } from './runner';
@@ -259,6 +260,8 @@ export async function syncSource(
       opts.log?.info({ accountId: account.id, fetched: items.length, ...result }, 'T-Invest account synced');
     }
 
+    // New securities may have arrived: their coupons and dividends, after positions are recalculated.
+    if (newOperations > 0) enqueuePayouts(db, new Date(Date.now() + 30_000));
     const finished = new Date();
     db.update(syncRuns)
       .set({ status: 'ok', finishedAt: finished, newOperations, progress: { stage: 'done', percent: 100 } })

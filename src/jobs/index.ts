@@ -4,6 +4,7 @@ import { refreshPricesJob, snapshotJob } from './market';
 import { recalcPositions } from './positions';
 import { heartbeat } from './system';
 import { syncDue, syncTinvest } from './tinvest-sync';
+import { refreshPayoutsJob } from './payouts';
 
 export const jobDefinitions: JobDefinition<never>[] = [
   heartbeat as JobDefinition<never>,
@@ -12,6 +13,7 @@ export const jobDefinitions: JobDefinition<never>[] = [
   snapshotJob as JobDefinition<never>,
   syncTinvest as JobDefinition<never>,
   syncDue as JobDefinition<never>,
+  refreshPayoutsJob as JobDefinition<never>,
 ];
 
 export const schedules: ScheduleDef[] = [
@@ -21,7 +23,9 @@ export const schedules: ScheduleDef[] = [
   { name: snapshotJob.name, cron: '*/10 * * * *' },
   // Each source has its own interval (15 minutes by default); this only checks who is due.
   { name: syncDue.name, cron: '* * * * *' },
+  // Coupon and dividend schedules change rarely: once a day, early morning UTC.
+  { name: refreshPayoutsJob.name, cron: '0 3 * * *' },
 ];
 
 /** Run once when the worker starts: fill gaps left while it was down. */
-export const startupJobs = [refreshPricesJob.name, snapshotJob.name];
+export const startupJobs = [refreshPricesJob.name, snapshotJob.name, refreshPayoutsJob.name];

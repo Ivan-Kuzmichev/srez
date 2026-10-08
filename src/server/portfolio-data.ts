@@ -5,6 +5,7 @@ import {
   finAccounts,
   fxRates,
   instruments,
+  payoutEvents,
   portfolioRules,
   portfolios,
   portfolioTargets,
@@ -21,6 +22,7 @@ import { dayChange, externalFlows, type ExternalFlow, type FlowOperation } from 
 import type { LedgerContext } from '@/domain/ledger-types';
 import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope';
 import { valueOn } from '@/domain/timeline';
+import { assetLabel } from '@/lib/asset-label';
 import { addDays, localDate } from '@/lib/time';
 
 const ZERO = new Decimal(0);
@@ -409,4 +411,45 @@ export function convertSeries(
     const rate = rubPer(fx, currency, p.date) ?? fallback;
     return { date: p.date, value: p.value.div(rate).toNumber(), invested: p.invested.div(rate).toNumber() };
   });
+}
+
+export interface UpcomingPayout {
+  instrumentId: string;
+  payDate: string;
+  kind: (typeof payoutEvents.$inferSelect)['kind'];
+  name: string;
+  /** Per unit × what the area holds now. */
+  amount: Decimal;
+  currency: string;
+  estimate: boolean;
+}
+
+/** The next scheduled payouts of what the area holds (FR-OVR-4, FR-PAY-3). */
+export function upcomingPayouts(db: Db, cells: ValuedCell[], today: string, limit = 5): UpcomingPayout[] {
+  const held = new Map<string, { quantity: Decimal; cell: ValuedCell }>();
+  for (const c of cells) {
+    if (c.isCash || c.quantity.lte(0)) continue;
+    const h = held.get(c.instrumentId);
+    held.set(c.instrumentId, { quantity: (h?.quantity ?? new Decimal(0)).plus(c.quantity), cell: c });
+  }
+  if (held.size === 0) return [];
+  return db
+    .select()
+    .from(payoutEvents)
+    .where(and(inArray(payoutEvents.instrumentId, [...held.keys()]), gte(payoutEvents.payDate, today)))
+    .orderBy(asc(payoutEvents.payDate))
+    .limit(limit)
+    .all()
+    .map((e) => {
+      const h = held.get(e.instrumentId)!;
+      return {
+        instrumentId: e.instrumentId,
+        payDate: e.payDate,
+        kind: e.kind,
+        name: assetLabel(h.cell).code ?? h.cell.name,
+        amount: new Decimal(e.amountPerUnit).times(h.quantity),
+        currency: e.currency,
+        estimate: e.isEstimate,
+      };
+    });
 }

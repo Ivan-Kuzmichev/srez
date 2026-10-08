@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { ActionTile, EmptyState } from '@/components/ui/empty-state';
 import { Pill } from '@/components/ui/pill';
 import { Table, Td, Th } from '@/components/ui/table';
+import { and, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
+import { sources } from '@/db/schema';
 import { listJournal } from '@/db/queries/operations';
 import { Decimal } from '@/domain/decimal';
 import { Money } from '@/domain/money';
@@ -28,6 +30,7 @@ import {
   formatTradeAmount,
 } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
+import { localDate } from '@/lib/time';
 import {
   areaSeries,
   convertSeries,
@@ -39,6 +42,7 @@ import {
   portfolioScope,
   rubPer,
   summarizeArea,
+  upcomingPayouts,
 } from '@/server/portfolio-data';
 import { requireSession } from '@/server/session';
 import { getSettings } from '@/server/settings';
@@ -110,6 +114,13 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   const signed = (v: Decimal) => formatChange(Money.of(conv(v), cur));
   const chartPoints = convertSeries(series, fx, cur);
 
+  const payouts = upcomingPayouts(db(), s.cells, localDate(new Date(), tz));
+  const hasBroker =
+    db()
+      .select({ id: sources.id })
+      .from(sources)
+      .where(and(eq(sources.userId, userId), eq(sources.kind, 'tinvest')))
+      .get() !== undefined;
   const recent = listJournal(db(), userId, { period: 'all' }, 1).rows.slice(0, 5);
 
   return (
@@ -264,9 +275,44 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
         <section
           className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6"
           id="payouts"
+          data-testid="upcoming-payouts"
         >
-          <h2 className="m-0 text-card font-semibold">{ru.overview.payouts}</h2>
-          <div className="text-caption text-muted">{ru.overview.payoutsLater}</div>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="m-0 text-card font-semibold">{ru.overview.payouts}</h2>
+            <Link
+              href="/payouts"
+              className="flex min-h-11 items-center text-caption no-underline wide:hidden"
+            >
+              {ru.overview.payoutsAll}
+            </Link>
+          </div>
+          {payouts.length === 0 ? (
+            <div className="text-caption text-muted">
+              {hasBroker ? ru.overview.payoutsNone : ru.overview.payoutsLater}
+            </div>
+          ) : (
+            <ul className="m-0 flex flex-1 list-none flex-col p-0">
+              {payouts.map((p) => (
+                <li
+                  key={`${p.instrumentId}|${p.kind}|${p.payDate}`}
+                  className="flex min-h-14 items-center gap-3 border-b border-border-subtle last:border-b-0 wide:min-h-[60px] wide:gap-3.5 wide:py-1.5"
+                >
+                  <span className="num w-[50px] shrink-0 text-small whitespace-nowrap text-muted wide:w-[58px] wide:text-caption">
+                    {formatDate(new Date(`${p.payDate}T12:00:00Z`), 'UTC')}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate font-medium">{p.name}</span>
+                    <span className="text-small text-muted">{ru.overview.payoutKinds[p.kind]}</span>
+                  </span>
+                  <span className="num text-row whitespace-nowrap">
+                    {p.estimate
+                      ? approx(formatMoney(Money.of(p.amount, p.currency)))
+                      : formatMoney(Money.of(p.amount, p.currency))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 

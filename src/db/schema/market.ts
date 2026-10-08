@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { user } from './auth';
 import { createdAt, date, decimal, id, timestamp } from './columns';
 import { ASSET_CLASSES, finAccounts, instruments, tags } from './ledger';
@@ -139,3 +139,29 @@ export const settings = sqliteTable('settings', {
   data: text('data', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 });
+
+export const PAYOUT_KINDS = ['dividend', 'coupon', 'redemption', 'amortization', 'offer'] as const;
+
+/** Payout schedule of an instrument (docs/03-data-model.md, section 3): coupons, declared dividends, maturity. */
+export const payoutEvents = sqliteTable(
+  'payout_events',
+  {
+    id: id(),
+    instrumentId: text('instrument_id')
+      .notNull()
+      .references(() => instruments.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: PAYOUT_KINDS }).notNull(),
+    recordDate: date('record_date'),
+    payDate: date('pay_date').notNull(),
+    amountPerUnit: decimal('amount_per_unit').notNull(),
+    currency: text('currency').notNull(),
+    source: text('source', { enum: PRICE_SOURCES }).notNull(),
+    /** A floating coupon not fixed yet, or an amount the issuer has not announced. */
+    isEstimate: integer('is_estimate', { mode: 'boolean' }).notNull().default(false),
+  },
+  (t) => [
+    uniqueIndex('payout_events_instrument_kind_pay_idx').on(t.instrumentId, t.kind, t.payDate),
+    index('payout_events_pay_date_idx').on(t.payDate),
+    check('payout_events_kind_check', sql`${t.kind} in ('dividend', 'coupon', 'redemption', 'amortization', 'offer')`),
+  ],
+);
