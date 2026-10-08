@@ -36,6 +36,20 @@
       "when": 1791474610037,
       "tag": "0004_two_factor_enabled_at",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791476803444,
+      "tag": "0005_ledger",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791476803965,
+      "tag": "0006_ledger_indexes",
+      "breakpoints": true
     }
   ]
 }

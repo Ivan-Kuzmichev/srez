@@ -23,10 +23,11 @@ export const jobs = sqliteTable(
   },
   (t) => [
     index('jobs_status_run_at_idx').on(t.status, t.runAt),
-    // At most one unfinished job per singleton key.
-    uniqueIndex('jobs_singleton_active_idx')
+    // At most one waiting job per singleton key. A running one does not count: work queued while it
+    // runs (a new operation during a recalc) must still get its own pass.
+    uniqueIndex('jobs_singleton_queued_idx')
       .on(t.singletonKey)
-      .where(sql`${t.singletonKey} is not null and ${t.status} in ('queued', 'running')`),
+      .where(sql`${t.singletonKey} is not null and ${t.status} = 'queued'`),
     check('jobs_status_check', sql`${t.status} in ('queued', 'running', 'done', 'failed')`),
   ],
 );

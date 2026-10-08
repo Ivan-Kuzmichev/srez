@@ -33,13 +33,15 @@ describe('enqueue and claim', () => {
     expect(claimNext(database, 'w1', ['a'], 60_000, t0)).toBeNull();
   });
 
-  it('drops a duplicate singleton while the first is active, allows it after', () => {
+  it('keeps one waiting job per singleton key, and lets a new one wait while the first runs', () => {
     expect(enqueue(database, 'a', null, { singletonKey: 'k' }, t0)).not.toBeNull();
     expect(enqueue(database, 'a', null, { singletonKey: 'k' }, t0)).toBeNull();
     const job = claimNext(database, 'w1', ['a'], 60_000, t0)!;
+    // Work that arrives during the run gets its own pass afterwards.
+    expect(enqueue(database, 'a', null, { singletonKey: 'k' }, t0)).not.toBeNull();
     expect(enqueue(database, 'a', null, { singletonKey: 'k' }, t0)).toBeNull();
     completeJob(database, job.id, t0);
-    expect(enqueue(database, 'a', null, { singletonKey: 'k' }, t0)).not.toBeNull();
+    expect(claimNext(database, 'w1', ['a'], 60_000, t0)).not.toBeNull();
   });
 
   it('takes over a running job whose lock expired', () => {
