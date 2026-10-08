@@ -39,6 +39,7 @@ export default defineConfig([
     'design/**',
     'next-env.d.ts',
     'playwright-report/**',
+    'coverage/**',
     'test-results/**',
     'drizzle/meta/**',
   ]),

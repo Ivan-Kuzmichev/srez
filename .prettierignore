@@ -5,3 +5,4 @@ drizzle/
 .next/
 dist/
 *.md
+coverage/
