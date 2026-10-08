@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Телефон: новая операция</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4C4FF}a:hover{color:#DCE4FF}
+</style>
+</head>
+<body>
+<div style="width: 390px; min-height: 1120px; box-sizing: border-box; display: flex; flex-direction: column; background: #0F1214; color: #ECEFF1; font-family: 'Onest', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.4">
+
+<main style="flex: 1; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 14px">
+
+<header style="display: flex; align-items: center; gap: 4px">
+<a href="MOperations.html" aria-label="Назад к операциям" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: -12px; color: #ECEFF1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Новая операция</h1>
+</header>
+
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Тип
+<select style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 16px"><option>Покупка</option><option>Продажа</option><option>Выплата</option><option>Пополнение или вывод</option><option>Комиссия или налог</option></select>
+</label>
+
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Счёт
+<select style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 16px"><option>Кошелёк, вручную</option><option>Вклад, вручную</option><option>Брокерский, авто</option><option>ИИС, авто</option></select>
+</label>
+
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Актив
+<input type="search" value="BTC Bitcoin" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 16px">
+</label>
+
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Дата и время
+<input type="datetime-local" value="2026-10-05T19:40" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 16px; color-scheme: dark">
+</label>
+
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Количество
+<input type="text" inputmode="decimal" value="0,0100" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 16px">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Цена за единицу
+<input type="text" inputmode="decimal" value="6 120 000" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 16px">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Валюта
+<select style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 16px"><option>Рубль, ₽</option><option>Доллар, $</option><option>USDT</option></select>
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Комиссия
+<input type="text" inputmode="decimal" value="0" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 16px">
+</label>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Тег
+<select style="height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 16px"><option>Без тега</option><option>пенсия</option><option>детям</option></select>
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Заметка
+<input type="text" placeholder="Зачем купил" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 16px">
+</label>
+</div>
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Что изменится</h2>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px solid #1E2428"><span style="font-size: 14px; color: #9BA6AE">Позиция BTC</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">0,0620 → 0,0720</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px solid #1E2428"><span style="font-size: 14px; color: #9BA6AE">Средняя цена</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">→ 5 362 222</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px"><span style="font-size: 14px; color: #9BA6AE">Крипта в портфеле</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #FF8A65; white-space: nowrap">20,8 → 22,4 %</span></div>
+</div>
+<div style="margin-top: 6px; padding: 10px 12px; border-radius: 10px; background: #2A1D17; color: #FFB79E; font-size: 13px; text-wrap: pretty">Цель по крипте 15 %. Отклонение вырастет до 7,4 п.п.</div>
+</section>
+
+</main>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px 16px; background: #0B0E10; border-top: 1px solid #1E2428">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; color: #9BA6AE">Сумма сделки</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 18px; white-space: nowrap">61 200 ₽</span>
+</div>
+<a href="MOperations.html" style="display: flex; align-items: center; justify-content: center; min-width: 150px; height: 48px; padding: 0 20px; border-radius: 10px; background: #8FA8FF; color: #0F1214; font-size: 15px; font-weight: 600; text-decoration: none">Сохранить</a>
+</div>
+
+</div>
+</body>
+</html>

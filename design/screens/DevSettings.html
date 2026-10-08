@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Настройки: разработка и отладка</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4C4FF}a:hover{color:#DCE4FF}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0F1214; color: #ECEFF1; font-family: 'Onest', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<nav aria-label="Разделы" style="flex: 1 1 220px; box-sizing: border-box; padding: 24px 14px; background: #0B0E10; border-right: 1px solid #1E2428; display: flex; flex-direction: column; justify-content: space-between; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M11 5a8 8 0 1 0 8 8h-8z" fill="#8FA8FF"></path><path d="M14 2.5V10h7.5A7.5 7.5 0 0 0 14 2.5z" fill="#E3E9FF"></path></svg>
+<span style="font-size: 16px; font-weight: 600">Srez</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<a href="Main.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"></path></svg>
+<span>Обзор</span>
+</a>
+<a href="Portfolios.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9h9"></path></svg>
+<span>Портфели</span>
+</a>
+<a href="Operations.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+<span>Операции</span>
+</a>
+<a href="Payouts.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+<span>Выплаты</span>
+</a>
+<a href="Risk.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"></path></svg>
+<span>Аналитика</span>
+</a>
+<a href="Sources.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"></path></svg>
+<span>Источники</span>
+</a>
+<a href="Settings.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; background: #1A1F23; color: #ECEFF1; text-decoration: none; font-weight: 500">
+<span style="display: flex; color: #8FA8FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg></span>
+<span>Настройки</span>
+</a>
+</div>
+</div>
+<div style="padding: 14px; border: 1px solid #1E2428; border-radius: 10px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #4FD1A1"></span>
+<span>Т-Инвестиции</span>
+</div>
+<div style="font-size: 12px; color: #9BA6AE">Синхронизировано 5 минут назад</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 4px; border-top: 1px solid #1E2428; font-size: 13px">
+<a href="Security.html" style="display: flex; align-items: center; min-height: 44px; color: #ECEFF1; text-decoration: none">admin</a>
+<a href="Login.html" style="display: flex; align-items: center; min-height: 44px; text-decoration: none">Выйти</a>
+</div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px; display: flex; flex-direction: column; gap: 16px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">Настройки</h1>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: #8FA8FF; color: #0F1214; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Сохранить</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+<a href="Settings.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; color: #9BA6AE; font-size: 14px; text-decoration: none">Общие</a>
+<a href="Security.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; color: #9BA6AE; font-size: 14px; text-decoration: none">Безопасность</a>
+<a href="CryptoSettings.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; color: #9BA6AE; font-size: 14px; text-decoration: none">Крипта</a>
+<a href="DevSettings.html" aria-current="page" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #262C31; color: #ECEFF1; font-size: 14px; font-weight: 500; text-decoration: none">Разработка</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 16px; align-items: start">
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">API-токен для ассистента</h2>
+<span style="display: flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 999px; background: #17251F; color: #4FD1A1; font-size: 12px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4FD1A1"></span><span>Активен</span></span>
+</div>
+<div style="font-size: 13px; color: #9BA6AE; text-wrap: pretty">Через него ассистент смотрит данные и логи, чтобы искать причину проблем. Токен брокера, ключи и пароли через API не отдаются никогда.</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Название
+<input type="text" value="Claude, диагностика" style="box-sizing: border-box; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: inherit; font-size: 14px">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Срок действия
+<select style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: inherit; font-size: 14px"><option>30 дней</option><option>7 дней</option><option>24 часа</option><option>Без срока</option></select>
+</label>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 12px 14px; border-radius: 10px; background: #1A1F23">
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px">inv_••••••••••••3f9a</span>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 16px">
+<button type="button" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: #B4C4FF; font-family: inherit; font-size: 13px; cursor: pointer">Перевыпустить</button>
+<button type="button" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: #FF8A65; font-family: inherit; font-size: 13px; cursor: pointer">Отозвать</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="font-weight: 500">Принимать только из локальной сети</span></label>
+<span style="padding-left: 28px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: #9BA6AE">127.0.0.1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16</span>
+</div>
+
+<fieldset style="margin: 0; padding: 12px 0 0; border: 0; border-top: 1px solid #262C31; display: flex; flex-direction: column; gap: 2px">
+<legend style="padding: 0; font-size: 12px; color: #9BA6AE">Что разрешено</legend>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Читать портфели, позиции и операции</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Читать логи и состояние синхронизации</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Запускать синхронизацию и сверку</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; color: #9BA6AE; cursor: pointer"><input type="checkbox" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Изменять данные: операции, портфели, настройки</span></label>
+</fieldset>
+
+<div style="display: flex; flex-direction: column; padding-top: 4px; border-top: 1px solid #262C31; font-size: 13px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; min-height: 40px"><span style="color: #9BA6AE">Адрес API</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace">http://[адрес сервера]/api/v1</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; min-height: 40px"><span style="color: #9BA6AE">Описание методов</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace">/api/v1/openapi.json</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; min-height: 40px"><span style="color: #9BA6AE">Последний запрос</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace">19:31, GET /sync/status</span></div>
+</div>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Режим отладки</h2>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="font-weight: 500">Включить режим отладки</span></label>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #C5CDD3">
+<li>Логи пишутся на уровне «Отладка».</li>
+<li>Сырые ответы внешних API хранятся 24 часа, секреты из них вырезаны.</li>
+<li>В интерфейсе видны внутренние идентификаторы операций и задач.</li>
+</ul>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Выключить автоматически
+<select style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: inherit; font-size: 14px"><option>Через 24 часа</option><option>Через 1 час</option><option>Не выключать</option></select>
+</label>
+</section>
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Логирование</h2>
+<a href="Logs.html" style="display: flex; align-items: center; min-height: 44px; font-size: 13px; text-decoration: none">Открыть логи</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Уровень вне отладки
+<select style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: inherit; font-size: 14px"><option>Инфо</option><option>Предупреждения</option><option>Только ошибки</option></select>
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Хранить
+<select style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: inherit; font-size: 14px"><option>14 дней</option><option>7 дней</option><option>30 дней</option></select>
+</label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Писать запросы к внешним API и их длительность</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Писать входы и обращения по API-токену</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="checkbox" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Скрывать суммы и количества в логах</span></label>
+</div>
+</section>
+
+</div>
+
+</div>
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Состояние сервиса</h2>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #1A1F23; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">Собрать отчёт о проблеме</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 0 32px; font-size: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid #1E2428"><span style="color: #9BA6AE">База данных</span><span style="color: #4FD1A1">в норме</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid #1E2428"><span style="color: #9BA6AE">Очередь задач</span><span>0 в ожидании</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid #1E2428"><span style="color: #9BA6AE">API Т-Инвестиций</span><span style="color: #4FD1A1">отвечает, 240 мс</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid #1E2428"><span style="color: #9BA6AE">Цены крипты</span><span style="color: #4FD1A1">отвечает, 310 мс</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid #1E2428"><span style="color: #9BA6AE">Ошибок за сутки</span><span style="color: #FF8A65">1</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid #1E2428"><span style="color: #9BA6AE">Версия</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace">[версия]</span></div>
+</div>
+<div style="font-size: 13px; color: #9BA6AE; text-wrap: pretty">В отчёт попадают версия, настройки без секретов, состояние источников и последние 500 строк логов.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

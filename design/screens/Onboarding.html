@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Первый запуск: подключение Т-Инвестиций</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4C4FF}a:hover{color:#DCE4FF}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; box-sizing: border-box; padding: 56px 24px; display: flex; justify-content: center; background: #0F1214; color: #ECEFF1; font-family: 'Onest', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+<div style="width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M11 5a8 8 0 1 0 8 8h-8z" fill="#8FA8FF"></path><path d="M14 2.5V10h7.5A7.5 7.5 0 0 0 14 2.5z" fill="#E3E9FF"></path></svg>
+<span style="font-size: 16px; font-weight: 600">Srez</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">Подключим Т-Инвестиции</h1>
+<div style="color: #9BA6AE; text-wrap: pretty">Четыре шага: токен, счета, загрузка истории и сверка. Остальные источники добавите позже.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 8px">
+<button type="button" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer; color: #ECEFF1; font-weight: 500">
+<span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 1px solid; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; background: #8FA8FF; color: #0F1214; border-color: #8FA8FF">1</span>
+<span>Токен</span>
+</button>
+<button type="button" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer; color: #9BA6AE">
+<span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 1px solid; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; background: transparent; color: #9BA6AE; border-color: #3A424A">2</span>
+<span>Счета</span>
+</button>
+<button type="button" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer; color: #9BA6AE">
+<span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 1px solid; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; background: transparent; color: #9BA6AE; border-color: #3A424A">3</span>
+<span>Загрузка</span>
+</button>
+<button type="button" style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer; color: #9BA6AE">
+<span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 1px solid; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; background: transparent; color: #9BA6AE; border-color: #3A424A">4</span>
+<span>Сверка</span>
+</button>
+</div>
+
+<div data-step="1">
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Токен только для чтения</h2>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: #C5CDD3">
+<li>Откройте настройки Т-Инвестиций, раздел с токенами API.</li>
+<li>Выпустите новый токен с доступом «только чтение».</li>
+<li>Вставьте его сюда.</li>
+</ol>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Токен T-Invest API
+<input type="password" placeholder="t.xxxxxxxxxxxxxxxx" autocomplete="off" style="box-sizing: border-box; width: 100%; min-height: 48px; padding: 0 14px; border-radius: 10px; border: 1px solid #3A424A; background: #0F1214; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px">
+</label>
+<div style="padding: 14px 16px; border-radius: 10px; background: #1A1F23; font-size: 13px; color: #C5CDD3; text-wrap: pretty">С таким токеном сервис видит счета и операции, но не может выставлять заявки: это ограничение на стороне банка. Токен хранится на вашем сервере в зашифрованном виде.</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: #8FA8FF; color: #0F1214; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Проверить токен</button>
+</div>
+</section>
+</div>
+
+<div data-step="2">
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Какие счета загружать</h2>
+<span style="display: flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 999px; background: #17251F; color: #4FD1A1; font-size: 12px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4FD1A1"></span><span>Токен рабочий, только чтение</span></span>
+</div>
+<div style="display: flex; flex-direction: column">
+<label style="display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid #1E2428; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="flex: 1; font-weight: 500">Брокерский</span><span style="font-size: 13px; color: #9BA6AE">открыт в 2021</span></label>
+<label style="display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid #1E2428; cursor: pointer"><input type="checkbox" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="flex: 1; font-weight: 500">ИИС</span><span style="font-size: 13px; color: #9BA6AE">открыт в 2022</span></label>
+<label style="display: flex; align-items: center; gap: 12px; min-height: 56px; color: #9BA6AE; cursor: pointer"><input type="checkbox" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="flex: 1">Инвесткопилка</span><span style="font-size: 13px">открыта в 2023</span></label>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Глубина истории
+<select style="min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: inherit; font-size: 14px"><option>С открытия счетов</option><option>С начала этого года</option><option>Только текущие позиции</option></select>
+</label>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">Назад</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: #8FA8FF; color: #0F1214; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Загрузить историю</button>
+</div>
+</section>
+</div>
+
+<div data-step="3">
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Загружаем историю</h2>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span>Брокерский, операции за 2024 год</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace">64 %</span></div>
+<div style="height: 10px; border-radius: 5px; background: #22282D"><div style="width: 64%; height: 100%; border-radius: 5px; background: #8FA8FF"></div></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Операций загружено</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px">812</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Инструментов</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px">23</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Осталось примерно</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px">2 мин</span></div>
+</div>
+<div style="padding: 14px 16px; border-radius: 10px; background: #1A1F23; font-size: 13px; color: #C5CDD3; text-wrap: pretty">Страницу можно закрыть: загрузка идёт на сервере. Когда закончится, придёт уведомление, если подключён Telegram.</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">Назад</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #262C31; background: #1A1F23; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">Показать результат</button>
+</div>
+</section>
+</div>
+
+<div data-step="4">
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">История загружена</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Операций</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px">1 271</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Период</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px">2021–2026</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Позиций сейчас</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 20px">14</span></div>
+</div>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; border-bottom: 1px solid #1E2428">
+<span style="display: flex; color: #4FD1A1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg></span>
+<span>11 позиций сошлись с брокером</span>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px">
+<span style="display: flex; color: #FF8A65"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg></span>
+<span>3 позиции не сошлись: их нужно разобрать, иначе доходность будет неточной</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px">
+<a href="Main.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-size: 14px; text-decoration: none">Разберу позже</a>
+<a href="Reconcile.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 10px; background: #8FA8FF; color: #0F1214; font-size: 14px; font-weight: 600; text-decoration: none">Разобрать расхождения</a>
+</div>
+</section>
+</div>
+
+</div>
+</div>
+</body>
+</html>

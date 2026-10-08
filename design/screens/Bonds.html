@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Аналитика: облигации</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4C4FF}a:hover{color:#DCE4FF}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0F1214; color: #ECEFF1; font-family: 'Onest', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<nav aria-label="Разделы" style="flex: 1 1 220px; box-sizing: border-box; padding: 24px 14px; background: #0B0E10; border-right: 1px solid #1E2428; display: flex; flex-direction: column; justify-content: space-between; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M11 5a8 8 0 1 0 8 8h-8z" fill="#8FA8FF"></path><path d="M14 2.5V10h7.5A7.5 7.5 0 0 0 14 2.5z" fill="#E3E9FF"></path></svg>
+<span style="font-size: 16px; font-weight: 600">Srez</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<a href="Main.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"></path></svg>
+<span>Обзор</span>
+</a>
+<a href="Portfolios.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9h9"></path></svg>
+<span>Портфели</span>
+</a>
+<a href="Operations.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+<span>Операции</span>
+</a>
+<a href="Payouts.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+<span>Выплаты</span>
+</a>
+<a href="Risk.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; background: #1A1F23; color: #ECEFF1; text-decoration: none; font-weight: 500">
+<span style="display: flex; color: #8FA8FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"></path></svg></span>
+<span>Аналитика</span>
+</a>
+<a href="Sources.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"></path></svg>
+<span>Источники</span>
+</a>
+<a href="Settings.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+<span>Настройки</span>
+</a>
+</div>
+</div>
+<div style="padding: 14px; border: 1px solid #1E2428; border-radius: 10px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #4FD1A1"></span>
+<span>Т-Инвестиции</span>
+</div>
+<div style="font-size: 12px; color: #9BA6AE">Синхронизировано 5 минут назад</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 4px; border-top: 1px solid #1E2428; font-size: 13px">
+<a href="Security.html" style="display: flex; align-items: center; min-height: 44px; color: #ECEFF1; text-decoration: none">admin</a>
+<a href="Login.html" style="display: flex; align-items: center; min-height: 44px; text-decoration: none">Выйти</a>
+</div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px; display: flex; flex-direction: column; gap: 16px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">Аналитика</h1>
+<button type="button" style="display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">
+<span>Все портфели</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+<a href="Risk.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; color: #9BA6AE; font-size: 14px; text-decoration: none">Риск</a>
+<a href="Bonds.html" aria-current="page" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #262C31; color: #ECEFF1; font-size: 14px; font-weight: 500; text-decoration: none">Облигации</a>
+<a href="Realized.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; color: #9BA6AE; font-size: 14px; text-decoration: none">Прибыль за год</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px">
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #9BA6AE">Стоимость облигаций</div>
+<div style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap">1 286 760 ₽</div>
+<div style="font-size: 12px; color: #9BA6AE">26,7 % капитала, 4 выпуска</div>
+</section>
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #9BA6AE">Доходность к погашению</div>
+<div style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap">13,6 %</div>
+<div style="font-size: 12px; color: #9BA6AE">Средневзвешенная по стоимости</div>
+</section>
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #9BA6AE">Дюрация</div>
+<div style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap">5,9 года</div>
+<div style="font-size: 12px; color: #9BA6AE">Чем больше, тем сильнее реакция на ставку</div>
+</section>
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 13px; color: #9BA6AE">Купоны за 12 месяцев</div>
+<div style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap">≈ 159 400 ₽</div>
+<div style="font-size: 12px; color: #9BA6AE">Прогноз, флоатер по текущей ставке</div>
+</section>
+</div>
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Выпуски</h2>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 900px; border-collapse: collapse; font-size: 14px">
+<thead>
+<tr>
+<th scope="col" style="text-align: left; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px 10px 0; border-bottom: 1px solid #262C31">Выпуск</th>
+<th scope="col" style="text-align: right; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">Количество</th>
+<th scope="col" style="text-align: right; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">Цена, %</th>
+<th scope="col" style="text-align: right; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">Стоимость</th>
+<th scope="col" style="text-align: right; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">Купон</th>
+<th scope="col" style="text-align: right; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">К погашению</th>
+<th scope="col" style="text-align: right; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">Дюрация</th>
+<th scope="col" style="text-align: left; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 12px; border-bottom: 1px solid #262C31">Погашение</th>
+<th scope="col" style="text-align: left; font-weight: 500; font-size: 12px; color: #9BA6AE; padding: 10px 0 10px 12px; border-bottom: 1px solid #262C31">Портфели</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #1E2428; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 500; white-space: nowrap">ОФЗ 26238</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">1 020</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">63,40</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">646 680</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE; white-space: nowrap">7,10 %</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">12,8 %</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">7,4</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; color: #C5CDD3; white-space: nowrap">май 2041</td>
+<td style="padding: 14px 0 14px 12px; border-bottom: 1px solid #1E2428; color: #C5CDD3; white-space: nowrap">Долгосрочный, ИИС</td>
+</tr>
+<tr>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #1E2428; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 500; white-space: nowrap">ОФЗ-ПК 29025</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">220</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">100,60</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">221 320</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-size: 13px; color: #9BA6AE; white-space: nowrap">плавающий</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">≈ 15,0 %</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">0,1</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; color: #C5CDD3; white-space: nowrap">авг 2037</td>
+<td style="padding: 14px 0 14px 12px; border-bottom: 1px solid #1E2428; color: #C5CDD3; white-space: nowrap">ИИС</td>
+</tr>
+<tr>
+<td style="padding: 14px 12px 14px 0; border-bottom: 1px solid #1E2428; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 500; white-space: nowrap">ОФЗ 26230</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">320</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">68,05</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">217 760</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE; white-space: nowrap">7,70 %</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">12,9 %</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">6,9</td>
+<td style="padding: 14px 12px; border-bottom: 1px solid #1E2428; color: #C5CDD3; white-space: nowrap">мар 2039</td>
+<td style="padding: 14px 0 14px 12px; border-bottom: 1px solid #1E2428; color: #C5CDD3; white-space: nowrap">Детям</td>
+</tr>
+<tr>
+<td style="padding: 14px 12px 14px 0; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 500; white-space: nowrap">ОФЗ 26243</td>
+<td style="padding: 14px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">300</td>
+<td style="padding: 14px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">67,00</td>
+<td style="padding: 14px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">201 000</td>
+<td style="padding: 14px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE; white-space: nowrap">9,80 %</td>
+<td style="padding: 14px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">15,6 %</td>
+<td style="padding: 14px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">6,2</td>
+<td style="padding: 14px 12px; color: #C5CDD3; white-space: nowrap">май 2038</td>
+<td style="padding: 14px 0 14px 12px; color: #C5CDD3; white-space: nowrap">ИИС</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px">
+
+<section style="flex: 3 1 440px; min-width: 0; box-sizing: border-box; background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Погашения по годам</h2>
+<div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px">
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 40px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">2037</span>
+<div style="flex: 1; height: 12px; border-radius: 4px; background: #22282D"><div style="width: 34.2%; height: 100%; border-radius: 4px; background: #8FA8FF"></div></div>
+<span style="width: 84px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">221 320 ₽</span>
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 40px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">2038</span>
+<div style="flex: 1; height: 12px; border-radius: 4px; background: #22282D"><div style="width: 31.1%; height: 100%; border-radius: 4px; background: #8FA8FF"></div></div>
+<span style="width: 84px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">201 000 ₽</span>
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 40px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">2039</span>
+<div style="flex: 1; height: 12px; border-radius: 4px; background: #22282D"><div style="width: 33.7%; height: 100%; border-radius: 4px; background: #8FA8FF"></div></div>
+<span style="width: 84px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">217 760 ₽</span>
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 40px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">2041</span>
+<div style="flex: 1; height: 12px; border-radius: 4px; background: #22282D"><div style="width: 100%; height: 100%; border-radius: 4px; background: #8FA8FF"></div></div>
+<span style="width: 84px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap">646 680 ₽</span>
+</div>
+</div>
+<div style="padding: 14px 16px; border-radius: 10px; background: #1A1F23; font-size: 13px; color: #C5CDD3; text-wrap: pretty">В ближайшие 12 месяцев погашений, оферт и амортизаций нет. Когда появятся, они попадут сюда и в календарь выплат.</div>
+</section>
+
+<section style="flex: 2 1 340px; min-width: 0; box-sizing: border-box; background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 16px; font-weight: 600">Если ставки изменятся</h2>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; border-bottom: 1px solid #1E2428">
+<span>Рост на 1 п.п.</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px; color: #FF8A65; white-space: nowrap">≈ −76 000 ₽ · −5,9 %</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px">
+<span>Снижение на 1 п.п.</span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px; color: #4FD1A1; white-space: nowrap">≈ +76 000 ₽ · +5,9 %</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid #262C31">
+<span style="font-size: 12px; color: #9BA6AE">Тип купона</span>
+<div style="display: flex; gap: 3px; height: 12px">
+<div style="flex: 82.8 1 0; background: #B4C4FF; border-radius: 3px"></div>
+<div style="flex: 17.2 1 0; background: #4E60B0; border-radius: 3px"></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px">
+<div style="display: flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #B4C4FF"></span><span>Фиксированный, 82,8 %</span></div>
+<div style="display: flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #4E60B0"></span><span>Плавающий, 17,2 %</span></div>
+</div>
+</div>
+<div style="font-size: 13px; color: #9BA6AE; text-wrap: pretty">Оценка по дюрации. Флоатер на изменение ставки почти не реагирует ценой.</div>
+</section>
+
+</div>
+
+</main>
+</div>
+</body>
+</html>

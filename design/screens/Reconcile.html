@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Разбор расхождений с брокером</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4C4FF}a:hover{color:#DCE4FF}
+</style>
+</head>
+<body>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #0F1214; color: #ECEFF1; font-family: 'Onest', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+<nav aria-label="Разделы" style="flex: 1 1 220px; box-sizing: border-box; padding: 24px 14px; background: #0B0E10; border-right: 1px solid #1E2428; display: flex; flex-direction: column; justify-content: space-between; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style="flex: none"><path d="M11 5a8 8 0 1 0 8 8h-8z" fill="#8FA8FF"></path><path d="M14 2.5V10h7.5A7.5 7.5 0 0 0 14 2.5z" fill="#E3E9FF"></path></svg>
+<span style="font-size: 16px; font-weight: 600">Srez</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<a href="Main.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"></path></svg>
+<span>Обзор</span>
+</a>
+<a href="Portfolios.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v9h9"></path></svg>
+<span>Портфели</span>
+</a>
+<a href="Operations.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>
+<span>Операции</span>
+</a>
+<a href="Payouts.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+<span>Выплаты</span>
+</a>
+<a href="Risk.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"></path></svg>
+<span>Аналитика</span>
+</a>
+<a href="Sources.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; background: #1A1F23; color: #ECEFF1; text-decoration: none; font-weight: 500">
+<span style="display: flex; color: #8FA8FF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"></path></svg></span>
+<span>Источники</span>
+</a>
+<a href="Settings.html" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #9BA6AE; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+<span>Настройки</span>
+</a>
+</div>
+</div>
+<div style="padding: 14px; border: 1px solid #1E2428; border-radius: 10px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #FF8A65"></span>
+<span>Т-Инвестиции</span>
+</div>
+<div style="font-size: 12px; color: #9BA6AE">3 позиции не сошлись</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 4px; border-top: 1px solid #1E2428; font-size: 13px">
+<a href="Security.html" style="display: flex; align-items: center; min-height: 44px; color: #ECEFF1; text-decoration: none">admin</a>
+<a href="Login.html" style="display: flex; align-items: center; min-height: 44px; text-decoration: none">Выйти</a>
+</div>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px; display: flex; flex-direction: column; gap: 16px">
+
+<header style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9BA6AE">
+<a href="Sources.html" style="text-decoration: none">Источники</a>
+<span>/</span>
+<span>Т-Инвестиции</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">Разбор расхождений</h1>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">Сверить заново</button>
+</div>
+<div style="color: #9BA6AE; text-wrap: pretty">Количество бумаг, посчитанное из журнала, не совпало с тем, что показывает брокер. Сошлось 11 позиций из 14.</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px">
+
+<div style="flex: 2 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<button type="button" aria-pressed="true" style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 14px; border: 1px solid #8FA8FF; background: #1A1F23; color: #ECEFF1; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer">
+<span style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px"><span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-weight: 500">ROSN</span> <span style="color: #C5CDD3">Роснефть</span></span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; color: #FF8A65; white-space: nowrap">+50 шт</span></span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">в журнале 150 · у брокера 200</span>
+<span style="font-size: 13px; color: #C5CDD3">Похоже на перевод бумаг от другого брокера</span>
+</button>
+<button type="button" aria-pressed="false" style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 14px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer">
+<span style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px"><span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-weight: 500">USD</span> <span style="color: #C5CDD3">Доллары</span></span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; color: #FF8A65; white-space: nowrap">+412,50</span></span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">в журнале 0,00 · у брокера 412,50</span>
+<span style="font-size: 13px; color: #C5CDD3">Похоже на обмен валюты</span>
+</button>
+<button type="button" aria-pressed="false" style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 14px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; text-align: left; cursor: pointer">
+<span style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px"><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-weight: 500">ОФЗ 26229</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; color: #FF8A65; white-space: nowrap">−50 шт</span></span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">в журнале 50 · у брокера 0</span>
+<span style="font-size: 13px; color: #C5CDD3">Похоже на погашение облигации</span>
+</button>
+</div>
+
+<section style="flex: 3 1 480px; min-width: 0; box-sizing: border-box; background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 22px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Роснефть, счёт «Брокерский»</h2>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">В журнале</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px">150 шт</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">У брокера</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px">200 шт</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #9BA6AE">Не хватает в журнале</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 24px; color: #FF8A65">50 шт</span></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; color: #9BA6AE">Что есть в журнале по этой бумаге</span>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-height: 44px; border-bottom: 1px solid #1E2428; font-size: 14px"><span style="width: 96px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">12 мая 2025</span><span style="flex: 1">Покупка</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px">100 × 512,00</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-height: 44px; font-size: 14px"><span style="width: 96px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px; color: #9BA6AE">3 сен 2025</span><span style="flex: 1">Покупка</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px">50 × 478,50</span></div>
+</div>
+<span style="font-size: 13px; color: #9BA6AE">После 3 сентября 2025 операций от брокера не приходило.</span>
+</div>
+
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px">
+<legend style="padding: 0; margin-bottom: 6px; font-size: 12px; color: #9BA6AE">Как исправить</legend>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="radio" name="fix" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="font-weight: 500">Добавить ввод бумаг: 50 шт</span></label>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px; padding: 4px 0 10px 28px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Дата ввода
+<input type="date" value="2026-02-10" style="box-sizing: border-box; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px; color-scheme: dark">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Цена покупки за штуку, ₽
+<input type="text" inputmode="decimal" placeholder="Цена закрытия на дату" style="box-sizing: border-box; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px">
+</label>
+</div>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="radio" name="fix" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Добавить покупку, которой нет в журнале</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="radio" name="fix" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Это сплит или конвертация бумаг</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer"><input type="radio" name="fix" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Не сверять эту бумагу</span></label>
+</fieldset>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; border-top: 1px solid #262C31">
+<span style="flex: 1 1 240px; font-size: 13px; color: #9BA6AE; text-wrap: pretty">Исправление попадёт в журнал как ручная операция с пометкой «сверка», его можно отменить.</span>
+<div style="display: flex; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; cursor: pointer">Отложить</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: #8FA8FF; color: #0F1214; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Применить</button>
+</div>
+</div>
+</section>
+
+</div>
+
+</main>
+</div>
+</body>
+</html>

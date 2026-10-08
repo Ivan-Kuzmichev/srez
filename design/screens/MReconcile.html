@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Телефон: разбор расхождений</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B4C4FF}a:hover{color:#DCE4FF}
+</style>
+</head>
+<body>
+<div style="width: 390px; min-height: 1400px; box-sizing: border-box; display: flex; flex-direction: column; background: #0F1214; color: #ECEFF1; font-family: 'Onest', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.4">
+
+<main style="flex: 1; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 12px">
+
+<header style="display: flex; align-items: center; gap: 4px">
+<a href="MSources.html" aria-label="Назад к источникам" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: -12px; color: #ECEFF1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Расхождения</h1>
+</header>
+
+<div style="font-size: 14px; color: #9BA6AE; text-wrap: pretty">Количество бумаг из журнала не совпало с тем, что показывает брокер. Сошлось 11 позиций из 14.</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" aria-pressed="true" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 12px; border: 1px solid #8FA8FF; background: #1A1F23; color: #ECEFF1; font-family: inherit; font-size: 14px; text-align: left">
+<span style="display: flex; flex-direction: column; gap: 2px"><span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-weight: 500">ROSN</span> <span style="color: #C5CDD3">Роснефть</span></span><span style="font-size: 12px; color: #9BA6AE">Похоже на перевод бумаг</span></span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; color: #FF8A65; white-space: nowrap">+50 шт</span>
+</button>
+<button type="button" aria-pressed="false" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 12px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; text-align: left">
+<span style="display: flex; flex-direction: column; gap: 2px"><span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-weight: 500">USD</span> <span style="color: #C5CDD3">Доллары</span></span><span style="font-size: 12px; color: #9BA6AE">Похоже на обмен валюты</span></span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; color: #FF8A65; white-space: nowrap">+412,50</span>
+</button>
+<button type="button" aria-pressed="false" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 12px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 14px; text-align: left">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-weight: 500">ОФЗ 26229</span><span style="font-size: 12px; color: #9BA6AE">Похоже на погашение</span></span>
+<span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; color: #FF8A65; white-space: nowrap">−50 шт</span>
+</button>
+</div>
+
+<section style="background: #161A1D; border: 1px solid #262C31; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Роснефть, «Брокерский»</h2>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 12px; color: #9BA6AE">В журнале</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 18px">150</span></div>
+<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 12px; color: #9BA6AE">У брокера</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 18px">200</span></div>
+<div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 12px; color: #9BA6AE">Не хватает</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 18px; color: #FF8A65">50 шт</span></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid #262C31">
+<span style="font-size: 12px; color: #9BA6AE">Что есть в журнале</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; border-bottom: 1px solid #1E2428; font-size: 14px"><span>Покупка, 12 мая 2025</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px">100 × 512,00</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; font-size: 14px"><span>Покупка, 3 сен 2025</span><span style="font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 13px">50 × 478,50</span></div>
+<span style="font-size: 12px; color: #9BA6AE">После 3 сентября 2025 операций не приходило</span>
+</div>
+
+<fieldset style="margin: 0; padding: 12px 0 0; border: 0; border-top: 1px solid #262C31; display: flex; flex-direction: column">
+<legend style="padding: 0; font-size: 12px; color: #9BA6AE">Как исправить</legend>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px"><input type="radio" name="fix" checked="checked" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span style="font-weight: 500">Добавить ввод бумаг: 50 шт</span></label>
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 4px 0 8px 28px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Дата
+<input type="date" value="2026-02-10" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 10px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px; color-scheme: dark">
+</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #9BA6AE">Цена, ₽
+<input type="text" inputmode="decimal" placeholder="Закрытия" style="box-sizing: border-box; width: 100%; height: 48px; padding: 0 10px; border-radius: 10px; border: 1px solid #262C31; background: #0F1214; color: #ECEFF1; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 14px">
+</label>
+</div>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px"><input type="radio" name="fix" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Добавить покупку вручную</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px"><input type="radio" name="fix" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Это сплит или конвертация</span></label>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px"><input type="radio" name="fix" style="width: 18px; height: 18px; margin: 0; accent-color: #8FA8FF"><span>Не сверять эту бумагу</span></label>
+</fieldset>
+
+<div style="font-size: 12px; color: #9BA6AE; text-wrap: pretty">Исправление попадёт в журнал как ручная операция с пометкой «сверка», его можно отменить.</div>
+</section>
+
+</main>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; padding: 12px 16px 16px; background: #0B0E10; border-top: 1px solid #1E2428">
+<button type="button" style="height: 48px; border-radius: 10px; border: 1px solid #262C31; background: #161A1D; color: #ECEFF1; font-family: inherit; font-size: 15px">Отложить</button>
+<button type="button" style="height: 48px; border-radius: 10px; border: 0; background: #8FA8FF; color: #0F1214; font-family: inherit; font-size: 15px; font-weight: 600">Применить</button>
+</div>
+
+</div>
+</body>
+</html>
