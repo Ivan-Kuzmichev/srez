@@ -124,7 +124,8 @@ export function deleteOperation(db: Db, userId: string, id: string): void {
   db.transaction(() => {
     const existing = getOwnOperation(db, userId, id);
     if (!existing) throw new OperationError('NOT_FOUND');
-    if (existing.origin !== 'manual') throw new OperationError('IMPORTED');
+    // A reconcile fix is the owner's entry too: deleting it is how it is undone.
+    if (existing.origin !== 'manual' && existing.origin !== 'reconcile') throw new OperationError('IMPORTED');
     db.delete(operations).where(eq(operations.id, id)).run();
     enqueueRecalc(db, existing.accountId);
   });

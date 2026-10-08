@@ -61,4 +61,23 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   await card.getByRole('button', { name: 'Синхронизировать сейчас' }).click();
   await expect(page.getByText('Синхронизация поставлена в очередь').first()).toBeVisible();
   expect(await page.content()).not.toContain(MOCK_TOKEN);
+
+  // «Разбор расхождений»: the artificial discrepancy is there, a fix closes it, undo brings it back.
+  await page.getByTestId('reconcile-status').getByRole('link').click();
+  const list = page.getByTestId('reconcile-list');
+  await expect(list).toContainText('Газпром');
+  await expect(list).toContainText('Лукойл');
+  await list.getByRole('link', { name: /Газпром/ }).click();
+  await expect(page.getByTestId('reconcile-detail')).toContainText('Газпром');
+  await expect(page.getByLabel('Добавить ввод бумаг: 50 шт')).toBeChecked();
+  await page.getByRole('button', { name: 'Применить' }).click();
+  await expect(list).not.toContainText('Газпром');
+  const fixed = page.getByTestId('reconcile-fixed');
+  await expect(fixed).toContainText('Газпром');
+  await page.goto('/operations?period=all');
+  await expect(page.getByTestId('journal-table')).toContainText('Сверка');
+  await page.goBack();
+  await fixed.getByRole('button', { name: 'Отменить' }).click();
+  await expect(list).toContainText('Газпром');
+  await expect(fixed).toHaveCount(0);
 });
