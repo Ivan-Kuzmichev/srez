@@ -7,7 +7,6 @@ import { TwoFactorCard } from '@/components/security/two-factor-card';
 import { SettingsHeader } from '@/components/shell/settings-header';
 import { db } from '@/db/client';
 import { listActiveSessions, listPasskeys } from '@/db/queries/security';
-import { DEFAULT_TIME_ZONE } from '@/lib/app';
 import { formatDateLong } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { activity, dayOrDate } from '@/lib/relative-date';
@@ -15,13 +14,14 @@ import { describeUserAgent, parseUserAgent } from '@/lib/user-agent';
 import { auth, PASSWORD_MIN_LENGTH } from '@/server/auth';
 import { twoFactorStatus } from '@/server/security';
 import { requireSession } from '@/server/session';
+import { getSettings } from '@/server/settings';
 import { BACKUP_CODES_COUNT } from '@/server/two-factor';
 
 export const metadata: Metadata = { title: ru.pages.security };
 
 export default async function SecurityPage() {
   const session = await requireSession();
-  const tz = DEFAULT_TIME_ZONE;
+  const tz = getSettings(db(), session.user.id).display.timezone;
   const userId = session.user.id;
   const login = session.user.displayUsername ?? session.user.username ?? session.user.name;
 

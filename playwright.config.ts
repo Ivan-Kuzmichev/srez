@@ -4,6 +4,7 @@ import {
   E2E_LEDGER_USER,
   E2E_LOCKOUT_USER,
   E2E_PASSKEY_USER,
+  E2E_PORTFOLIO_USER,
   E2E_SESSIONS_USER,
   E2E_TOTP_USER,
   E2E_USER,
@@ -42,6 +43,7 @@ export default defineConfig({
       createUser(E2E_SESSIONS_USER),
       createUser(E2E_LEDGER_USER),
       createUser(E2E_EMPTY_USER),
+      createUser(E2E_PORTFOLIO_USER),
       'pnpm exec tsx tests/e2e/seed.ts',
       'pnpm next build',
       // «e2e» marks the worker so global teardown can stop it; Playwright only stops the server.

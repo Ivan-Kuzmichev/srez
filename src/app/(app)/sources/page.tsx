@@ -3,10 +3,10 @@ import { ManualAccountsCard } from '@/components/ledger/manual-accounts-card';
 import { PageHeader } from '@/components/shell/page-header';
 import { db } from '@/db/client';
 import { listManualAccounts, listTags } from '@/db/queries/accounts';
-import { DEFAULT_TIME_ZONE } from '@/lib/app';
 import { formatDate } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { requireSession } from '@/server/session';
+import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.sources };
 
@@ -18,7 +18,9 @@ export default async function SourcesPage() {
     name: a.name,
     kind: a.kind,
     operations: a.operations,
-    last: a.lastOperationAt ? formatDate(a.lastOperationAt, DEFAULT_TIME_ZONE) : null,
+    last: a.lastOperationAt
+      ? formatDate(a.lastOperationAt, getSettings(db(), session.user.id).display.timezone)
+      : null,
   }));
   return (
     <>

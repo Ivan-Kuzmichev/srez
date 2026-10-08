@@ -6,3 +6,4 @@ export const E2E_PASSKEY_USER = { username: 'keys', password: 'e2e passkey passw
 export const E2E_SESSIONS_USER = { username: 'sessions', password: 'e2e sessions password' };
 export const E2E_LEDGER_USER = { username: 'ledger', password: 'e2e ledger password' };
 export const E2E_EMPTY_USER = { username: 'fresh', password: 'e2e fresh password' };
+export const E2E_PORTFOLIO_USER = { username: 'portfolios', password: 'e2e portfolio password' };

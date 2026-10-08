@@ -14,6 +14,7 @@ import {
 import { toDbDecimal } from '@/domain/decimal';
 import { authedAction, type ActionResult } from '../action';
 import { OperationFormSchema, parseOperationForm } from '../operation-form';
+import { getSettings } from '../settings';
 
 function refused(err: unknown): ActionResult<never> {
   if (err instanceof OperationError) return { ok: false, code: err.code };
@@ -24,7 +25,7 @@ const SaveInput = OperationFormSchema.extend({ id: z.string().max(64).optional()
 
 /** Creates or updates a manual operation. Field errors come back keyed by field name. */
 export const saveOperation = authedAction(SaveInput, async (input, session) => {
-  const parsed = parseOperationForm(input);
+  const parsed = parseOperationForm(input, new Date(), getSettings(db(), session.user.id).display.timezone);
   if (!parsed.ok) {
     return {
       ok: false,
@@ -77,7 +78,7 @@ export const deleteOperation = authedAction(z.object({ id: z.string().max(64) })
 
 /** «Что изменится» while the form is being filled. Silent about incomplete input. */
 export const previewOperation = authedAction(SaveInput, async (input, session) => {
-  const parsed = parseOperationForm(input);
+  const parsed = parseOperationForm(input, new Date(), getSettings(db(), session.user.id).display.timezone);
   if (!parsed.ok) return { ok: true, data: null };
   try {
     const p = preview(db(), session.user.id, parsed.value, input.id);

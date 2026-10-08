@@ -523,6 +523,23 @@ export const ru = {
   settings: {
     backToMenu: 'Назад в меню',
     tabsLabel: 'Разделы настроек',
+    save: 'Сохранить',
+    saved: 'Настройки сохранены',
+    failed: 'Не сохранилось. Проверьте поля.',
+    pricesTitle: 'Цены и курсы',
+    sourcesSecurities: 'Биржевые бумаги',
+    sourcesSecuritiesValue: 'Мосбиржа, до подключения Т-Инвестиций',
+    sourcesCrypto: 'Крипта',
+    sourcesFx: 'Курсы валют',
+    sourcesFxValue: 'ЦБ РФ',
+    refresh: 'Обновлять цены',
+    refreshOptions: { '15': 'Каждые 15 минут', '60': 'Каждый час', '1440': 'Раз в день' } as Record<
+      string,
+      string
+    >,
+    snapshot: 'Ежедневный снимок стоимости',
+    laterSections:
+      'Расчёт доходности, валюты, уведомления, лимиты риска и выгрузки появятся в следующих фазах.',
   },
   security: {
     twoFactorTitle: 'Двухфакторная защита',

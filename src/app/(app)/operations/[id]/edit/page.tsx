@@ -5,19 +5,19 @@ import { FormHeader } from '@/components/shell/form-header';
 import { db } from '@/db/client';
 import { getOwnOperation } from '@/db/mutations/operations';
 import { Decimal } from '@/domain/decimal';
-import { DEFAULT_TIME_ZONE } from '@/lib/app';
 import { ru } from '@/lib/i18n/ru';
 import { utcToZonedLocal } from '@/lib/time';
 import { getInstrument } from '@/server/instruments';
 import { formChoices } from '@/server/operation-page';
 import { requireSession } from '@/server/session';
+import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.operationEdit };
 
 type Row = NonNullable<ReturnType<typeof getOwnOperation>>;
 
 /** Stored operation → the form's five kinds and plain-text fields. */
-function toFormValues(op: Row): OperationFormValues {
+function toFormValues(op: Row, timeZone: string): OperationFormValues {
   const decimalText = (v: string) =>
     new Decimal(v).isZero() ? '' : new Decimal(v).toFixed().replace('.', ',');
   const kind: FormKind =
@@ -34,7 +34,7 @@ function toFormValues(op: Row): OperationFormValues {
     kind,
     subtype: kind === 'buy' || kind === 'sell' ? '' : op.type,
     accountId: op.accountId,
-    executedAt: utcToZonedLocal(op.executedAt, DEFAULT_TIME_ZONE),
+    executedAt: utcToZonedLocal(op.executedAt, timeZone),
     quantity: decimalText(op.quantity),
     price: decimalText(op.price),
     currency: op.currency,
@@ -65,7 +65,7 @@ export default async function EditOperationPage({ params }: PageProps<'/operatio
         accounts={accounts}
         tags={tags}
         instrument={op.instrumentId ? getInstrument(db(), session.user.id, op.instrumentId) : null}
-        initial={toFormValues(op)}
+        initial={toFormValues(op, getSettings(db(), session.user.id).display.timezone)}
         imported={op.origin !== 'manual'}
       />
     </>

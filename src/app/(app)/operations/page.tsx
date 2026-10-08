@@ -20,7 +20,6 @@ import {
   type JournalRow,
 } from '@/db/queries/operations';
 import { Money } from '@/domain/money';
-import { DEFAULT_TIME_ZONE } from '@/lib/app';
 import {
   formatChange,
   formatCrypto,
@@ -32,6 +31,7 @@ import {
 import { assetLabel } from '@/lib/asset-label';
 import { ru } from '@/lib/i18n/ru';
 import { requireSession } from '@/server/session';
+import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.operations };
 
@@ -61,8 +61,7 @@ const TRADE_TYPES = new Set([
   'accrual',
 ]);
 
-function toItem(r: JournalRow): JournalItem {
-  const tz = DEFAULT_TIME_ZONE;
+function toItem(r: JournalRow, tz: string): JournalItem {
   const qty = r.instrumentKind === 'crypto' ? formatCrypto(r.quantity) : formatQuantity(r.quantity);
   return {
     id: r.id,
@@ -216,7 +215,7 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
         />
       ) : (
         <JournalView
-          items={rows.map(toItem)}
+          items={rows.map((r) => toItem(r, getSettings(db(), userId).display.timezone))}
           totals={totals}
           phoneTotals={phoneTotals}
           totalsNote={t.otherCurrency > 0 ? ru.journal.otherCurrency(t.otherCurrency) : null}

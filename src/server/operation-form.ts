@@ -45,6 +45,7 @@ export interface ParsedOperation {
 export function parseOperationForm(
   input: OperationFormInput,
   now = new Date(),
+  timeZone = DEFAULT_TIME_ZONE,
 ): { ok: true; value: ParsedOperation } | { ok: false; fieldErrors: Record<string, FieldError> } {
   const errors: Record<string, FieldError> = {};
   const num = (
@@ -69,7 +70,7 @@ export function parseOperationForm(
     return d;
   };
 
-  const executedAt = input.executedAt ? zonedLocalToUtc(input.executedAt, DEFAULT_TIME_ZONE) : null;
+  const executedAt = input.executedAt ? zonedLocalToUtc(input.executedAt, timeZone) : null;
   if (!input.executedAt) errors.executedAt = 'REQUIRED';
   else if (!executedAt) errors.executedAt = 'BAD_DATE';
   else if (executedAt.getTime() > now.getTime() + 24 * 3600_000) errors.executedAt = 'FUTURE_DATE';

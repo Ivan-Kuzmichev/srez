@@ -5,11 +5,11 @@ import { FormHeader } from '@/components/shell/form-header';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { db } from '@/db/client';
-import { DEFAULT_TIME_ZONE } from '@/lib/app';
 import { ru } from '@/lib/i18n/ru';
 import { utcToZonedLocal } from '@/lib/time';
 import { formChoices } from '@/server/operation-page';
 import { requireSession } from '@/server/session';
+import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.operationNew };
 
@@ -57,7 +57,7 @@ export default async function NewOperationPage({ searchParams }: PageProps<'/ope
           kind: 'buy',
           subtype: '',
           accountId: preferred.id,
-          executedAt: utcToZonedLocal(new Date(), DEFAULT_TIME_ZONE),
+          executedAt: utcToZonedLocal(new Date(), getSettings(db(), session.user.id).display.timezone),
           quantity: '',
           price: '',
           currency: preferred.currency,

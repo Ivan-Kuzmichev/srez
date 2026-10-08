@@ -34,7 +34,15 @@ test('add a passkey in settings, then sign in with it alone', async ({ page }, i
 
   await page.context().clearCookies();
   await page.goto('/login');
-  await page.getByRole('button', { name: 'Войти с пасскеем' }).click();
+  // The virtual authenticator may answer the autofill request (conditional UI) on its own before
+  // the button is pressed; both ways sign in with the passkey alone.
+  await Promise.race([
+    page.waitForURL(/\/$/),
+    page
+      .getByRole('button', { name: 'Войти с пасскеем' })
+      .click()
+      .catch(() => undefined),
+  ]);
   await expect(page).toHaveURL(/\/$/);
 
   await page.goto('/settings/security');
