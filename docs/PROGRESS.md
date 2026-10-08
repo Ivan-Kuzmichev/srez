@@ -66,7 +66,7 @@
 | Порт web по умолчанию слушает только `127.0.0.1` (`SREZ_BIND`) | Без адреса сокета `X-Forwarded-For` подделывается при прямом доступе |
 
 - [x] 1. Better Auth и таблицы: `createAuth()` в `src/server/auth.ts` (username, twoFactor, passkey, nextCookies), ленивый `auth()`, чтобы `next build` не требовал секретов; таблицы из CLI Better Auth (`pnpm auth:generate`) плюс свои `login_attempts` и `passkey_usage`; миграция `0003_auth`; uuid v7 для id. Плагин пасскеев не умеет добавлять поля, поэтому дата последнего входа лежит в `passkey_usage`. Плагин пасскеев сам не требует проверки пользователя на сервере (`requireUserVerification: false`), проверку добавлю в задаче 6 через `afterVerification`
-- [ ] 2. CLI
+- [x] 2. CLI: `user:create`, `user:reset-password [--disable-2fa] [--remove-passkeys]`, пароль вводится дважды без эха (из канала — построчно), логика в `src/server/users.ts` с тестами, события в `logs` с источником `auth`. Логи CLI пишутся только в базу (`LOG_CONSOLE=0`)
 - [ ] 3. Экран входа
 - [ ] 4. Защита и выход
 - [ ] 5. 2FA

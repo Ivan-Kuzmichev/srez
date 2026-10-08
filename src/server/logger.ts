@@ -82,13 +82,16 @@ export interface LoggerOptions {
   level: LogLevel;
   getDb: () => Db;
   pretty?: boolean;
-  /** Extra stream for tests; stdout otherwise. */
-  console?: DestinationStream;
+  /** Extra stream for tests; stdout otherwise. `false` writes to the database only (CLI). */
+  console?: DestinationStream | false;
 }
 
 export function createLogger(options: LoggerOptions): { root: Logger; sink: DbLogSink } {
   const sink = new DbLogSink(options.getDb);
-  const consoleStream = options.console ?? (options.pretty ? prettyStream() : pino.destination(1));
+  const consoleStream =
+    options.console === false
+      ? null
+      : (options.console ?? (options.pretty ? prettyStream() : pino.destination(1)));
   const root = pino(
     {
       level: options.level,
@@ -101,7 +104,7 @@ export function createLogger(options: LoggerOptions): { root: Logger; sink: DbLo
       serializers: { err: pino.stdSerializers.err },
     },
     pino.multistream([
-      { level: options.level, stream: consoleStream },
+      ...(consoleStream ? [{ level: options.level, stream: consoleStream }] : []),
       { level: options.level, stream: sink },
     ]),
   );
@@ -124,6 +127,7 @@ function instance() {
       level: LOG_LEVEL,
       getDb: db,
       pretty: NODE_ENV !== 'production' && process.env.LOG_PRETTY !== '0',
+      console: process.env.LOG_CONSOLE === '0' ? false : undefined,
     });
   }
   return globalForLogger.srezLogger;
