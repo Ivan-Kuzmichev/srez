@@ -7,7 +7,14 @@ export const onRequestError: Instrumentation.onRequestError = async (err, reques
   const requestId = request.headers['x-request-id'];
   const digest = typeof err === 'object' && err !== null && 'digest' in err ? String(err.digest) : undefined;
   logger('web', typeof requestId === 'string' ? { requestId } : {}).error(
-    { err, digest, method: request.method, path: request.path, route: context.routePath, kind: context.routeType },
+    {
+      err,
+      digest,
+      method: request.method,
+      path: request.path,
+      route: context.routePath,
+      kind: context.routeType,
+    },
     'Request failed',
   );
 };

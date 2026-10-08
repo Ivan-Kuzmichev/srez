@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens from docs/08-ui.md, section 1. Components use these names only, never raw values.
+ * Tailwind turns each into utilities: bg-surface, text-muted, border-border-subtle, rounded-card, text-row…
+ */
+@theme {
+  --color-*: initial;
+  --color-bg: #0f1214;
+  --color-bg-nav: #0b0e10;
+  --color-surface: #161a1d;
+  --color-surface-2: #1a1f23;
+  --color-pressed: #262c31;
+  --color-track: #22282d;
+  --color-border: #262c31;
+  --color-border-subtle: #1e2428;
+  --color-border-strong: #3a424a;
+  --color-text: #eceff1;
+  --color-text-2: #c5cdd3;
+  --color-muted: #9ba6ae;
+  /* Disabled text and the empty-state zero; used in MainEmpty and Operations mockups. */
+  --color-faint: #7f8a93;
+  --color-accent: #8fa8ff;
+  --color-accent-fg: #0f1214;
+  --color-accent-bg: #1d2338;
+  --color-accent-text: #b4c4ff;
+  /* Link hover; used in every mockup's base styles. */
+  --color-accent-text-hover: #dce4ff;
+  --color-gain: #4fd1a1;
+  --color-gain-bg: #17251f;
+  --color-loss: #ff8a65;
+  --color-loss-bg: #2a1d17;
+  --color-loss-border: #5a4033;
+  --color-loss-text: #ffb79e;
+  --color-warn: #e8c46a;
+  --color-warn-bg: #2b2616;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Asset classes, light to dark. Order and colors are fixed across screens. */
+  --color-class-stocks: #e3e9ff;
+  --color-class-bonds: #b4c4ff;
+  --color-class-funds: #8fa8ff;
+  --color-class-crypto: #6c82dd;
+  --color-class-cash: #4e60b0;
+
+  --font-sans: var(--font-onest), 'Segoe UI', system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace;
+
+  --text-hero: 40px;
+  --text-hero--letter-spacing: -0.02em;
+  --text-hero-phone: 28px;
+  --text-page: 28px;
+  --text-page--letter-spacing: -0.01em;
+  --text-page-phone: 22px;
+  --text-metric: 24px;
+  --text-metric-phone: 17px;
+  --text-section: 20px;
+  --text-card: 16px;
+  --text-body: 15px;
+  --text-row: 14px;
+  --text-caption: 13px;
+  --text-small: 12px;
+
+  --radius-card: 14px;
+  --radius-tile: 12px;
+  --radius-control: 10px;
+  --radius-nav: 9px;
+  --radius-tag: 6px;
+  --radius-bar: 4px;
+  --radius-mark: 3px;
+  --radius-pill: 999px;
+
+  --breakpoint-wide: 900px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.45;
+  }
+
+  a {
+    color: var(--color-accent-text);
+  }
+  a:hover {
+    color: var(--color-accent-text-hover);
+  }
+
+  /* Not drawn in the mockups: a visible ring for keyboard focus only (docs/08-ui.md, «Фокус»). */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
