@@ -4,10 +4,25 @@
 
 Общие правила:
 
-- Первичные ключи: `uuid` (v7), кроме `logs` (`bigserial`).
+- База — SQLite. Типы ниже записаны логически, физически они хранятся так:
+
+  | Логический тип | В SQLite |
+  |---|---|
+  | `uuid` (v7) | `text`, генерируется в коде |
+  | `bigserial` | `integer primary key autoincrement` |
+  | `numeric`, `numeric(38, 18)` | `text`, десятичная строка без экспоненты. Арифметика и сравнение только в коде через `decimal.js` |
+  | `timestamptz` | `integer`, миллисекунды Unix в UTC |
+  | `date` | `text`, `YYYY-MM-DD` |
+  | `bool` | `integer` 0/1 |
+  | `jsonb` | `text` с JSON, структура описана Zod-схемой |
+  | `text[]` | `text` с JSON-массивом |
+  | `bytea` | `blob` |
+  | enum | `text` с `CHECK` |
+
+- Первичные ключи: `uuid` (v7), кроме `logs` и `jobs` (`bigserial`).
 - У всех таблиц с пользовательскими данными есть `user_id`.
 - Числа: `numeric(38, 18)`. Время: `timestamptz`. Даты без времени: `date`.
-- Перечисления — Postgres enum или `text` с проверкой, значения латиницей в нижнем регистре.
+- Перечисления — `text` с проверкой, значения латиницей в нижнем регистре.
 - Мягкого удаления нет, кроме `operations` (см. ниже).
 
 ## 1. Аутентификация
@@ -173,9 +188,13 @@
 `user_id`, `key text` (например `limit:singleStock:<instrument>`), `active bool`, `last_sent_at`.
 
 **logs**
-`id bigserial`, `ts`, `level` (`debug` | `info` | `warn` | `error`), `source`, `message`, `context jsonb`, `request_id`, `job_id`. Индексы по `ts desc`, `(level, ts)`, `(source, ts)`, полнотекстовый по `message`.
+`id bigserial`, `ts`, `level` (`debug` | `info` | `warn` | `error`), `source`, `message`, `context jsonb`, `request_id`, `job_id`. Индексы по `ts desc`, `(level, ts)`, `(source, ts)`, полнотекстовый по `message` (FTS5).
 
 **raw_responses** — только в режиме отладки, срок жизни 24 часа.
 `id`, `ts`, `integration`, `method`, `status`, `duration_ms`, `body jsonb`.
 
-Очередь задач pg-boss живёт в своей схеме `pgboss`.
+**jobs** — очередь фоновых задач.
+`id bigserial`, `name`, `payload jsonb`, `status` (`queued` | `running` | `done` | `failed`), `run_at timestamptz`, `attempt int`, `max_attempts int`, `singleton_key text` (не больше одной незавершённой задачи с тем же ключом), `locked_by text`, `locked_until timestamptz`, `last_error text`, `created_at`, `finished_at`. Индекс по `(status, run_at)`. Завершённые задачи чистятся вместе с логами.
+
+**job_schedules** — расписания.
+`name` (pk), `cron text`, `payload jsonb`, `last_enqueued_at timestamptz`.

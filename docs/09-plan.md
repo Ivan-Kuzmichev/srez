@@ -17,9 +17,9 @@
 Задачи:
 
 1. Проект Next.js, TypeScript strict, pnpm, ESLint, Prettier, Vitest, Playwright, скрипт `pnpm check`.
-2. Docker Compose: postgres, web, worker. Dockerfile с standalone-сборкой.
+2. Docker Compose: web, worker, общий том с файлом SQLite. Dockerfile с standalone-сборкой.
 3. Drizzle: подключение, первая миграция, применение при старте.
-4. Точка входа воркера с pg-boss, тестовая задача по расписанию.
+4. Своя очередь на SQLite (`jobs`, `job_schedules`), точка входа воркера, тестовая задача по расписанию.
 5. Логгер pino с редактором секретов, идентификаторы запросов, запись в таблицу `logs`.
 6. Токены оформления, шрифты через `next/font`, базовые компоненты из `08-ui.md`, раздел 3.
 7. Каркас: боковое меню и нижняя панель, все маршруты из карты экранов как заглушки.

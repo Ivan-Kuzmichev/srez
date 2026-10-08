@@ -13,6 +13,13 @@
 
 | Дата | Решение | Причина |
 |---|---|---|
+| 2026-10-08 | SQLite (`better-sqlite3`, WAL) вместо PostgreSQL. Деньги — `text`, время — `integer` мс UTC. Обновлены `CLAUDE.md`, `02`, `03`, `09`, `.env.example` | Решение владельца: база — просто файл |
+| 2026-10-08 | Своя очередь на таблицах `jobs`, `job_schedules` и `croner` вместо pg-boss | pg-boss работает только с Postgres |
+| 2026-10-08 | TypeScript 6.0.x, не 7 | `typescript-eslint` поддерживает `<6.1` |
+| 2026-10-08 | Next 16: `proxy.ts` вместо `middleware.ts`, линт через `eslint` CLI | `next lint` удалён в 16 |
+| 2026-10-08 | Drizzle 0.45 (стабильная), не 1.0 RC | Better Auth поддерживает обе |
+| 2026-10-08 | Dev-зависимости вне стека: `esbuild` (сборка воркера, миграций и CLI), `tsx`, `pino-pretty`. Согласовано | Не гонять TypeScript в продакшене |
+| 2026-10-08 | uuid v7 генерируется в коде; пакет `uuid` добавить в фазе 2 | В SQLite и Node нет встроенного v7 |
 
 ## Журнал
 
