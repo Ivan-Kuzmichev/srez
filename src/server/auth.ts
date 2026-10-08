@@ -7,7 +7,7 @@ import { db, type Db } from '@/db/client';
 import * as schema from '@/db/schema';
 import { APP_NAME } from '@/lib/app';
 import { uuidv7 } from '@/lib/uuid';
-import { createAuthHooks, createPasskeyChecks, loginMethodForPath } from './auth-hooks';
+import { createAuthHooks, createIpResolver, createPasskeyChecks, loginMethodForPath } from './auth-hooks';
 import { authSecret, env, trustedProxyList } from './env';
 import { BACKUP_CODES_COUNT, generateBackupCodes } from './two-factor';
 
@@ -24,6 +24,7 @@ export interface AuthConfig {
 
 export function createAuth(config: AuthConfig) {
   const url = new URL(config.baseURL);
+  const ipOf = createIpResolver(config.trustedProxies);
   return betterAuth({
     appName: APP_NAME,
     baseURL: config.baseURL,

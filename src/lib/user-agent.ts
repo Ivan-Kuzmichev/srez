@@ -15,7 +15,7 @@ const BROWSERS: Array<[RegExp, string]> = [
   [/\bYaBrowser\//, 'Яндекс Браузер'],
   [/\bSamsungBrowser\//, 'Samsung Internet'],
   [/\bFirefox\/|\bFxiOS\//, 'Firefox'],
-  [/\bChrome\/|\bCriOS\//, 'Chrome'],
+  [/Chrome\/|\bCriOS\//, 'Chrome'],
   [/\bSafari\//, 'Safari'],
 ];
 

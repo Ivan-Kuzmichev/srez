@@ -60,11 +60,16 @@ export function loginLockout(db: Db, username: string, now = new Date()): Lockou
   return lockoutState(rows, now);
 }
 
-export function createAuthHooks(config: { db: Db; trustedProxies: string[] }) {
-  const trusted = parseTrustedProxies(config.trustedProxies.join(','));
-  const hasTrusted = config.trustedProxies.length > 0;
-  const ipOf = (headers: Headers | undefined) =>
+/** Client address resolver bound to the configured proxies. */
+export function createIpResolver(trustedProxies: string[]) {
+  const trusted = parseTrustedProxies(trustedProxies.join(','));
+  const hasTrusted = trustedProxies.length > 0;
+  return (headers: Headers | undefined | null) =>
     clientIp(headers?.get('x-forwarded-for') ?? null, trusted, hasTrusted);
+}
+
+export function createAuthHooks(config: { db: Db; trustedProxies: string[] }) {
+  const ipOf = createIpResolver(config.trustedProxies);
   const log = () => logger('auth');
   const limiter = new RateLimiter(20, 60_000);
 

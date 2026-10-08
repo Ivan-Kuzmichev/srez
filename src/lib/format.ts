@@ -112,6 +112,28 @@ function dateParts(date: Date, timeZone: string) {
   };
 }
 
+const MONTHS_FULL = [
+  'января',
+  'февраля',
+  'марта',
+  'апреля',
+  'мая',
+  'июня',
+  'июля',
+  'августа',
+  'сентября',
+  'октября',
+  'ноября',
+  'декабря',
+];
+
+/** «12 сентября», with the year when it is not the current one: «12 сентября 2025». */
+export function formatDateLong(date: Date, timeZone: string, now = new Date()): string {
+  const p = dateParts(date, timeZone);
+  const base = `${p.day}${NBSP}${MONTHS_FULL[p.month - 1]}`;
+  return p.year === dateParts(now, timeZone).year ? base : `${base}${NBSP}${p.year}`;
+}
+
 /** «5 окт» in the display time zone. */
 export function formatDate(date: Date, timeZone: string): string {
   const p = dateParts(date, timeZone);

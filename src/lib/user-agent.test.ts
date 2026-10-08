@@ -32,5 +32,10 @@ describe('describeUserAgent', () => {
     expect(describeUserAgent(null)).toBeNull();
     expect(describeUserAgent('curl/8.0')).toBeNull();
     expect(parseUserAgent(UA.safariMac).device).toBe('Mac');
+    expect(
+      describeUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36',
+      ),
+    ).toBe('Chrome, macOS');
   });
 });

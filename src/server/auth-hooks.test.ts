@@ -100,10 +100,13 @@ describe('sign-in events', () => {
     expect(rows[1]!.context).toMatchObject({ username: 'owner', method: 'password', ip: '203.0.113.10' });
   });
 
-  it('stores the login method on the session', async () => {
+  it('stores the login method and the client address on the session', async () => {
     const { auth, db } = setup();
     await seedUser(auth, 'owner', PASSWORD);
     await signIn(auth, PASSWORD);
-    expect(db.select().from(session).get()?.loginMethod).toBe('password');
+    expect(db.select().from(session).get()).toMatchObject({
+      loginMethod: 'password',
+      ipAddress: '203.0.113.10',
+    });
   });
 });

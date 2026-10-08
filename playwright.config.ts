@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
-import { E2E_LOCKOUT_USER, E2E_PASSKEY_USER, E2E_TOTP_USER, E2E_USER } from './tests/e2e/users';
+import {
+  E2E_LOCKOUT_USER,
+  E2E_PASSKEY_USER,
+  E2E_SESSIONS_USER,
+  E2E_TOTP_USER,
+  E2E_USER,
+} from './tests/e2e/users';
 
 const port = Number(process.env.E2E_PORT ?? 3100);
 const db = './data/e2e.db';
@@ -29,6 +35,7 @@ export default defineConfig({
       createUser(E2E_LOCKOUT_USER),
       createUser(E2E_TOTP_USER),
       createUser(E2E_PASSKEY_USER),
+      createUser(E2E_SESSIONS_USER),
       'pnpm next build',
       `pnpm next start -p ${port}`,
     ].join(' && '),

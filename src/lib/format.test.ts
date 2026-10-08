@@ -6,6 +6,7 @@ import {
   formatCrypto,
   formatDate,
   formatDateYear,
+  formatDateLong,
   formatMoney,
   formatPercent,
   formatPp,
@@ -98,6 +99,12 @@ describe('dates and time', () => {
     const late = new Date('2026-12-31T22:00:00Z');
     expect(formatDateYear(late, 'UTC')).toBe(nb('31 дек 2026'));
     expect(formatDateYear(late, 'Europe/Moscow')).toBe(nb('1 янв 2027'));
+  });
+
+  it('writes the full month, adding the year only for other years', () => {
+    const now = new Date('2026-10-08T12:00:00Z');
+    expect(formatDateLong(new Date('2026-09-12T10:00:00Z'), 'UTC', now)).toBe(nb('12 сентября'));
+    expect(formatDateLong(new Date('2025-05-01T10:00:00Z'), 'UTC', now)).toBe(nb('1 мая 2025'));
   });
 
   it('uses the genitive short month names', () => {

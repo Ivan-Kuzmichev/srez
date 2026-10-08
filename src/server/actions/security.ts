@@ -1,13 +1,18 @@
 'use server';
 
+import { isAPIError } from 'better-auth/api';
+import { and, eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 import { db } from '@/db/client';
+import { session as sessionTable, user } from '@/db/schema';
 import { authedAction, type ActionResult } from '../action';
 import { auth } from '../auth';
 import { logger } from '../logger';
 import * as security from '../security';
 import { totpSecretFromUri } from '../two-factor';
+import { PasswordSchema } from '../users';
 
 const Password = z.object({ password: z.string().min(1).max(256) });
 const log = () => logger('auth');
@@ -60,4 +65,59 @@ export const regenerateBackupCodes = authedAction(Password, async ({ password },
     'Backup codes regenerated',
   );
   return { ok: true, data: { backupCodes: result.value.backupCodes } };
+});
+
+const ChangePasswordInput = z
+  .object({
+    currentPassword: z.string().min(1).max(256),
+    newPassword: PasswordSchema,
+    repeatPassword: z.string(),
+  })
+  .refine((v) => v.newPassword === v.repeatPassword, { path: ['repeatPassword'], message: 'MISMATCH' });
+
+/** Keeps this session, ends the others (docs/07-auth-security.md, section 5). */
+export const changePassword = authedAction(ChangePasswordInput, async (input, session) => {
+  try {
+    await auth().api.changePassword({
+      body: {
+        currentPassword: input.currentPassword,
+        newPassword: input.newPassword,
+        revokeOtherSessions: true,
+      },
+      headers: await headers(),
+    });
+  } catch (err) {
+    if (isAPIError(err) && err.statusCode < 500) return { ok: false, code: 'INVALID_PASSWORD' };
+    throw err;
+  }
+  db().update(user).set({ passwordChangedAt: new Date() }).where(eq(user.id, session.user.id)).run();
+  log().warn({ username: session.user.username, event: 'password_changed' }, 'Password changed');
+  return { ok: true, data: null };
+});
+
+export const revokeSession = authedAction(
+  z.object({ id: z.string().min(1).max(64) }),
+  async ({ id }, current) => {
+    if (id === current.session.id) return { ok: false, code: 'CURRENT_SESSION' };
+    const target = db()
+      .select({ token: sessionTable.token })
+      .from(sessionTable)
+      .where(and(eq(sessionTable.id, id), eq(sessionTable.userId, current.user.id)))
+      .get();
+    if (!target) return { ok: false, code: 'NOT_FOUND' };
+    await auth().api.revokeSession({ body: { token: target.token }, headers: await headers() });
+    log().info(
+      { username: current.user.username, event: 'session_revoked', sessionId: id },
+      'Session revoked',
+    );
+    revalidatePath('/settings/security');
+    return { ok: true, data: null };
+  },
+);
+
+export const revokeOtherSessions = authedAction(z.object({}), async (_input, current) => {
+  await auth().api.revokeOtherSessions({ headers: await headers() });
+  log().info({ username: current.user.username, event: 'sessions_revoked' }, 'Other sessions revoked');
+  revalidatePath('/settings/security');
+  return { ok: true, data: null };
 });
