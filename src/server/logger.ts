@@ -1,9 +1,11 @@
 import { createRequire } from 'node:module';
 import pino, { type DestinationStream, type Logger } from 'pino';
 import { db, type Db } from '@/db/client';
-import { logs, type LogLevel } from '@/db/schema';
+import { logs, rawResponses, type LogLevel } from '@/db/schema';
+import { onExternalRequest, type ExternalRequest } from '@/integrations/observe';
 import { env } from './env';
 import { redact } from './redact';
+import { debugActive, ownerSettings, type Settings } from './settings';
 
 export type { Logger } from 'pino';
 
@@ -78,6 +80,43 @@ export class DbLogSink implements DestinationStream {
   }
 }
 
+/** Runtime switches from «Разработка» (FR-DEV-2); refreshed from settings every minute. */
+export interface LogConfig {
+  /** The threshold; checked per call, because child loggers copy their level once at creation. */
+  level: LogLevel;
+  debug: boolean;
+  maskAmounts: boolean;
+  externalRequests: boolean;
+  authEvents: boolean;
+}
+export const logConfig: LogConfig = {
+  level: 'info',
+  debug: false,
+  maskAmounts: false,
+  externalRequests: true,
+  authEvents: true,
+};
+
+const MASK = '•••';
+// Money and quantity fields, at any depth: amount, price, quantity, payment, balance, value…
+const AMOUNT_KEY =
+  /(amount|price|quantity|qty|payment|balance|value|total|sum|fee|tax|close|nominal|cost|cash|units|nano)$/i;
+const NUMBER = /[-−+]?\d+(?:[\s\u00a0]\d{3})*(?:[.,]\d+)?/g;
+
+/** «скрывать суммы и количества»: numbers in messages and amount-like fields become «•••». */
+export function maskAmounts(value: unknown, key = ''): unknown {
+  if (typeof value === 'number' || (typeof value === 'string' && AMOUNT_KEY.test(key)))
+    return AMOUNT_KEY.test(key) ? MASK : value;
+  if (Array.isArray(value)) return value.map((v) => maskAmounts(v, key));
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) out[k] = maskAmounts(v, k);
+    return out;
+  }
+  return value;
+}
+export const maskMessage = (message: string) => message.replace(NUMBER, MASK);
+
 export interface LoggerOptions {
   level: LogLevel;
   getDb: () => Db;
@@ -87,6 +126,7 @@ export interface LoggerOptions {
 }
 
 export function createLogger(options: LoggerOptions): { root: Logger; sink: DbLogSink } {
+  logConfig.level = options.level;
   const sink = new DbLogSink(options.getDb);
   const consoleStream =
     options.console === false
@@ -94,18 +134,33 @@ export function createLogger(options: LoggerOptions): { root: Logger; sink: DbLo
       : (options.console ?? (options.pretty ? prettyStream() : pino.destination(1)));
   const root = pino(
     {
-      level: options.level,
+      level: 'debug',
       base: undefined,
       formatters: {
         level: (label) => ({ level: pino.levels.values[label] ?? 30 }),
         bindings: (bindings) => redact(bindings) as Record<string, unknown>,
-        log: (object) => redact(object) as Record<string, unknown>,
+        log: (object) => {
+          const clean = redact(object) as Record<string, unknown>;
+          return logConfig.maskAmounts ? (maskAmounts(clean) as Record<string, unknown>) : clean;
+        },
+      },
+      hooks: {
+        logMethod(args, method, level) {
+          if (level < (pino.levels.values[logConfig.level] ?? 30)) return;
+          // «Писать входы и обращения по API-токену» off: routine entries go, warnings and errors stay.
+          const source = (this.bindings() as { source?: string }).source;
+          if (level < 40 && !logConfig.authEvents && (source === 'auth' || source === 'api')) return;
+          if (logConfig.maskAmounts)
+            args = args.map((a) => (typeof a === 'string' ? maskMessage(a) : a)) as typeof args;
+          method.apply(this, args);
+        },
       },
       serializers: { err: pino.stdSerializers.err },
     },
+    // Streams take everything; the logger's own level decides, so it can change at runtime.
     pino.multistream([
-      ...(consoleStream ? [{ level: options.level, stream: consoleStream }] : []),
-      { level: options.level, stream: sink },
+      ...(consoleStream ? [{ level: 'debug' as const, stream: consoleStream }] : []),
+      { level: 'debug' as const, stream: sink },
     ]),
   );
   return { root, sink };
@@ -129,8 +184,70 @@ function instance() {
       pretty: NODE_ENV !== 'production' && process.env.LOG_PRETTY !== '0',
       console: process.env.LOG_CONSOLE === '0' ? false : undefined,
     });
+    refreshLogSettings();
+    // Debug mode switches itself off on time; the other process (web or worker) may change settings.
+    setInterval(refreshLogSettings, 60_000).unref();
+    onExternalRequest(observeExternalRequest);
   }
   return globalForLogger.srezLogger;
+}
+
+/** Applies «Логирование» and «Режим отладки» from the owner's settings (FR-DEV-1, 2). */
+export function applyLogSettings(s: Settings, now = Date.now()): void {
+  logConfig.debug = debugActive(s, now);
+  logConfig.level = logConfig.debug ? 'debug' : s.logging.level;
+  logConfig.maskAmounts = s.logging.maskAmounts;
+  logConfig.externalRequests = s.logging.externalRequests;
+  logConfig.authEvents = s.logging.authEvents;
+}
+
+function refreshLogSettings(): void {
+  try {
+    applyLogSettings(ownerSettings(db()));
+  } catch {
+    // No database yet (first start, CLI): keep the environment level.
+  }
+}
+
+const RAW_LIMIT = 256 * 1024;
+
+/** One external call: a log line if asked for, and in debug mode the raw answer with secrets cut out. */
+export function observeExternalRequest(r: ExternalRequest, database: () => Db = db): void {
+  const source: LogSource = r.integration === 'tinvest' ? 'collector' : 'prices';
+  if (logConfig.externalRequests) {
+    const entry = {
+      integration: r.integration,
+      method: r.method,
+      status: r.status,
+      durationMs: r.durationMs,
+      error: r.error,
+    };
+    const log = instance().root.child({ source });
+    if (r.status === 0 || r.status >= 400) log.warn(entry, 'External request failed');
+    else log.info(entry, 'External request');
+  }
+  if (!logConfig.debug || r.body === undefined) return;
+  let body: unknown = r.body.length > RAW_LIMIT ? `${r.body.slice(0, RAW_LIMIT)}…` : r.body;
+  try {
+    body = redact(JSON.parse(r.body));
+  } catch {
+    // Not JSON (or cut): kept as text.
+  }
+  try {
+    database()
+      .insert(rawResponses)
+      .values({
+        ts: new Date(),
+        integration: r.integration,
+        method: r.method,
+        status: r.status,
+        durationMs: r.durationMs,
+        body,
+      })
+      .run();
+  } catch (err) {
+    process.stderr.write(`Failed to store a raw response: ${String(err)}\n`);
+  }
 }
 
 /** Logger for one source; add `requestId` or `jobId` with `.child()`. */

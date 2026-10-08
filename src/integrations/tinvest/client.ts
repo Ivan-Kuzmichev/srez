@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Decimal } from '@/domain/decimal';
+import { reportExternalRequest } from '../observe';
 import { nodeTransport, type RawResponse, type Transport } from './transport';
 
 /**
@@ -275,6 +276,8 @@ export class TinvestClient {
     body: object,
     schema: T,
   ): Promise<z.infer<T>> {
+    const started = Date.now();
+    const name = `${service}/${method}`;
     let res: RawResponse;
     try {
       res = await this.transport(
@@ -289,8 +292,23 @@ export class TinvestClient {
       );
     } catch (err) {
       const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+      reportExternalRequest({
+        integration: 'tinvest',
+        method: name,
+        status: 0,
+        durationMs: Date.now() - started,
+        error: message,
+      });
       throw new TinvestError('UNAVAILABLE', `${service}/${method}: ${message}`);
     }
+    // The request body and headers are never reported: only the method and the answer.
+    reportExternalRequest({
+      integration: 'tinvest',
+      method: name,
+      status: res.status,
+      durationMs: Date.now() - started,
+      body: res.body,
+    });
     if (res.status !== 200) throw toError(res);
     let json: unknown;
     try {

@@ -33,6 +33,23 @@ export const SettingsSchema = z.object({
         .default('23:50'),
     })
     .prefault({}),
+  logging: z
+    .object({
+      /** The level outside debug mode. */
+      level: z.enum(['info', 'warn', 'error']).default('info'),
+      retentionDays: z.union([z.literal(7), z.literal(14), z.literal(30)]).default(14),
+      externalRequests: z.boolean().default(true),
+      authEvents: z.boolean().default(true),
+      maskAmounts: z.boolean().default(false),
+    })
+    .prefault({}),
+  debug: z
+    .object({
+      enabled: z.boolean().default(false),
+      /** Unix ms; null keeps debug on until switched off. */
+      autoOffAt: z.number().int().nullable().default(null),
+    })
+    .prefault({}),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
@@ -53,6 +70,8 @@ export function updateSettings(db: Executor, userId: string, patch: DeepPartial<
     display: { ...current.display, ...patch.display },
     returns: { ...current.returns, ...patch.returns },
     prices: { ...current.prices, ...patch.prices },
+    logging: { ...current.logging, ...patch.logging },
+    debug: { ...current.debug, ...patch.debug },
   });
   const now = new Date();
   db.insert(settings)
@@ -66,4 +85,9 @@ export function updateSettings(db: Executor, userId: string, patch: DeepPartial<
 export function ownerSettings(db: Executor): Settings {
   const owner = db.select({ id: user.id }).from(user).orderBy(asc(user.createdAt)).limit(1).get();
   return owner ? getSettings(db, owner.id) : SettingsSchema.parse({});
+}
+
+/** Debug mode is on and its time has not run out (FR-DEV-1). */
+export function debugActive(s: Settings, now = Date.now()): boolean {
+  return s.debug.enabled && (s.debug.autoOffAt === null || s.debug.autoOffAt > now);
 }

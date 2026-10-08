@@ -25,3 +25,19 @@ export const logs = sqliteTable(
     check('logs_level_check', sql`${t.level} in ('debug', 'info', 'warn', 'error')`),
   ],
 );
+
+/** Raw answers of external APIs, debug mode only, kept 24 hours (docs/03-data-model.md, section 8). */
+export const rawResponses = sqliteTable(
+  'raw_responses',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    ts: integer('ts', { mode: 'timestamp_ms' }).notNull(),
+    integration: text('integration').notNull(),
+    method: text('method').notNull(),
+    status: integer('status').notNull(),
+    durationMs: integer('duration_ms').notNull(),
+    /** Secrets cut out before the write. */
+    body: text('body', { mode: 'json' }),
+  },
+  (t) => [index('raw_responses_ts_idx').on(t.ts)],
+);
