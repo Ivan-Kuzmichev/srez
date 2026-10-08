@@ -22,7 +22,9 @@ export const discrepancies = sqliteTable(
     guess: text('guess', { enum: RECONCILE_GUESSES }).notNull(),
     status: text('status', { enum: DISCREPANCY_STATUSES }).notNull().default('open'),
     /** The `reconcile` operation that fixed it; undoing the fix reopens the discrepancy. */
-    resolutionOperationId: text('resolution_operation_id').references(() => operations.id, { onDelete: 'set null' }),
+    resolutionOperationId: text('resolution_operation_id').references(() => operations.id, {
+      onDelete: 'set null',
+    }),
     detectedAt: timestamp('detected_at').notNull(),
     resolvedAt: timestamp('resolved_at'),
   },
@@ -32,7 +34,10 @@ export const discrepancies = sqliteTable(
       .on(t.accountId, t.instrumentId)
       .where(sql`${t.status} in ('open', 'snoozed')`),
     index('discrepancies_account_idx').on(t.accountId, t.status),
-    check('discrepancies_guess_check', sql`${t.guess} in ('transfer', 'fx', 'redemption', 'split', 'unknown')`),
+    check(
+      'discrepancies_guess_check',
+      sql`${t.guess} in ('transfer', 'fx', 'redemption', 'split', 'unknown')`,
+    ),
     check('discrepancies_status_check', sql`${t.status} in ('open', 'resolved', 'ignored', 'snoozed')`),
   ],
 );

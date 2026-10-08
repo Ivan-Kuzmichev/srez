@@ -164,3 +164,19 @@ describe('log settings', () => {
     expect(getSettings(db, 'u1').debug).toEqual({ enabled: false, autoOffAt: null });
   });
 });
+
+describe('log context', () => {
+  it('stamps every line written inside a job with its id', async () => {
+    const { db, root, sink } = setup();
+    const { logContext } = await import('./log-context');
+    await logContext.run({ jobId: 'job_9' }, async () => {
+      root.child({ source: 'collector' }).info('inside');
+    });
+    root.child({ source: 'collector' }).info('outside');
+    sink.flush();
+    expect(db.select({ m: logs.message, j: logs.jobId }).from(logs).all()).toEqual([
+      { m: 'inside', j: 'job_9' },
+      { m: 'outside', j: null },
+    ]);
+  });
+});

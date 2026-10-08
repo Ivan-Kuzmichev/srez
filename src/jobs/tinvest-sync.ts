@@ -325,6 +325,7 @@ export async function syncSource(
     return { newOperations, relinked, accounts: accounts.length };
   } catch (err) {
     const text = syncErrorText(err, opts.attempt ?? 1);
+    opts.log?.error({ sourceId, err }, `T-Invest sync failed: ${text}`);
     db.update(syncRuns)
       .set({ status: 'error', finishedAt: new Date(), error: text })
       .where(eq(syncRuns.id, run.id))

@@ -64,7 +64,11 @@ export function peerAddress(headers: Headers, key = process.env.SREZ_PEER_KEY): 
  * docs/06-api.md, section 3: the connection address; when it is a trusted proxy, the rightmost
  * address of X-Forwarded-For that is not one. A header from anyone else is not believed.
  */
-export function resolveClientIp(headers: Headers, trusted: BlockList, key = process.env.SREZ_PEER_KEY): string | null {
+export function resolveClientIp(
+  headers: Headers,
+  trusted: BlockList,
+  key = process.env.SREZ_PEER_KEY,
+): string | null {
   const peer = peerAddress(headers, key);
   if (!peer) return null;
   if (!isTrusted(trusted, peer)) return peer;

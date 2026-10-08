@@ -27,7 +27,8 @@ export function openDb(path: string): Db {
   // Writers take the write lock at BEGIN. A deferred transaction that reads first fails at once with
   // SQLITE_BUSY_SNAPSHOT when web and worker write at the same time; an immediate one waits busy_timeout.
   const begin = database.transaction.bind(database);
-  database.transaction = ((fn, config) => begin(fn, { behavior: 'immediate', ...config })) as typeof database.transaction;
+  database.transaction = ((fn, config) =>
+    begin(fn, { behavior: 'immediate', ...config })) as typeof database.transaction;
   return database;
 }
 

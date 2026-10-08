@@ -162,6 +162,9 @@ export const payoutEvents = sqliteTable(
   (t) => [
     uniqueIndex('payout_events_instrument_kind_pay_idx').on(t.instrumentId, t.kind, t.payDate),
     index('payout_events_pay_date_idx').on(t.payDate),
-    check('payout_events_kind_check', sql`${t.kind} in ('dividend', 'coupon', 'redemption', 'amortization', 'offer')`),
+    check(
+      'payout_events_kind_check',
+      sql`${t.kind} in ('dividend', 'coupon', 'redemption', 'amortization', 'offer')`,
+    ),
   ],
 );

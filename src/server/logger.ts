@@ -4,6 +4,7 @@ import { db, type Db } from '@/db/client';
 import { logs, rawResponses, type LogLevel } from '@/db/schema';
 import { onExternalRequest, type ExternalRequest } from '@/integrations/observe';
 import { env } from './env';
+import { logContext } from './log-context';
 import { redact } from './redact';
 import { debugActive, ownerSettings, type Settings } from './settings';
 
@@ -136,6 +137,8 @@ export function createLogger(options: LoggerOptions): { root: Logger; sink: DbLo
     {
       level: 'debug',
       base: undefined,
+      // jobId or requestId of the work in progress, unless the call sets its own.
+      mixin: () => ({ ...logContext.getStore() }),
       formatters: {
         level: (label) => ({ level: pino.levels.values[label] ?? 30 }),
         bindings: (bindings) => redact(bindings) as Record<string, unknown>,

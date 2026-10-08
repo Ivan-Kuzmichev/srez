@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import type { Db } from '@/db/client';
+import { logContext } from '@/server/log-context';
 import type { Logger } from '@/server/logger';
 import {
   claimNext,
@@ -69,7 +70,7 @@ export async function runOnce(options: WorkerOptions, now = new Date()): Promise
   const started = Date.now();
   try {
     const payload = def.payload.parse(job.payload);
-    await def.handler({ db, job, payload, jobId, log: jobLog });
+    await logContext.run({ jobId }, () => def.handler({ db, job, payload, jobId, log: jobLog }));
     completeJob(db, job.id);
     jobLog.debug({ job: job.name, attempt: job.attempt, durationMs: Date.now() - started }, 'Job done');
   } catch (err) {

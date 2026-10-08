@@ -31,7 +31,11 @@ describe('runOnce', () => {
     expect(worked).toBe(true);
     sink.flush();
     // At debug level the runner's own «Job done» is there too.
-    const rows = db.select().from(logs).all().filter((r) => r.message === 'Worker heartbeat');
+    const rows = db
+      .select()
+      .from(logs)
+      .all()
+      .filter((r) => r.message === 'Worker heartbeat');
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ source: 'jobs', message: 'Worker heartbeat', jobId: `job_${id}` });
     expect(db.select().from(jobs).get()?.status).toBe('done');

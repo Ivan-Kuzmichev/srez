@@ -14,7 +14,9 @@ describe('heldQuantity', () => {
   });
 
   it('ignores payouts and cash, and never goes below zero', () => {
-    expect(heldQuantity([op('buy', 2), op('coupon', 0), op('dividend', 0), op('fee', 0)]).toString()).toBe('2');
+    expect(heldQuantity([op('buy', 2), op('coupon', 0), op('dividend', 0), op('fee', 0)]).toString()).toBe(
+      '2',
+    );
     expect(heldQuantity([op('buy', 2), op('sell', 5), op('buy', 1)]).toString()).toBe('1');
     expect(heldQuantity([]).toString()).toBe('0');
   });

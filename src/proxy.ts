@@ -9,7 +9,8 @@ const trustedList = () => (trusted ??= parseTrustedProxies(trustedProxyList().jo
 export const REQUEST_ID_HEADER = 'x-request-id';
 
 /** Reachable without a session. Everything else needs one. */
-const PUBLIC_PREFIXES = ['/login', '/api/auth', '/api/health', '/dev/ui'];
+// /api/v1 is authorized by its own bearer tokens (docs/06-api.md).
+const PUBLIC_PREFIXES = ['/login', '/api/auth', '/api/health', '/api/v1', '/dev/ui'];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
