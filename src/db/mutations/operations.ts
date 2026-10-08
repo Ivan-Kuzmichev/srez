@@ -1,6 +1,6 @@
 import { and, eq, isNull, or } from 'drizzle-orm';
 import type { Db } from '@/db/client';
-import { finAccounts, instruments, operations, tags } from '@/db/schema';
+import { finAccounts, instruments, operations, tagRules, tags } from '@/db/schema';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
 import type { LedgerOperation } from '@/domain/ledger-types';
 import { previewChange, type CellPreview } from '@/domain/operation-input';
@@ -162,4 +162,32 @@ export function previewOperation(
     candidate,
     ctx,
   );
+}
+
+/**
+ * FR-AST-5: a new tag for a position applies to every operation of this instrument on the account
+ * and is remembered as a rule, so future imports get it too. `null` removes the tag and the rule.
+ */
+export function setPositionTag(
+  db: Db,
+  userId: string,
+  accountId: string,
+  instrumentId: string,
+  tagId: string | null,
+): number {
+  return db.transaction(() => {
+    ownAccount(db, userId, accountId);
+    checkRefs(db, userId, { instrumentId, tagId });
+    const changed = db
+      .update(operations)
+      .set({ tagId })
+      .where(and(eq(operations.accountId, accountId), eq(operations.instrumentId, instrumentId)))
+      .run().changes;
+    db.delete(tagRules)
+      .where(and(eq(tagRules.accountId, accountId), eq(tagRules.instrumentId, instrumentId)))
+      .run();
+    if (tagId) db.insert(tagRules).values({ accountId, instrumentId, tagId }).run();
+    enqueueRecalc(db, accountId);
+    return changed;
+  });
 }

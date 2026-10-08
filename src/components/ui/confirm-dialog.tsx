@@ -6,8 +6,10 @@ import { ru } from '@/lib/i18n/ru';
 import { Button } from './button';
 
 export interface ConfirmDialogProps {
-  /** The element that opens the dialog, usually a Button. */
-  trigger: ReactNode;
+  /** The element that opens the dialog, usually a Button; omit when controlled with `open`. */
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: ReactNode;
   description?: ReactNode;
   confirmLabel?: string;
@@ -19,13 +21,20 @@ export interface ConfirmDialogProps {
 
 export function ConfirmDialog({
   trigger,
+  open: controlledOpen,
+  onOpenChange,
   title,
   description,
   confirmLabel,
   danger,
   onConfirm,
 }: ConfirmDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = controlledOpen ?? ownOpen;
+  const setOpen = (next: boolean) => {
+    setOwnOpen(next);
+    onOpenChange?.(next);
+  };
   const [busy, setBusy] = useState(false);
 
   async function confirm() {
@@ -40,7 +49,7 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog.Root open={open} onOpenChange={(next) => !busy && setOpen(next)}>
-      <AlertDialog.Trigger asChild>{trigger}</AlertDialog.Trigger>
+      {trigger ? <AlertDialog.Trigger asChild>{trigger}</AlertDialog.Trigger> : null}
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="fixed inset-0 z-40 bg-bg-nav/80" />
         <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 flex w-[calc(100vw-32px)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-border bg-surface p-6">

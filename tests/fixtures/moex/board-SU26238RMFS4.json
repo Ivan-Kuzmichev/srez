@@ -1,7 +1,6 @@
 {
-"securities": {
-	"columns": ["SECID", "LOTSIZE", "FACEVALUE", "FACEUNIT"], 
-	"data": [
-		["SU26238RMFS4", 1, 1000, "SUR"]
-	]
-}}
+  "securities": {
+    "columns": ["SECID", "LOTSIZE", "FACEVALUE", "FACEUNIT"],
+    "data": [["SU26238RMFS4", 1, 1000, "SUR"]]
+  }
+}

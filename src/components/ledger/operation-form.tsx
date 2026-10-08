@@ -15,7 +15,13 @@ import { cn } from '@/lib/cn';
 import { formatCrypto, formatQuantity, formatTradeAmount, currencySymbol } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { parseDecimalInput } from '@/lib/parse';
-import { previewOperation, saveOperation, saveTagAndNote } from '@/server/actions/operations';
+import {
+  deleteOperation,
+  previewOperation,
+  saveOperation,
+  saveTagAndNote,
+} from '@/server/actions/operations';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { InstrumentSummary } from '@/server/instruments';
 import { CustomAssetCard, CustomAssetDialog } from './custom-asset';
 import { InstrumentPicker, instrumentLabel } from './instrument-picker';
@@ -408,6 +414,29 @@ export function OperationForm({
             </Button>
           </div>
         </div>
+        {operationId && !imported ? (
+          <ConfirmDialog
+            trigger={
+              <Button variant="danger-text" className="self-start px-0 text-row">
+                {ru.journal.delete}
+              </Button>
+            }
+            title={ru.journal.deleteTitle}
+            description={ru.journal.deleteText}
+            confirmLabel={ru.journal.delete}
+            danger
+            onConfirm={async () => {
+              const result = await deleteOperation(null, { id: operationId });
+              if (!result.ok) {
+                notify({ tone: 'error', title: ru.journal.failed });
+                return;
+              }
+              notify({ tone: 'success', title: ru.journal.deleted });
+              router.push('/operations');
+              router.refresh();
+            }}
+          />
+        ) : null}
       </section>
 
       {!imported ? (

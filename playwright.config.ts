@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import {
+  E2E_EMPTY_USER,
+  E2E_LEDGER_USER,
   E2E_LOCKOUT_USER,
   E2E_PASSKEY_USER,
   E2E_SESSIONS_USER,
@@ -18,6 +20,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: 'list',
   globalSetup: './tests/e2e/global-setup.ts',
+  globalTeardown: './tests/e2e/global-teardown.ts',
   use: { baseURL: `http://localhost:${port}`, storageState: 'test-results/.auth/owner.json' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
@@ -28,6 +31,7 @@ export default defineConfig({
   ],
   webServer: {
     // A production build on a fresh database: dev mode compiles routes on first hit and reloads pages mid-test.
+    // The worker runs alongside to recalculate positions, as in production.
     command: [
       `rm -f ${db} ${db}-wal ${db}-shm`,
       'pnpm -s db:migrate',
@@ -36,8 +40,12 @@ export default defineConfig({
       createUser(E2E_TOTP_USER),
       createUser(E2E_PASSKEY_USER),
       createUser(E2E_SESSIONS_USER),
+      createUser(E2E_LEDGER_USER),
+      createUser(E2E_EMPTY_USER),
+      'pnpm exec tsx tests/e2e/seed.ts',
       'pnpm next build',
-      `pnpm next start -p ${port}`,
+      // «e2e» marks the worker so global teardown can stop it; Playwright only stops the server.
+      `(LOG_CONSOLE=0 pnpm exec tsx src/worker.ts e2e &) && pnpm next start -p ${port}`,
     ].join(' && '),
     url: `http://localhost:${port}/api/health`,
     reuseExistingServer: false,
@@ -45,6 +53,8 @@ export default defineConfig({
       DATABASE_PATH: db,
       APP_URL: `http://localhost:${port}`,
       AUTH_SECRET: 'e2e-secret-e2e-secret-e2e-secret-e2e-secret',
+      // Every scenario signs in from the same address.
+      AUTH_RATE_LIMIT: '1000',
     },
     timeout: 300_000,
   },

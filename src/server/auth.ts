@@ -20,6 +20,8 @@ export interface AuthConfig {
   baseURL: string;
   secret: string;
   trustedProxies: string[];
+  /** Sign-in attempts per minute per address; 20 unless set. */
+  rateLimit?: number;
 }
 
 export function createAuth(config: AuthConfig) {
@@ -31,7 +33,11 @@ export function createAuth(config: AuthConfig) {
     secret: config.secret,
     trustedOrigins: [url.origin],
     database: drizzleAdapter(config.db, { provider: 'sqlite', schema }),
-    hooks: createAuthHooks({ db: config.db, trustedProxies: config.trustedProxies }),
+    hooks: createAuthHooks({
+      db: config.db,
+      trustedProxies: config.trustedProxies,
+      rateLimit: config.rateLimit,
+    }),
     databaseHooks: {
       session: {
         create: {
@@ -80,9 +86,9 @@ export function createAuth(config: AuthConfig) {
       window: 60,
       max: 100,
       customRules: {
-        '/sign-in/*': { window: 60, max: 20 },
-        '/two-factor/*': { window: 60, max: 20 },
-        '/passkey/verify-authentication': { window: 60, max: 20 },
+        '/sign-in/*': { window: 60, max: config.rateLimit ?? 20 },
+        '/two-factor/*': { window: 60, max: config.rateLimit ?? 20 },
+        '/passkey/verify-authentication': { window: 60, max: config.rateLimit ?? 20 },
       },
     },
     plugins: [
@@ -121,6 +127,7 @@ export function auth(): Auth {
     baseURL: env().APP_URL,
     secret: authSecret(),
     trustedProxies: trustedProxyList(),
+    rateLimit: env().AUTH_RATE_LIMIT,
   });
   return globalForAuth.srezAuth;
 }

@@ -1,49 +1,49 @@
 {
- "coins": [
-  {
-   "id": "bitcoin",
-   "name": "Bitcoin",
-   "api_symbol": "bitcoin",
-   "symbol": "BTC",
-   "market_cap_rank": 1,
-   "thumb": "https://coin-images.coingecko.com/coins/images/1/thumb/bitcoin.png",
-   "large": "https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png"
-  },
-  {
-   "id": "bitcoin-cash",
-   "name": "Bitcoin Cash",
-   "api_symbol": "bitcoin-cash",
-   "symbol": "BCH",
-   "market_cap_rank": 22,
-   "thumb": "https://coin-images.coingecko.com/coins/images/780/thumb/bitcoin-cash-circle.png",
-   "large": "https://coin-images.coingecko.com/coins/images/780/large/bitcoin-cash-circle.png"
-  },
-  {
-   "id": "bitcoin-cash-sv",
-   "name": "Bitcoin SV",
-   "api_symbol": "bitcoin-cash-sv",
-   "symbol": "BSV",
-   "market_cap_rank": 128,
-   "thumb": "https://coin-images.coingecko.com/coins/images/6799/thumb/BSV.png",
-   "large": "https://coin-images.coingecko.com/coins/images/6799/large/BSV.png"
-  },
-  {
-   "id": "dog-go-to-the-moon-rune",
-   "name": "Dog (Bitcoin)",
-   "api_symbol": "dog-go-to-the-moon-rune",
-   "symbol": "DOG",
-   "market_cap_rank": 303,
-   "thumb": "https://coin-images.coingecko.com/coins/images/37352/thumb/DOGGOTOTHEMOON.png",
-   "large": "https://coin-images.coingecko.com/coins/images/37352/large/DOGGOTOTHEMOON.png"
-  },
-  {
-   "id": "fractal-bitcoin",
-   "name": "Fractal Bitcoin",
-   "api_symbol": "fractal-bitcoin",
-   "symbol": "FB",
-   "market_cap_rank": 529,
-   "thumb": "https://coin-images.coingecko.com/coins/images/40049/thumb/Fractal_LogoMark_Round.png",
-   "large": "https://coin-images.coingecko.com/coins/images/40049/large/Fractal_LogoMark_Round.png"
-  }
- ]
+  "coins": [
+    {
+      "id": "bitcoin",
+      "name": "Bitcoin",
+      "api_symbol": "bitcoin",
+      "symbol": "BTC",
+      "market_cap_rank": 1,
+      "thumb": "https://coin-images.coingecko.com/coins/images/1/thumb/bitcoin.png",
+      "large": "https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png"
+    },
+    {
+      "id": "bitcoin-cash",
+      "name": "Bitcoin Cash",
+      "api_symbol": "bitcoin-cash",
+      "symbol": "BCH",
+      "market_cap_rank": 22,
+      "thumb": "https://coin-images.coingecko.com/coins/images/780/thumb/bitcoin-cash-circle.png",
+      "large": "https://coin-images.coingecko.com/coins/images/780/large/bitcoin-cash-circle.png"
+    },
+    {
+      "id": "bitcoin-cash-sv",
+      "name": "Bitcoin SV",
+      "api_symbol": "bitcoin-cash-sv",
+      "symbol": "BSV",
+      "market_cap_rank": 128,
+      "thumb": "https://coin-images.coingecko.com/coins/images/6799/thumb/BSV.png",
+      "large": "https://coin-images.coingecko.com/coins/images/6799/large/BSV.png"
+    },
+    {
+      "id": "dog-go-to-the-moon-rune",
+      "name": "Dog (Bitcoin)",
+      "api_symbol": "dog-go-to-the-moon-rune",
+      "symbol": "DOG",
+      "market_cap_rank": 303,
+      "thumb": "https://coin-images.coingecko.com/coins/images/37352/thumb/DOGGOTOTHEMOON.png",
+      "large": "https://coin-images.coingecko.com/coins/images/37352/large/DOGGOTOTHEMOON.png"
+    },
+    {
+      "id": "fractal-bitcoin",
+      "name": "Fractal Bitcoin",
+      "api_symbol": "fractal-bitcoin",
+      "symbol": "FB",
+      "market_cap_rank": 529,
+      "thumb": "https://coin-images.coingecko.com/coins/images/40049/thumb/Fractal_LogoMark_Round.png",
+      "large": "https://coin-images.coingecko.com/coins/images/40049/large/Fractal_LogoMark_Round.png"
+    }
+  ]
 }

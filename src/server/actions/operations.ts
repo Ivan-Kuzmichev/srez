@@ -9,6 +9,7 @@ import {
   OperationError,
   previewOperation as preview,
   updateOperation,
+  setPositionTag as retagPosition,
 } from '@/db/mutations/operations';
 import { toDbDecimal } from '@/domain/decimal';
 import { authedAction, type ActionResult } from '../action';
@@ -93,3 +94,21 @@ export const previewOperation = authedAction(SaveInput, async (input, session) =
     return refused(err);
   }
 });
+
+/** FR-AST-5: one tag for every operation of the instrument on the account, remembered as a rule. */
+export const setPositionTag = authedAction(
+  z.object({
+    accountId: z.string().max(64),
+    instrumentId: z.string().max(64),
+    tagId: z.preprocess((v) => (v === '' ? null : v), z.string().max(64).nullable()),
+  }),
+  async ({ accountId, instrumentId, tagId }, session) => {
+    try {
+      const changed = retagPosition(db(), session.user.id, accountId, instrumentId, tagId);
+      revalidatePath('/operations');
+      return { ok: true, data: { changed } };
+    } catch (err) {
+      return refused(err);
+    }
+  },
+);

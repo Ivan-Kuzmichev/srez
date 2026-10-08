@@ -37,13 +37,20 @@ export function Th({
 export function Td({
   align = 'left',
   mono,
+  pad = 'normal',
   className,
   ...props
-}: TdHTMLAttributes<HTMLTableCellElement> & { align?: Align; mono?: boolean }) {
+}: TdHTMLAttributes<HTMLTableCellElement> & {
+  align?: Align;
+  mono?: boolean;
+  /** «tall» matches roomy lists (14 px), «none» is for a cell holding a 44 px button. */
+  pad?: 'normal' | 'tall' | 'none';
+}) {
   return (
     <td
       className={cn(
-        'border-b border-border-subtle px-3 py-3 whitespace-nowrap first:pl-0 last:pr-0',
+        'border-b border-border-subtle px-3 whitespace-nowrap first:pl-0 last:pr-0',
+        pad === 'normal' ? 'py-3' : pad === 'tall' ? 'py-3.5' : 'py-0',
         align === 'right' ? 'text-right' : 'text-left',
         mono && 'num',
         className,

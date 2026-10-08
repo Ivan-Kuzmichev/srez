@@ -7,7 +7,10 @@ import { Alert } from './alert';
 import { Button } from './button';
 
 export interface FormDialogProps {
-  trigger: ReactNode;
+  /** Opens the dialog; omit when the dialog is controlled with `open`. */
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: ReactNode;
   description?: ReactNode;
   submitLabel: string;
@@ -21,6 +24,8 @@ export interface FormDialogProps {
 /** Small dialog with a form: confirm with a password, change the password, name a passkey. */
 export function FormDialog({
   trigger,
+  open: controlledOpen,
+  onOpenChange,
   title,
   description,
   submitLabel,
@@ -28,7 +33,12 @@ export function FormDialog({
   children,
   onSubmit,
 }: FormDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = controlledOpen ?? ownOpen;
+  const setOpen = (next: boolean) => {
+    setOwnOpen(next);
+    onOpenChange?.(next);
+  };
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +64,7 @@ export function FormDialog({
         if (!next) setError(null);
       }}
     >
-      <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
+      {trigger ? <Dialog.Trigger asChild>{trigger}</Dialog.Trigger> : null}
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-bg-nav/80" />
         <Dialog.Content className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-32px)] w-[calc(100vw-32px)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-card border border-border bg-surface p-6">

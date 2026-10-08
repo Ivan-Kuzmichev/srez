@@ -68,10 +68,10 @@ export function createIpResolver(trustedProxies: string[]) {
     clientIp(headers?.get('x-forwarded-for') ?? null, trusted, hasTrusted);
 }
 
-export function createAuthHooks(config: { db: Db; trustedProxies: string[] }) {
+export function createAuthHooks(config: { db: Db; trustedProxies: string[]; rateLimit?: number }) {
   const ipOf = createIpResolver(config.trustedProxies);
   const log = () => logger('auth');
-  const limiter = new RateLimiter(20, 60_000);
+  const limiter = new RateLimiter(config.rateLimit ?? 20, 60_000);
 
   const before = createAuthMiddleware(async (ctx) => {
     if (!SIGN_IN_PATHS.has(ctx.path)) return;

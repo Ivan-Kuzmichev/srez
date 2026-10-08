@@ -4,3 +4,5 @@ export const E2E_LOCKOUT_USER = { username: 'locked', password: 'e2e locked pass
 export const E2E_TOTP_USER = { username: 'totp', password: 'e2e totp password' };
 export const E2E_PASSKEY_USER = { username: 'keys', password: 'e2e passkey password' };
 export const E2E_SESSIONS_USER = { username: 'sessions', password: 'e2e sessions password' };
+export const E2E_LEDGER_USER = { username: 'ledger', password: 'e2e ledger password' };
+export const E2E_EMPTY_USER = { username: 'fresh', password: 'e2e fresh password' };

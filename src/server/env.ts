@@ -13,6 +13,8 @@ const EnvSchema = z.object({
   TRUSTED_PROXIES: z.preprocess(emptyToUndefined, z.string().optional()),
   TINVEST_PROXY_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  /** Sign-in attempts per minute per address (docs/07-auth-security.md, section 2). Raised only in e2e. */
+  AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
 });
 
 export type Env = z.infer<typeof EnvSchema> & { DATABASE_PATH: string };
