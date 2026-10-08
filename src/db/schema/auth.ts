@@ -18,6 +18,9 @@ export const user = sqliteTable('user', {
   displayUsername: text('display_username'),
   twoFactorEnabled: integer('two_factor_enabled', { mode: 'boolean' }).default(false),
   passwordChangedAt: integer('password_changed_at', { mode: 'timestamp_ms' }),
+  twoFactorEnabledAt: integer('two_factor_enabled_at', {
+    mode: 'timestamp_ms',
+  }),
 });
 
 export const session = sqliteTable(

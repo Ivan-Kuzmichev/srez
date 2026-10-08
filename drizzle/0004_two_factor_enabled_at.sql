@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `two_factor_enabled_at` integer;

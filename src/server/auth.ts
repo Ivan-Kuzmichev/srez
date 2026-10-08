@@ -9,6 +9,7 @@ import { APP_NAME } from '@/lib/app';
 import { uuidv7 } from '@/lib/uuid';
 import { createAuthHooks, loginMethodForPath } from './auth-hooks';
 import { authSecret, env, trustedProxyList } from './env';
+import { BACKUP_CODES_COUNT, generateBackupCodes } from './two-factor';
 
 export const PASSWORD_MIN_LENGTH = 12;
 export const SESSION_TTL_REMEMBER_S = 30 * 24 * 3600;
@@ -49,6 +50,7 @@ export function createAuth(config: AuthConfig) {
     user: {
       additionalFields: {
         passwordChangedAt: { type: 'date', required: false, input: false },
+        twoFactorEnabledAt: { type: 'date', required: false, input: false },
       },
     },
     session: {
@@ -82,7 +84,11 @@ export function createAuth(config: AuthConfig) {
       twoFactor({
         issuer: APP_NAME,
         totpOptions: { digits: 6, period: 30 },
-        backupCodeOptions: { amount: 10, storeBackupCodes: 'encrypted' },
+        backupCodeOptions: {
+          amount: BACKUP_CODES_COUNT,
+          storeBackupCodes: 'encrypted',
+          customBackupCodesGenerate: generateBackupCodes,
+        },
         trustDeviceMaxAge: SESSION_TTL_REMEMBER_S,
       }),
       passkey({

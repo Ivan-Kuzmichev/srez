@@ -17,6 +17,7 @@ import {
   twoFactorFailures,
 } from '../auth-hooks';
 import { safeNext } from '../session';
+import { normalizeBackupCode } from '../two-factor';
 
 const checkbox = z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean());
 
@@ -76,7 +77,7 @@ export const verifySecondFactor = publicAction(CodeInput, async (input) => {
   const key = twoFactorChallengeKey(requestHeaders.get('cookie'));
   if (!key) redirect('/login');
 
-  const code = input.backup ? input.code.replace(/\s+/g, '') : input.code.replace(/\D/g, '');
+  const code = input.backup ? normalizeBackupCode(input.code) : input.code.replace(/\D/g, '');
   if (!input.backup && code.length !== 6)
     return { ok: false, code: 'INVALID_CODE', fieldErrors: { code: ['6'] } };
 

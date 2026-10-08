@@ -8,5 +8,8 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'tests/unit/**/*.test.ts'],
     environment: 'node',
+    // Never touch a real database file; quiet console logs.
+    env: { DATABASE_PATH: ':memory:', LOG_CONSOLE: '0' },
+    setupFiles: ['tests/setup.ts'],
   },
 });

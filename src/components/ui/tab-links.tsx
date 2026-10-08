@@ -19,23 +19,29 @@ export function TabLinks({
 }) {
   const pathname = usePathname();
   return (
-    <nav aria-label={ariaLabel} className="flex flex-wrap gap-2">
-      {items.map((item) => {
-        const current = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={current ? 'page' : undefined}
-            className={cn(
-              'flex min-h-11 items-center rounded-control border border-border px-4 text-row no-underline',
-              current ? 'bg-pressed font-medium text-text hover:text-text' : 'text-muted hover:text-text',
-            )}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    // Phone: a scrollable row of pills edge to edge; wide: wrapped rounded tabs.
+    <nav
+      aria-label={ariaLabel}
+      className="-mx-4 overflow-x-auto px-4 wide:mx-0 wide:overflow-visible wide:px-0"
+    >
+      <div className="flex w-max gap-2 wide:w-auto wide:flex-wrap">
+        {items.map((item) => {
+          const current = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={current ? 'page' : undefined}
+              className={cn(
+                'flex min-h-11 items-center rounded-pill border border-border px-3.5 text-row whitespace-nowrap no-underline wide:rounded-control wide:px-4',
+                current ? 'bg-pressed font-medium text-text hover:text-text' : 'text-muted hover:text-text',
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
