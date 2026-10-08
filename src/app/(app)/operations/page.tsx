@@ -98,14 +98,16 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
     origins: listOrigins(db(), userId),
   };
 
-  const header = (
+  const header = (withFilters: boolean) => (
     <PageHeader
       title={ru.pages.operations}
       actions={
         <>
-          <span className="wide:hidden">
-            <PhoneFiltersButton choices={choices} />
-          </span>
+          {withFilters ? (
+            <span className="wide:hidden">
+              <PhoneFiltersButton choices={choices} />
+            </span>
+          ) : null}
           <Button asChild variant="primary" className="max-wide:size-11 max-wide:px-0">
             <Link href="/operations/new" aria-label={ru.journal.add}>
               <span className="hidden wide:inline">{ru.journal.add}</span>
@@ -124,7 +126,7 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
   if (!anyOperations) {
     return (
       <>
-        {header}
+        {header(false)}
         <EmptyState
           title={ru.journal.emptyTitle}
           description={ru.journal.emptyText}
@@ -195,7 +197,7 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
 
   return (
     <>
-      {header}
+      {header(true)}
       <JournalFilters choices={choices} />
       {rows.length === 0 ? (
         <EmptyState
