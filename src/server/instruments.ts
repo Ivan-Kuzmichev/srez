@@ -147,7 +147,8 @@ function upsertMoex(db: Db, sec: Awaited<ReturnType<typeof getSecurity>>): Instr
       isin: sec.isin,
       currency: sec.currency,
       lot: String(sec.lot),
-      meta: sec.bond ? { ...sec.bond, amortization: false } : { secid: sec.secid },
+      // secid and board are what the price jobs need to ask ISS for quotes.
+      meta: { secid: sec.secid, ...(sec.board ?? {}), ...(sec.bond ? { ...sec.bond, amortization: false } : {}) },
     })
     .returning()
     .get();

@@ -1,0 +1,13 @@
+{
+"marketdata": {
+	"columns": ["SECID", "LAST", "MARKETPRICE", "LCURRENTPRICE"], 
+	"data": [
+		["SU26238RMFS4", 50.366, 50.591, 50.362]
+	]
+},
+"securities": {
+	"columns": ["SECID", "FACEVALUE", "PREVPRICE"], 
+	"data": [
+		["SU26238RMFS4", 1000, 50.668]
+	]
+}}

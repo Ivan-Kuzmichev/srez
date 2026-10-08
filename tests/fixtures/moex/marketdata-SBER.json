@@ -1,0 +1,13 @@
+{
+"marketdata": {
+	"columns": ["SECID", "LAST", "MARKETPRICE", "LCURRENTPRICE"], 
+	"data": [
+		["SBER", 279.81, 284.21, 279.85]
+	]
+},
+"securities": {
+	"columns": ["SECID", "FACEVALUE", "PREVPRICE"], 
+	"data": [
+		["SBER", 3, 283.04]
+	]
+}}

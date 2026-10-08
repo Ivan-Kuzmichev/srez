@@ -6,3 +6,4 @@ drizzle/
 dist/
 *.md
 coverage/
+tests/fixtures/

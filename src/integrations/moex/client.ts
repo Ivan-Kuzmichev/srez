@@ -67,8 +67,16 @@ export async function searchSecurities(query: string, fetchFn: Fetch = fetch): P
     }));
 }
 
+/** Where a security trades: needed for prices and history. */
+export interface MoexBoard {
+  engine: string;
+  market: string;
+  board: string;
+}
+
 export interface MoexSecurity {
   secid: string;
+  board: MoexBoard | null;
   isin: string | null;
   shortName: string;
   name: string;
@@ -123,6 +131,9 @@ export async function getSecurity(secid: string, fetchFn: Fetch = fetch): Promis
 
   return {
     secid,
+    board: board
+      ? { engine: String(board.engine), market: String(board.market), board: String(board.boardid) }
+      : null,
     isin: d.ISIN ? String(d.ISIN) : null,
     shortName: String(d.SHORTNAME ?? secid),
     name: String(d.NAME ?? d.SHORTNAME ?? secid),
@@ -140,3 +151,80 @@ export async function getSecurity(secid: string, fetchFn: Fetch = fetch): Promis
         : undefined,
   };
 }
+
+export interface MoexPriceRef extends MoexBoard {
+  secid: string;
+  kind: MoexKind;
+}
+
+/** Bond prices on the exchange are percent of face value; the ledger keeps money. */
+function toMoney(kind: MoexKind, price: unknown, face: unknown): string | null {
+  if (price === null || price === undefined || price === '') return null;
+  const p = String(price);
+  if (!/^\d+(\.\d+)?$/.test(p)) return null;
+  if (kind !== 'bond') return p;
+  const f = Number(face);
+  if (!Number.isFinite(f) || f <= 0) return null;
+  // percent × face / 100, exactly: multiply as integers, then move the point two places left.
+  return shiftLeft2(decimalTimes(p, String(face)));
+}
+
+/** Exact product of two non-negative decimal strings. */
+function decimalTimes(a: string, b: string): string {
+  const [ai = '0', af = ''] = a.split('.');
+  const [bi = '0', bf = ''] = b.split('.');
+  const product = (BigInt(ai + af) * BigInt(bi + bf)).toString();
+  const scale = af.length + bf.length;
+  const padded = product.padStart(scale + 1, '0');
+  const int = padded.slice(0, padded.length - scale);
+  const frac = padded.slice(padded.length - scale).replace(/0+$/, '');
+  return frac ? `${int}.${frac}` : int;
+}
+
+function shiftLeft2(value: string): string {
+  const [int = '0', frac = ''] = value.split('.');
+  const padded = int.padStart(3, '0');
+  const newInt = padded.slice(0, -2).replace(/^0+(?=\d)/, '');
+  const newFrac = (padded.slice(-2) + frac).replace(/0+$/, '');
+  return newFrac ? `${newInt}.${newFrac}` : newInt;
+}
+
+/** Last trade price in money (LAST, else the market price, else yesterday's). Null outside trading history. */
+export async function getLastPrice(ref: MoexPriceRef, fetchFn: Fetch = fetch): Promise<string | null> {
+  const url = `${BASE}/engines/${ref.engine}/markets/${ref.market}/boards/${ref.board}/securities/${encodeURIComponent(ref.secid)}.json?iss.meta=off&iss.only=marketdata,securities&marketdata.columns=SECID,LAST,MARKETPRICE,LCURRENTPRICE&securities.columns=SECID,FACEVALUE,PREVPRICE`;
+  const body = parse(z.object({ marketdata: Table, securities: Table }), await getJson('moex', url, fetchFn));
+  const md = rows(body.marketdata)[0];
+  const sec = rows(body.securities)[0];
+  const raw = md?.last ?? md?.lcurrentprice ?? md?.marketprice ?? sec?.prevprice;
+  return toMoney(ref.kind, raw, sec?.facevalue);
+}
+
+/** Daily closes between two dates, following ISS pages of 100 rows. */
+export async function getPriceHistory(
+  ref: MoexPriceRef,
+  from: string,
+  till: string,
+  fetchFn: Fetch = fetch,
+): Promise<{ date: string; close: string }[]> {
+  const out: { date: string; close: string }[] = [];
+  for (let start = 0, guard = 0; guard < 200; guard++) {
+    const url = `${BASE}/history/engines/${ref.engine}/markets/${ref.market}/boards/${ref.board}/securities/${encodeURIComponent(ref.secid)}.json?iss.meta=off&from=${from}&till=${till}&start=${start}&history.columns=TRADEDATE,CLOSE,LEGALCLOSEPRICE,FACEVALUE`;
+    const body = parse(
+      z.object({ history: Table, 'history.cursor': Table.optional() }),
+      await getJson('moex', url, fetchFn),
+    );
+    const page = rows(body.history);
+    for (const r of page) {
+      const close = toMoney(ref.kind, r.close ?? r.legalcloseprice, r.facevalue);
+      if (close && typeof r.tradedate === 'string') out.push({ date: r.tradedate, close });
+    }
+    const cursor = body['history.cursor'] ? rows(body['history.cursor'])[0] : undefined;
+    const total = Number(cursor?.total ?? 0);
+    const size = Number(cursor?.pagesize ?? 100);
+    start += size;
+    if (page.length === 0 || start >= total) break;
+  }
+  return out;
+}
+
+export const _test = { toMoney, decimalTimes };

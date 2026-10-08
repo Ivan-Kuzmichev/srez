@@ -37,3 +37,21 @@ export async function getJson(
     throw new IntegrationError(integration, 'BAD_RESPONSE', String(err));
   }
 }
+
+/** GET raw bytes with the same error handling, for non-JSON sources (the CBR serves windows-1251 XML). */
+export async function getBytes(
+  integration: string,
+  url: string,
+  fetchFn: Fetch,
+  timeoutMs = 8000,
+): Promise<Uint8Array> {
+  let res: Response;
+  try {
+    res = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) });
+  } catch (err) {
+    const timeout = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
+    throw new IntegrationError(integration, timeout ? 'TIMEOUT' : 'NETWORK', String(err));
+  }
+  if (!res.ok) throw new IntegrationError(integration, 'HTTP', `HTTP ${res.status}`, res.status);
+  return new Uint8Array(await res.arrayBuffer());
+}
