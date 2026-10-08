@@ -78,11 +78,13 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
   const isCashInstrument = (id: string, currency: string) => ctx.cashInstrumentId(currency) === id;
 
   for (const op of [...operations].filter((o) => !o.voided).sort(byTime)) {
-    // The security part and the cash part of an operation land under the same tag.
+    // Securities follow the tag rules; money always sits in the account's cash cell, which belongs to the
+    // account's default tag (docs/04-calculations.md, section 3). Currencies bought are money too.
     const tagId = resolveTag(op.instrumentId ?? ctx.cashInstrumentId(op.currency), op.tagId, ctx);
+    const cashTagId = ctx.accountDefaultTagId;
 
     if (!op.amount.isZero()) {
-      const cash = cell(ctx.cashInstrumentId(op.currency), tagId, true);
+      const cash = cell(ctx.cashInstrumentId(op.currency), cashTagId, true);
       cash.balance = cash.balance.plus(op.amount);
     }
 
@@ -92,7 +94,7 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
         issues.push({ operationId: op.id, code: 'MISSING_INSTRUMENT' });
         continue;
       }
-      const target = cell(op.instrumentId, tagId, true);
+      const target = cell(op.instrumentId, cashTagId, true);
       target.balance =
         op.type === 'fx_buy' ? target.balance.plus(op.quantity) : target.balance.minus(op.quantity);
       continue;

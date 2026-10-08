@@ -205,15 +205,16 @@ describe('tags', () => {
     expect(resolveTag('lkoh', null, ctx())).toBeNull();
   });
 
-  it('split one instrument into cells by tag, and the cash follows the operation tag', () => {
+  it('split one instrument into cells by tag; money stays in the cash cell of the default tag', () => {
     const ops = [
       op('buy', { qty: 10, price: 100, tagId: 'a' }),
       op('buy', { qty: 5, price: 100, tagId: 'b' }),
     ];
-    const l = buildLedger(ops, ctx());
+    const l = buildLedger(ops, ctx({ accountDefaultTagId: 'main' }));
     expect(position(l, 'sber', 'a').quantity.toFixed()).toBe('10');
     expect(position(l, 'sber', 'b').quantity.toFixed()).toBe('5');
-    expect(position(l, RUB, 'a').quantity.toFixed()).toBe('-1000');
+    expect(position(l, RUB, 'main').quantity.toFixed()).toBe('-1500');
+    expect(l.positions.filter((p) => p.isCash)).toHaveLength(1);
   });
 });
 

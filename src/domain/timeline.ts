@@ -50,13 +50,14 @@ export function dailyQuantities(
       const op = ordered[i]!;
       const cashId = ctx.cashInstrumentId(op.currency);
       const tagId = resolveTag(op.instrumentId ?? cashId, op.tagId, ctx);
+      const cashTagId = ctx.accountDefaultTagId; // as in buildLedger
       if (!op.amount.isZero()) {
-        const cash = cell(cashId, tagId, true);
+        const cash = cell(cashId, cashTagId, true);
         cash.quantity = cash.quantity.plus(op.amount);
       }
       if (!op.instrumentId) continue;
       if (op.type === 'fx_buy' || op.type === 'fx_sell') {
-        const target = cell(op.instrumentId, tagId, true);
+        const target = cell(op.instrumentId, cashTagId, true);
         target.quantity =
           op.type === 'fx_buy' ? target.quantity.plus(op.quantity) : target.quantity.minus(op.quantity);
         continue;
