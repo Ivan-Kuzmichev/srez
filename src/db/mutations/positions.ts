@@ -123,6 +123,7 @@ export function recalcAccount(db: Executor, accountId: string, now = new Date())
             avgPrice: toDbDecimal(p.avgPrice),
             realizedPnl: toDbDecimal(p.realizedPnl),
             payoutsTotal: toDbDecimal(p.payoutsTotal),
+            costCurrency: p.costCurrency,
             firstBuyAt: p.firstBuyAt,
             updatedAt: now,
           })),

@@ -15,6 +15,7 @@ export function openLot(args: {
   accruedInterest: Decimal;
   fee: Decimal;
   deductFees: boolean;
+  currency: string;
 }): Lot {
   const total = args.quantity
     .times(args.price)
@@ -29,6 +30,7 @@ export function openLot(args: {
     remaining: args.quantity,
     unitCost: args.quantity.isZero() ? ZERO : total.div(args.quantity),
     unitPrice: args.price,
+    currency: args.currency,
   };
 }
 

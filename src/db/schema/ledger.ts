@@ -213,6 +213,8 @@ export const positions = sqliteTable(
     avgPrice: decimal('avg_price').notNull(),
     realizedPnl: decimal('realized_pnl').notNull(),
     payoutsTotal: decimal('payouts_total').notNull(),
+    /** Currency of cost_basis and avg_price: the trades' currency (BTC bought for rubles → RUB). */
+    costCurrency: text('cost_currency'),
     firstBuyAt: timestamp('first_buy_at'),
     updatedAt: timestamp('updated_at').notNull(),
   },

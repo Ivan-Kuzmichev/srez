@@ -34,6 +34,7 @@ describe('lots at the edges', () => {
       accruedInterest: D(0),
       fee: D(1),
       deductFees: false,
+      currency: 'RUB',
     });
 
   it('a zero-quantity lot has zero unit cost', () => {

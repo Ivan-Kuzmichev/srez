@@ -63,6 +63,8 @@ export interface Lot {
   unitCost: Decimal;
   /** Clean purchase price per unit, for the displayed average price. */
   unitPrice: Decimal;
+  /** Currency of unitCost and unitPrice: the currency of the opening trade. */
+  currency: string;
 }
 
 export interface LotClosure {
@@ -85,13 +87,15 @@ export interface Position {
   realizedPnl: Decimal;
   payoutsTotal: Decimal;
   firstBuyAt: Date | null;
+  /** Currency of costBasis and avgPrice (the trades'); for cash, the cash currency. */
+  costCurrency: string | null;
   /** Cash cells keep a running balance instead of lots. */
   isCash: boolean;
 }
 
 export interface LedgerIssue {
   operationId: string;
-  code: 'OVERSOLD' | 'NO_POSITION' | 'MISSING_INSTRUMENT' | 'ZERO_PRICE';
+  code: 'OVERSOLD' | 'NO_POSITION' | 'MISSING_INSTRUMENT' | 'ZERO_PRICE' | 'MIXED_CURRENCY';
 }
 
 export interface Ledger {

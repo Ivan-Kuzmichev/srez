@@ -218,6 +218,20 @@ describe('tags', () => {
   });
 });
 
+describe('currencies of cost', () => {
+  it('keep the currency of the trades and flag a mix', () => {
+    const l = buildLedger(
+      [
+        op('buy', { instrumentId: 'btc', qty: '0.01', price: 6000000 }),
+        op('buy', { id: 'usd-buy', instrumentId: 'btc', qty: '0.01', price: 80000, currency: 'USD', amount: -800 }),
+      ],
+      ctx(),
+    );
+    expect(position(l, 'btc').costCurrency).toBe('RUB');
+    expect(l.issues).toEqual([{ operationId: 'usd-buy', code: 'MIXED_CURRENCY' }]);
+  });
+});
+
 describe('corporate actions', () => {
   it('a split scales open lots and keeps the cost', () => {
     const ops = [op('buy', { qty: 10, price: 100 }), op('split', { qty: 90 })];

@@ -118,8 +118,10 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
           accruedInterest: op.accruedInterest,
           fee: op.fee,
           deductFees: ctx.deductFees,
+          currency: op.currency,
         }),
       );
+      if (c.lots.some((l) => l.currency !== op.currency)) issues.push({ operationId: op.id, code: 'MIXED_CURRENCY' });
       if (op.type === 'buy' && !c.firstBuyAt) c.firstBuyAt = op.executedAt;
     } else if (SELL.has(op.type)) {
       const proceeds = op.quantity.times(op.price).minus(ctx.deductFees ? op.fee : ZERO);
@@ -164,6 +166,7 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
         realizedPnl: ZERO,
         payoutsTotal: c.payoutsTotal,
         firstBuyAt: null,
+        costCurrency: null,
         isCash: true,
       });
       continue;
@@ -182,6 +185,7 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
       realizedPnl: c.realizedPnl,
       payoutsTotal: c.payoutsTotal,
       firstBuyAt: c.firstBuyAt,
+      costCurrency: c.lots[0]?.currency ?? null,
       isCash: false,
     });
   }
