@@ -1,7 +1,7 @@
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Executor } from '@/db/client';
-import { settings } from '@/db/schema';
+import { settings, user } from '@/db/schema';
 import { DEFAULT_TIME_ZONE } from '@/lib/app';
 
 /**
@@ -60,4 +60,10 @@ export function updateSettings(db: Executor, userId: string, patch: DeepPartial<
     .onConflictDoUpdate({ target: settings.userId, set: { data: merged, updatedAt: now } })
     .run();
   return merged;
+}
+
+/** Settings of the owner: the app has one user; market jobs are not per-user. */
+export function ownerSettings(db: Executor): Settings {
+  const owner = db.select({ id: user.id }).from(user).orderBy(asc(user.createdAt)).limit(1).get();
+  return owner ? getSettings(db, owner.id) : SettingsSchema.parse({});
 }

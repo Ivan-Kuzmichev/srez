@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type { Executor } from '@/db/client';
 import { recalcAccount } from '@/db/mutations/positions';
+import { deleteAccountSnapshots } from '@/db/mutations/snapshots';
+import { enqueueSnapshots } from './market';
 import { enqueue } from './queue';
 import { defineJob } from './runner';
 
@@ -17,6 +19,9 @@ export const recalcPositions = defineJob({
   handler({ db, payload, log }) {
     const started = Date.now();
     const { issues } = recalcAccount(db, payload.accountId);
+    // Past values depend on the journal: this account's snapshots are rebuilt from scratch.
+    deleteAccountSnapshots(db, payload.accountId);
+    enqueueSnapshots(db);
     if (issues.length > 0)
       log.warn({ accountId: payload.accountId, issues }, 'Positions recalculated with issues');
     log.debug({ accountId: payload.accountId, durationMs: Date.now() - started }, 'Positions recalculated');

@@ -1,6 +1,7 @@
 import { hostname } from 'node:os';
 import { db } from '@/db/client';
-import { jobDefinitions, schedules } from '@/jobs';
+import { jobDefinitions, schedules, startupJobs } from '@/jobs';
+import { enqueue } from '@/jobs/queue';
 import { startWorker } from '@/jobs/runner';
 import { flushLogs, logger } from '@/server/logger';
 
@@ -13,6 +14,7 @@ const worker = startWorker({
   schedules,
   log,
 });
+for (const name of startupJobs) enqueue(db(), name, null, { singletonKey: name });
 log.info({ jobs: jobDefinitions.map((d) => d.name) }, 'Worker started');
 
 let shuttingDown = false;

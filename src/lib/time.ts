@@ -41,3 +41,22 @@ export function utcToZonedLocal(date: Date, timeZone: string): string {
   const shifted = new Date(date.getTime() + offsetMinutes(date, timeZone) * 60_000);
   return shifted.toISOString().slice(0, 16);
 }
+
+/** Calendar date «YYYY-MM-DD» of an instant in `timeZone`. */
+export function localDate(date: Date, timeZone: string): string {
+  return utcToZonedLocal(date, timeZone).slice(0, 10);
+}
+
+/** «YYYY-MM-DD» plus `days` (may be negative). */
+export function addDays(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Every date from `from` to `to` inclusive. */
+export function eachDay(from: string, to: string): string[] {
+  const out: string[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) out.push(d);
+  return out;
+}
