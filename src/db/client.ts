@@ -19,6 +19,10 @@ export function openDb(path: string): Db {
   sqlite.pragma('busy_timeout = 5000');
   sqlite.pragma('synchronous = NORMAL');
   sqlite.pragma('foreign_keys = ON');
+  // SQLite's lower() is ASCII-only; search over Cyrillic names needs a Unicode one.
+  sqlite.function('ulower', { deterministic: true }, (value: unknown) =>
+    value == null ? null : String(value).toLocaleLowerCase('ru'),
+  );
   return drizzle({ client: sqlite, schema });
 }
 

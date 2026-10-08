@@ -1,0 +1,7 @@
+{
+"securities": {
+	"columns": ["SECID", "LOTSIZE", "FACEVALUE", "FACEUNIT"], 
+	"data": [
+		["SBER", 1, 3, "SUR"]
+	]
+}}
