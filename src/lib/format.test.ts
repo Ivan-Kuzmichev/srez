@@ -10,6 +10,7 @@ import {
   formatMoney,
   formatPercent,
   formatPlain,
+  formatSigned,
   formatShareOfTarget,
   formatPp,
   formatQuantity,
@@ -70,6 +71,8 @@ describe('percent and points', () => {
 describe('plain numbers and targets', () => {
   it('formats a bare number and fact against target', () => {
     expect(formatPlain('100', 0)).toBe('100');
+    expect(formatSigned('52920.4')).toBe(nb('+52 920'));
+    expect(formatSigned('-16400')).toBe(nb('−16 400'));
     expect(formatPlain('1234.56', 1)).toBe(nb('1 234,6'));
     expect(formatShareOfTarget('38.37', '40')).toBe('38,4 / 40\u00a0%');
     expect(formatShareOfTarget('8.3', null)).toBe('8,3 / 0\u00a0%');

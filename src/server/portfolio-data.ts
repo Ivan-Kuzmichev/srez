@@ -63,6 +63,8 @@ export interface ValuedCell {
   assetClass: AssetClass;
   ticker: string | null;
   name: string;
+  /** Instrument currency: the currency a manual price is given in. */
+  currency: string;
   isCash: boolean;
   quantity: Decimal;
   /** Current price in rubles; null when valued without a price. */
@@ -170,6 +172,7 @@ export function loadValuedCells(db: Db, userId: string, fx: FxSeries): ValuedCel
       assetClass: r.assetClass as AssetClass,
       ticker: r.ticker,
       name: r.name,
+      currency: r.currency,
     };
   }
 }
@@ -333,4 +336,64 @@ export function tagNames(db: Db, userId: string): Map<string, string> {
       .all()
       .map((t) => [t.id, t.name]),
   );
+}
+
+/**
+ * Profit split for the portfolio page (docs/04-calculations.md, section 3): price result (unrealized
+ * plus realized) and payouts, in rubles at today's rate. Closed positions count too.
+ */
+export function profitSplit(db: Db, userId: string, scope: Scope, cells: ValuedCell[], fx: FxSeries) {
+  let course = ZERO;
+  for (const c of cells)
+    if (!c.isCash && scope(c.accountId, c.tagId) && c.costRub)
+      course = course.plus(c.valueRub.minus(c.costRub));
+  let payouts = ZERO;
+  for (const p of db
+    .select({
+      accountId: positions.accountId,
+      tagId: positions.tagId,
+      realizedPnl: positions.realizedPnl,
+      payoutsTotal: positions.payoutsTotal,
+      costCurrency: positions.costCurrency,
+      currency: instruments.currency,
+    })
+    .from(positions)
+    .innerJoin(instruments, eq(instruments.id, positions.instrumentId))
+    .where(eq(positions.userId, userId))
+    .all()) {
+    if (!scope(p.accountId, p.tagId)) continue;
+    const rate = rubPer(fx, p.costCurrency ?? p.currency) ?? ONE;
+    course = course.plus(new Decimal(p.realizedPnl).times(rate));
+    payouts = payouts.plus(new Decimal(p.payoutsTotal).times(rate));
+  }
+  return { course, payouts };
+}
+
+export interface SeriesPoint {
+  date: string;
+  value: Decimal;
+  invested: Decimal;
+}
+
+/** Daily value and cumulative invested of an area; today is the live value. */
+export function areaSeries(
+  db: Db,
+  userId: string,
+  scope: Scope,
+  flows: ExternalFlow[],
+  liveValue: Decimal,
+  timeZone: string,
+  now = new Date(),
+): SeriesPoint[] {
+  const today = localDate(now, timeZone);
+  const points = valueSeries(db, userId, scope, null).filter((p) => p.date < today);
+  points.push({ date: today, value: liveValue });
+  const sorted = [...flows].sort((a, b) => a.at.getTime() - b.at.getTime());
+  let i = 0;
+  let invested = ZERO;
+  return points.map((p) => {
+    for (; i < sorted.length && localDate(sorted[i]!.at, timeZone) <= p.date; i++)
+      invested = invested.plus(sorted[i]!.amountRub);
+    return { date: p.date, value: p.value, invested };
+  });
 }

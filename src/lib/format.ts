@@ -34,6 +34,11 @@ export function formatPlain(value: DecimalValue, decimals: number): string {
   return formatNumber(value, decimals);
 }
 
+/** Signed bare number: «+52 920», «−16 400», for result columns without a currency. */
+export function formatSigned(value: DecimalValue, decimals = 0): string {
+  return formatNumber(value, decimals, 'always');
+}
+
 /** Fact against target: «38,4 / 40 %». */
 export function formatShareOfTarget(share: DecimalValue, target: DecimalValue | null): string {
   return `${formatNumber(share, 1)} / ${target === null ? '0' : formatNumber(target, 0)}${NBSP}%`;

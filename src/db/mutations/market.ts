@@ -167,3 +167,32 @@ export function fxRange(db: Executor, code: string): { from: string | null; to: 
     .get();
   return { from: r?.from ?? null, to: r?.to ?? null };
 }
+
+/**
+ * «Указать стоимость»: the owner's own valuation of an instrument on a date (custom assets valued by
+ * hand, or anything without a quote). Becomes the latest price if it is the newest.
+ */
+export function setManualPrice(
+  db: Executor,
+  instrumentId: string,
+  date: string,
+  close: string,
+  currency: string,
+  now = new Date(),
+): void {
+  db.transaction((tx) => {
+    tx.insert(prices)
+      .values({ instrumentId, date, close, currency, source: 'manual' })
+      .onConflictDoUpdate({
+        target: [prices.instrumentId, prices.date],
+        set: { close, currency, source: 'manual' },
+      })
+      .run();
+    const latest = tx
+      .select({ date: max(prices.date) })
+      .from(prices)
+      .where(eq(prices.instrumentId, instrumentId))
+      .get();
+    if (latest?.date === date) setLastPrice(tx, instrumentId, close, currency, 'manual', now);
+  });
+}
