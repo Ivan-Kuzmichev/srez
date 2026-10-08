@@ -1,0 +1,2272 @@
+{
+ "operations": [
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000001",
+   "parentOperationId": "",
+   "name": "Пополнение брокерского счёта",
+   "date": "2020-01-20T09:00:00Z",
+   "type": "OPERATION_TYPE_INPUT",
+   "description": "Пополнение брокерского счёта",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "400000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000002",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2020-01-21T07:10:00Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-15324",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "255",
+    "nano": 400000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "60",
+   "quantityRest": "0",
+   "quantityDone": "60",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000003",
+   "parentOperationId": "80000000002",
+   "name": "Удержание комиссии за операцию",
+   "date": "2020-01-21T07:10:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-12",
+    "nano": -770000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000004",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2020-02-03T08:00:00Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-20290",
+    "nano": -200000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "1012",
+    "nano": 500000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "40",
+    "nano": 200000000
+   },
+   "quantity": "20",
+   "quantityRest": "0",
+   "quantityDone": "20",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000005",
+   "parentOperationId": "80000000004",
+   "name": "Удержание комиссии за операцию",
+   "date": "2020-02-03T08:00:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-3",
+    "nano": -40000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000006",
+   "parentOperationId": "",
+   "name": "Выплата купонов",
+   "date": "2020-07-15T06:00:00Z",
+   "type": "OPERATION_TYPE_COUPON",
+   "description": "Выплата купонов",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "310",
+    "nano": 400000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000007",
+   "parentOperationId": "",
+   "name": "Удержание налога по купонам",
+   "date": "2020-07-15T06:00:00Z",
+   "type": "OPERATION_TYPE_BOND_TAX",
+   "description": "Удержание налога по купонам",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-40",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000008",
+   "parentOperationId": "",
+   "name": "Комиссия за управление по стратегии автоследования",
+   "date": "2021-03-02T10:00:00Z",
+   "type": "OPERATION_TYPE_TRACK_MFEE",
+   "description": "Комиссия за управление по стратегии автоследования",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "-120",
+    "nano": -500000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000009",
+   "parentOperationId": "",
+   "name": "Сбер Банк",
+   "date": "2023-07-05T20:59:00Z",
+   "type": "OPERATION_TYPE_TRANS_IIS_BS",
+   "description": "Перевод 60 акций Сбер Банк",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-15600",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "260",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "60",
+   "quantityRest": "0",
+   "quantityDone": "60",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000010",
+   "parentOperationId": "",
+   "name": "ОФЗ 29014",
+   "date": "2023-07-05T20:59:00Z",
+   "type": "OPERATION_TYPE_TRANS_IIS_BS",
+   "description": "Перевод 20 облигаций ОФЗ 29014",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-20250",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "1012",
+    "nano": 500000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "20",
+   "quantityRest": "0",
+   "quantityDone": "20",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000003",
+   "id": "80000000011",
+   "parentOperationId": "",
+   "name": "",
+   "date": "2023-07-05T20:59:00Z",
+   "type": "OPERATION_TYPE_TRANS_IIS_BS",
+   "description": "Перевод денежных средств",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "-364519",
+    "nano": -890000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000012",
+   "parentOperationId": "",
+   "name": "Сбер Банк",
+   "date": "2023-07-05T20:59:00Z",
+   "type": "OPERATION_TYPE_TRANS_IIS_BS",
+   "description": "Перевод 60 акций Сбер Банк",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "15600",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "260",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "60",
+   "quantityRest": "0",
+   "quantityDone": "60",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000013",
+   "parentOperationId": "",
+   "name": "ОФЗ 29014",
+   "date": "2023-07-05T20:59:00Z",
+   "type": "OPERATION_TYPE_TRANS_IIS_BS",
+   "description": "Перевод 20 облигаций ОФЗ 29014",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "20250",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "1012",
+    "nano": 500000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "20",
+   "quantityRest": "0",
+   "quantityDone": "20",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000014",
+   "parentOperationId": "",
+   "name": "",
+   "date": "2023-07-05T20:59:00Z",
+   "type": "OPERATION_TYPE_TRANS_IIS_BS",
+   "description": "Перевод денежных средств",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "364519",
+    "nano": 890000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000015",
+   "parentOperationId": "",
+   "name": "Пополнение брокерского счёта",
+   "date": "2023-07-10T09:12:00Z",
+   "type": "OPERATION_TYPE_INPUT",
+   "description": "Пополнение брокерского счёта",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "300000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000016",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2023-07-11T07:30:11Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-10000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "250",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "40",
+   "quantityRest": "0",
+   "quantityDone": "40",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000017",
+   "parentOperationId": "80000000016",
+   "name": "Удержание комиссии за операцию",
+   "date": "2023-07-11T07:30:11Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-7",
+    "nano": -500000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000018",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2023-08-01T08:05:42Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
+   "figi": "BBG00Y3XYV94",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU26238RMFS4",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-6140",
+    "nano": -900000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "605",
+    "nano": 500000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "85",
+    "nano": 900000000
+   },
+   "quantity": "10",
+   "quantityRest": "0",
+   "quantityDone": "10",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000019",
+   "parentOperationId": "80000000018",
+   "name": "Удержание комиссии за операцию",
+   "date": "2023-08-01T08:05:42Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
+   "figi": "BBG00Y3XYV94",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU26238RMFS4",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-1",
+    "nano": -820000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000020",
+   "parentOperationId": "",
+   "name": "Покупка валюты",
+   "date": "2023-08-02T10:00:00Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка валюты",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "4f8a1b2c-0000-4000-8000-0000000000aa",
+   "figi": "BBG0013HGFT4",
+   "instrumentType": "currency",
+   "instrumentKind": "INSTRUMENT_TYPE_CURRENCY",
+   "positionUid": "",
+   "ticker": "USD000UTSTOM",
+   "classCode": "CETS",
+   "payment": {
+    "currency": "rub",
+    "units": "-8215",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "82",
+    "nano": 150000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "100",
+   "quantityRest": "0",
+   "quantityDone": "100",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000021",
+   "parentOperationId": "80000000020",
+   "name": "Удержание комиссии за операцию",
+   "date": "2023-08-02T10:00:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "4f8a1b2c-0000-4000-8000-0000000000aa",
+   "figi": "BBG0013HGFT4",
+   "instrumentType": "currency",
+   "instrumentKind": "INSTRUMENT_TYPE_CURRENCY",
+   "positionUid": "",
+   "ticker": "USD000UTSTOM",
+   "classCode": "CETS",
+   "payment": {
+    "currency": "rub",
+    "units": "-24",
+    "nano": -650000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000022",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2023-08-03T11:00:00Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
+   "figi": "BBG004731032",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "LKOH",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-5400",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "5400",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "2",
+   "quantityRest": "1",
+   "quantityDone": "1",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000023",
+   "parentOperationId": "80000000022",
+   "name": "Удержание комиссии за операцию",
+   "date": "2023-08-03T11:00:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
+   "figi": "BBG004731032",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "LKOH",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-2",
+    "nano": -700000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000024",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2023-08-04T11:00:00Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_CANCELED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-3000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "300",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "10",
+   "quantityRest": "0",
+   "quantityDone": "10",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000025",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг с карты",
+   "date": "2023-08-07T09:00:00Z",
+   "type": "OPERATION_TYPE_BUY_CARD",
+   "description": "Покупка ценных бумаг с карты",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+   "figi": "TCS60A101X76",
+   "instrumentType": "etf",
+   "instrumentKind": "INSTRUMENT_TYPE_ETF",
+   "positionUid": "",
+   "ticker": "TMOS",
+   "classCode": "TQTF",
+   "payment": {
+    "currency": "rub",
+    "units": "-3050",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "6",
+    "nano": 100000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "500",
+   "quantityRest": "0",
+   "quantityDone": "500",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000026",
+   "parentOperationId": "80000000025",
+   "name": "Удержание комиссии за операцию",
+   "date": "2023-08-07T09:00:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+   "figi": "TCS60A101X76",
+   "instrumentType": "etf",
+   "instrumentKind": "INSTRUMENT_TYPE_ETF",
+   "positionUid": "",
+   "ticker": "TMOS",
+   "classCode": "TQTF",
+   "payment": {
+    "currency": "rub",
+    "units": "0",
+    "nano": -920000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000027",
+   "parentOperationId": "",
+   "name": "Выплата купонов",
+   "date": "2024-01-17T06:00:00Z",
+   "type": "OPERATION_TYPE_COUPON",
+   "description": "Выплата купонов",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
+   "figi": "BBG00Y3XYV94",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU26238RMFS4",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "356",
+    "nano": 500000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000028",
+   "parentOperationId": "",
+   "name": "Удержание налога по купонам",
+   "date": "2024-01-17T06:00:00Z",
+   "type": "OPERATION_TYPE_BOND_TAX",
+   "description": "Удержание налога по купонам",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
+   "figi": "BBG00Y3XYV94",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU26238RMFS4",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "-46",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000029",
+   "parentOperationId": "",
+   "name": "Выплата дивидендов",
+   "date": "2024-07-26T06:00:00Z",
+   "type": "OPERATION_TYPE_DIVIDEND",
+   "description": "Выплата дивидендов",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "3315",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000030",
+   "parentOperationId": "",
+   "name": "Удержание налога по дивидендам",
+   "date": "2024-07-26T06:00:00Z",
+   "type": "OPERATION_TYPE_DIVIDEND_TAX",
+   "description": "Удержание налога по дивидендам",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-431",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000031",
+   "parentOperationId": "",
+   "name": "Выплата дивидендов",
+   "date": "2024-10-03T06:00:00Z",
+   "type": "OPERATION_TYPE_DIV_EXT",
+   "description": "Выплата дивидендов по акциям Лукойл на карту",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
+   "figi": "BBG004731032",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "LKOH",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "1200",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000032",
+   "parentOperationId": "",
+   "name": "Продажа ценных бумаг",
+   "date": "2025-03-05T12:40:00Z",
+   "type": "OPERATION_TYPE_SELL",
+   "description": "Продажа ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "5800",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "290",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "20",
+   "quantityRest": "0",
+   "quantityDone": "20",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000033",
+   "parentOperationId": "80000000032",
+   "name": "Удержание комиссии за операцию",
+   "date": "2025-03-05T12:40:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "payment": {
+    "currency": "rub",
+    "units": "-1",
+    "nano": -740000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000034",
+   "parentOperationId": "",
+   "name": "Комиссия за обслуживание счёта",
+   "date": "2025-04-01T00:00:00Z",
+   "type": "OPERATION_TYPE_SERVICE_FEE",
+   "description": "Комиссия за обслуживание счёта",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "-99",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000035",
+   "parentOperationId": "",
+   "name": "",
+   "date": "2025-12-31T00:00:00Z",
+   "type": "OPERATION_TYPE_TAX",
+   "description": "Удержание налога",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "-1820",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000036",
+   "parentOperationId": "",
+   "name": "",
+   "date": "2026-01-20T00:00:00Z",
+   "type": "OPERATION_TYPE_TAX_CORRECTION",
+   "description": "Корректировка налога по ставке 13%",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "240",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000037",
+   "parentOperationId": "",
+   "name": "ОФЗ 29014",
+   "date": "2026-03-25T06:00:00Z",
+   "type": "OPERATION_TYPE_BOND_REPAYMENT_FULL",
+   "description": "Погашение ОФЗ 29014",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "payment": {
+    "currency": "rub",
+    "units": "20000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000038",
+   "parentOperationId": "",
+   "name": "Вывод денежных средств",
+   "date": "2026-05-20T09:00:00Z",
+   "type": "OPERATION_TYPE_OUTPUT",
+   "description": "Вывод денежных средств",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "-10000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000039",
+   "parentOperationId": "",
+   "name": "Новый вид операции",
+   "date": "2026-06-01T09:00:00Z",
+   "type": "OPERATION_TYPE_SOMETHING_NEW",
+   "description": "Тип, которого нет в таблице соответствия",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "-5",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000002",
+   "id": "80000000040",
+   "parentOperationId": "",
+   "name": "Пополнение ИИС",
+   "date": "2025-07-05T09:00:00Z",
+   "type": "OPERATION_TYPE_INPUT",
+   "description": "Пополнение ИИС",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "100000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000002",
+   "id": "80000000041",
+   "parentOperationId": "",
+   "name": "Покупка ценных бумаг",
+   "date": "2025-07-06T07:15:00Z",
+   "type": "OPERATION_TYPE_BUY",
+   "description": "Покупка ценных бумаг",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+   "figi": "TCS60A101X76",
+   "instrumentType": "etf",
+   "instrumentKind": "INSTRUMENT_TYPE_ETF",
+   "positionUid": "",
+   "ticker": "TMOS",
+   "classCode": "TQTF",
+   "payment": {
+    "currency": "rub",
+    "units": "-69000",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "6",
+    "nano": 900000000
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "10000",
+   "quantityRest": "0",
+   "quantityDone": "10000",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000002",
+   "id": "80000000042",
+   "parentOperationId": "80000000041",
+   "name": "Удержание комиссии за операцию",
+   "date": "2025-07-06T07:15:00Z",
+   "type": "OPERATION_TYPE_BROKER_FEE",
+   "description": "Удержание комиссии за операцию",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+   "figi": "TCS60A101X76",
+   "instrumentType": "etf",
+   "instrumentKind": "INSTRUMENT_TYPE_ETF",
+   "positionUid": "",
+   "ticker": "TMOS",
+   "classCode": "TQTF",
+   "payment": {
+    "currency": "rub",
+    "units": "-20",
+    "nano": -700000000
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  }
+ ]
+}

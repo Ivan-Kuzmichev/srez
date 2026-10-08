@@ -1,0 +1,108 @@
+{
+ "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01": [
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2024-01-17T00:00:00Z",
+   "couponNumber": "1",
+   "fixDate": "2024-01-17T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2024-07-17T00:00:00Z",
+   "couponNumber": "2",
+   "fixDate": "2024-07-17T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2025-01-15T00:00:00Z",
+   "couponNumber": "3",
+   "fixDate": "2025-01-15T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2025-07-16T00:00:00Z",
+   "couponNumber": "4",
+   "fixDate": "2025-07-16T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2026-01-14T00:00:00Z",
+   "couponNumber": "5",
+   "fixDate": "2026-01-14T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2026-07-15T00:00:00Z",
+   "couponNumber": "6",
+   "fixDate": "2026-07-15T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2027-01-13T00:00:00Z",
+   "couponNumber": "7",
+   "fixDate": "2027-01-13T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  },
+  {
+   "figi": "BBG00Y3XYV94",
+   "couponDate": "2027-07-14T00:00:00Z",
+   "couponNumber": "8",
+   "fixDate": "2027-07-14T00:00:00Z",
+   "payOneBond": {
+    "currency": "rub",
+    "units": "35",
+    "nano": 650000000
+   },
+   "couponType": "COUPON_TYPE_CONSTANT",
+   "couponPeriod": 182
+  }
+ ]
+}

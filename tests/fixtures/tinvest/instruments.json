@@ -1,0 +1,124 @@
+{
+ "instruments": [
+  {
+   "uid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+   "figi": "BBG004730N88",
+   "ticker": "SBER",
+   "classCode": "TQBR",
+   "isin": "RU0009029540",
+   "lot": 10,
+   "currency": "rub",
+   "name": "Сбер Банк",
+   "exchange": "MOEX",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "countryOfRisk": "RU"
+  },
+  {
+   "uid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
+   "figi": "BBG004731032",
+   "ticker": "LKOH",
+   "classCode": "TQBR",
+   "isin": "RU0009024277",
+   "lot": 1,
+   "currency": "rub",
+   "name": "Лукойл",
+   "exchange": "MOEX",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "countryOfRisk": "RU"
+  },
+  {
+   "uid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
+   "figi": "BBG00Y3XYV94",
+   "ticker": "SU26238RMFS4",
+   "classCode": "TQOB",
+   "isin": "RU000A1038V6",
+   "lot": 1,
+   "currency": "rub",
+   "name": "ОФЗ 26238",
+   "exchange": "MOEX",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "countryOfRisk": "RU",
+   "nominal": {
+    "currency": "rub",
+    "units": "1000",
+    "nano": 0
+   },
+   "initialNominal": {
+    "currency": "rub",
+    "units": "1000",
+    "nano": 0
+   },
+   "maturityDate": "2041-05-15T00:00:00Z",
+   "couponQuantityPerYear": 2,
+   "floatingCouponFlag": false,
+   "amortizationFlag": false,
+   "perpetualFlag": false
+  },
+  {
+   "uid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
+   "figi": "BBG00R0Q6Y51",
+   "ticker": "SU29014RMFS6",
+   "classCode": "TQOB",
+   "isin": "RU000A101N52",
+   "lot": 1,
+   "currency": "rub",
+   "name": "ОФЗ 29014",
+   "exchange": "MOEX",
+   "instrumentType": "bond",
+   "instrumentKind": "INSTRUMENT_TYPE_BOND",
+   "positionUid": "",
+   "countryOfRisk": "RU",
+   "nominal": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "initialNominal": {
+    "currency": "rub",
+    "units": "1000",
+    "nano": 0
+   },
+   "maturityDate": "2026-03-25T00:00:00Z",
+   "couponQuantityPerYear": 2,
+   "floatingCouponFlag": false,
+   "amortizationFlag": false,
+   "perpetualFlag": false
+  },
+  {
+   "uid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+   "figi": "TCS60A101X76",
+   "ticker": "TMOS",
+   "classCode": "TQTF",
+   "isin": "RU000A101X76",
+   "lot": 1,
+   "currency": "rub",
+   "name": "Т-Капитал Индекс МосБиржи",
+   "exchange": "MOEX",
+   "instrumentType": "etf",
+   "instrumentKind": "INSTRUMENT_TYPE_ETF",
+   "positionUid": "",
+   "countryOfRisk": "RU"
+  },
+  {
+   "uid": "a22a1263-8e1b-4546-a1aa-416463f104d3",
+   "figi": "BBG0013HGFT4",
+   "ticker": "USD000UTSTOM",
+   "classCode": "CETS",
+   "isin": "",
+   "lot": 1000,
+   "currency": "rub",
+   "name": "Доллар США",
+   "exchange": "MOEX",
+   "instrumentType": "currency",
+   "instrumentKind": "INSTRUMENT_TYPE_CURRENCY",
+   "positionUid": "",
+   "countryOfRisk": "RU"
+  }
+ ]
+}

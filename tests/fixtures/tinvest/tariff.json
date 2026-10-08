@@ -1,0 +1,36 @@
+{
+ "unaryLimits": [
+  {
+   "limitPerMinute": 50,
+   "methods": [
+    "tinkoff.public.invest.api.contract.v1.UsersService/GetAccounts",
+    "tinkoff.public.invest.api.contract.v1.UsersService/GetUserTariff"
+   ]
+  },
+  {
+   "limitPerMinute": 200,
+   "methods": [
+    "tinkoff.public.invest.api.contract.v1.OperationsService/GetOperationsByCursor",
+    "tinkoff.public.invest.api.contract.v1.OperationsService/GetPortfolio"
+   ]
+  },
+  {
+   "limitPerMinute": 200,
+   "methods": [
+    "tinkoff.public.invest.api.contract.v1.InstrumentsService/GetInstrumentBy",
+    "tinkoff.public.invest.api.contract.v1.InstrumentsService/BondBy",
+    "tinkoff.public.invest.api.contract.v1.InstrumentsService/GetBondCoupons",
+    "tinkoff.public.invest.api.contract.v1.InstrumentsService/GetDividends",
+    "tinkoff.public.invest.api.contract.v1.InstrumentsService/FindInstrument"
+   ]
+  },
+  {
+   "limitPerMinute": 600,
+   "methods": [
+    "tinkoff.public.invest.api.contract.v1.MarketDataService/GetLastPrices",
+    "tinkoff.public.invest.api.contract.v1.MarketDataService/GetCandles"
+   ]
+  }
+ ],
+ "streamLimits": []
+}

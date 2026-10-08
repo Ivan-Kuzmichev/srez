@@ -17,47 +17,66 @@
 - Заголовок `Authorization: Bearer <токен>`.
 - Токен пользователь выпускает сам, с доступом только для чтения. Сервис не вызывает ни одного метода, меняющего что-либо у брокера.
 - Лимиты динамические, зависят от сервиса. При 429 ждать и повторять. Текущие лимиты отдаёт метод тарифа пользователя.
-- Прокси: если задан `TINVEST_PROXY_URL`, все запросы этого клиента идут через него. Остальные интеграции прокси не используют.
+- Сертификат сервера выпущен Russian Trusted Root CA (Минцифры), которого нет в списке Node. Клиент доверяет этому корневому сертификату сам и только в своих запросах (`src/integrations/tinvest/ca.ts`, отпечаток SHA-256 `D2:6D:2D:02:…:CF:31` проверяет тест). Отключать проверку сертификата нельзя: токен уйдёт любому, кто встанет посередине.
+- Прокси: если задан `TINVEST_PROXY_URL` (только `http://`, туннель CONNECT), все запросы этого клиента идут через него. Остальные интеграции прокси не используют. С NAS владельца API доступен напрямую (проверено 2026-10-08).
+- Поля JSON в camelCase, int64 приходят строками, перечисления строками (`OPERATION_TYPE_BUY`), время в RFC 3339 UTC.
+- Ошибка приходит телом `{"code": <gRPC>, "message": "<текст>", "description": "<код Т-Инвестиций>"}`: код вроде `40003` лежит в `description`.
+- Лимиты в документации завышены: для `UsersService` фактически 50 запросов в минуту, а не 100. Брать их из `GetUserTariff` и заголовков `x-ratelimit-limit`, `x-ratelimit-remaining`, `x-ratelimit-reset` (секунды до сброса).
+- Права токена видны: у каждого счёта `accessLevel`. Мастер принимает токен, только если все счета `ACCOUNT_ACCESS_LEVEL_READ_ONLY`.
 
 Нужные методы (названия сверить):
 
 | Задача | Сервис и метод |
 |---|---|
-| Проверка токена, список счетов | `UsersService/GetAccounts` |
+| Проверка токена, список счетов | `UsersService/GetAccounts` (`status: ACCOUNT_STATUS_ALL` — вместе с закрытыми) |
 | Лимиты | `UsersService/GetUserTariff` |
 | Операции с пагинацией | `OperationsService/GetOperationsByCursor` |
-| Текущие позиции для сверки | `OperationsService/GetPositions` |
-| Справочник бумаги | `InstrumentsService/GetInstrumentBy`, `FindInstrument` |
+| Текущие позиции для сверки | `OperationsService/GetPortfolio` (количество с дробной частью; для закрытого счёта ошибка `30081`, для счёта ЦФА — `50004`) |
+| Справочник бумаги | `InstrumentsService/GetInstrumentBy`, `BondBy`, `FindInstrument` |
 | Купоны облигации | `InstrumentsService/GetBondCoupons` |
 | Дивиденды | `InstrumentsService/GetDividends` |
 | Последние цены | `MarketDataService/GetLastPrices` |
-| История дневных цен | `MarketDataService/GetCandles` |
+| История дневных цен | `MarketDataService/GetCandles` (дневные свечи — до 6 лет за запрос) |
 
 Особенности:
 
 - Деньги и количества приходят парами `units` и `nano`. Перевод: `units + nano / 1e9`, сразу в `Decimal`.
 - `GetOperationsByCursor`: до 1000 записей за запрос, дальше по курсору. Брать только исполненные операции.
-- Первая загрузка: по каждому счёту с даты открытия, окнами по году, чтобы показывать прогресс в мастере.
+- Первая загрузка: по каждому счёту с даты открытия, окнами по году, чтобы показывать прогресс в мастере. Закрытые счета загружаются один раз и в расписание не входят. Счета ЦФА (`ACCOUNT_TYPE_DFA`) не поддерживаются: API не отдаёт по ним позиций.
+- Номера операций у брокера «могут меняться со временем» (документация API, `operations_problems.md`). Поэтому кроме `(source_id, external_id)` у импортированной операции хранится отпечаток: счёт, время, тип, uid бумаги, сумма, количество. Если операция пришла с новым номером, а отпечаток уже есть, у существующей обновляется `external_id`.
 - Дальнейшие: с даты последней известной операции минус 3 дня. Дубли отсекает уникальный индекс.
-- Комиссия брокера приходит отдельной операцией со ссылкой на сделку. При импорте она кладётся в поле `fee` сделки, отдельная операция не создаётся. Комиссии без родительской сделки (обслуживание, маржа) создаются как `fee`.
-- Налог приходит отдельной операцией: создаётся как `tax`, а если есть ссылка на выплату — кладётся в её поле `tax`.
+- Комиссия брокера приходит отдельной операцией со ссылкой на сделку (`parentOperationId`). При импорте она кладётся в поле `fee` сделки, отдельная операция не создаётся. Поле `commission` самой сделки дублирует ту же сумму и не используется. Комиссии без родительской сделки (обслуживание, маржа, автоследование) создаются как `fee`.
+- Исполненное количество сделки — `quantity − quantityRest`: `quantity` — объём заявки, при частичном исполнении он больше.
+- Цена в операции — в деньгах за штуку, у облигации тоже (сумма = цена × количество + НКД). Цена из `GetLastPrices` и свечей у облигации — в процентах от номинала.
+- `uid` в старых операциях может устареть: справочник отвечает `50002`. Тогда бумага ищется по FIGI, затем по тикеру и `classCode`, а если не нашлась — создаётся из полей операции.
+- Налог приходит отдельной операцией без ссылки на выплату. Налог по бумаге (`BOND_TAX`, `DIVIDEND_TAX`) кладётся в поле `tax` выплаты по той же бумаге в тот же день; если пары нет, и для налогов без бумаги, создаётся `tax`.
 
 Соответствие типов операций. Таблица неполная: для каждого значения перечисления из документации должно быть явное правило, неизвестный тип импортируется как `other` с предупреждением в лог.
 
-| У брокера | У нас |
+| У брокера (`OPERATION_TYPE_…`) | У нас |
 |---|---|
-| Покупка, покупка с карты | `buy` |
-| Продажа | `sell` |
-| Дивиденды | `dividend` |
-| Купон | `coupon` |
-| Погашение облигации | `redemption` |
-| Частичное погашение | `amortization` |
-| Пополнение счёта | `deposit` |
-| Вывод средств | `withdrawal` |
-| Комиссия брокера | поле `fee` или `fee` |
-| Налог, корректировка налога | поле `tax` или `tax` |
-| Покупка и продажа валюты | `fx_buy`, `fx_sell` |
-| Ввод и вывод бумаг | `transfer_in`, `transfer_out` |
+| `BUY`, `BUY_MARGIN`, `DELIVERY_BUY` | `buy`; для валюты (`INSTRUMENT_TYPE_CURRENCY`) — `fx_buy` |
+| `BUY_CARD` | `deposit` + `buy`: покупка оплачена с карты, деньги на счёт не заходили |
+| `SELL`, `SELL_CARD`, `SELL_MARGIN`, `DELIVERY_SELL` | `sell`; для валюты — `fx_sell` |
+| `DIVIDEND`, `DIVIDEND_TRANSFER` | `dividend` |
+| `DIV_EXT` | `dividend` + `withdrawal`: дивиденд выплачен на карту |
+| `COUPON` | `coupon` |
+| `BOND_REPAYMENT_FULL` | `redemption`; количество брокер не присылает, берётся остаток бумаги на счёте к этой дате |
+| `BOND_REPAYMENT` | `amortization` |
+| `INPUT`, `INPUT_SWIFT`, `INPUT_ACQUIRING`, `INP_MULTI` | `deposit` |
+| `OUTPUT`, `OUTPUT_SWIFT`, `OUTPUT_ACQUIRING`, `OUT_MULTI` | `withdrawal` |
+| `INPUT_SECURITIES` | `transfer_in` |
+| `OUTPUT_SECURITIES` | `transfer_out` |
+| `TRANS_IIS_BS`, `TRANS_BS_BS` | перевод между своими счетами, приходит парой: с бумагой — `transfer_in` или `transfer_out` по знаку суммы, цена операции — стоимость; без бумаги — `deposit` или `withdrawal` |
+| `BROKER_FEE` | поле `fee` сделки по `parentOperationId` |
+| `SERVICE_FEE`, `MARGIN_FEE`, `SUCCESS_FEE`, `TRACK_MFEE`, `TRACK_PFEE`, `CASH_FEE`, `OUT_FEE`, `OUT_STAMP_DUTY`, `OUTPUT_PENALTY`, `ADVICE_FEE`, `OVER_COM` | `fee` |
+| `BOND_TAX`, `BOND_TAX_PROGRESSIVE`, `DIVIDEND_TAX`, `DIVIDEND_TAX_PROGRESSIVE` | поле `tax` выплаты или `tax` |
+| `TAX`, `TAX_PROGRESSIVE`, `BENEFIT_TAX`, `BENEFIT_TAX_PROGRESSIVE`, `TAX_REPO…` | `tax` |
+| `TAX_CORRECTION`, `TAX_CORRECTION_PROGRESSIVE`, `TAX_CORRECTION_COUPON`, `TAX_REPO_REFUND…` | `tax` со знаком суммы (возврат — положительный) |
+| `OVERNIGHT`, `OVER_INCOME` | `interest` |
+| `OVER_PLACEMENT`, `ACCRUING_VARMARGIN`, `WRITING_OFF_VARMARGIN`, `OPTION_EXPIRATION`, `FUTURE_EXPIRATION`, `UNSPECIFIED` и неизвестные | `other` с предупреждением в лог |
+
+Типы, которые встретились в настоящей истории владельца (2026-10-08): `BUY`, `BUY_CARD`, `SELL`, `BROKER_FEE`, `COUPON`, `BOND_TAX`, `DIVIDEND`, `DIV_EXT`, `DIVIDEND_TAX`, `BOND_REPAYMENT_FULL` (у облигаций и у фондов с заблокированными активами), `INPUT`, `OUTPUT`, `OUTPUT_SECURITIES`, `TRANS_IIS_BS`, `SERVICE_FEE`, `TRACK_MFEE`, `TAX`, `TAX_CORRECTION`.
 
 Ошибки для интерфейса:
 

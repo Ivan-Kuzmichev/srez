@@ -1,0 +1,148 @@
+{
+ "2000000001": {
+  "accountId": "2000000001",
+  "positions": [
+   {
+    "figi": "BBG004731032",
+    "instrumentType": "share",
+    "quantity": {
+     "units": "1",
+     "nano": 0
+    },
+    "instrumentUid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
+    "positionUid": "",
+    "ticker": "LKOH",
+    "classCode": "TQBR",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "7100",
+     "nano": 0
+    }
+   },
+   {
+    "figi": "BBG004730N88",
+    "instrumentType": "share",
+    "quantity": {
+     "units": "80",
+     "nano": 0
+    },
+    "instrumentUid": "e6123145-9665-43e0-8413-cd61b8aa9b13",
+    "positionUid": "",
+    "ticker": "SBER",
+    "classCode": "TQBR",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "300",
+     "nano": 0
+    }
+   },
+   {
+    "figi": "BBG00Y3XYV94",
+    "instrumentType": "bond",
+    "quantity": {
+     "units": "10",
+     "nano": 0
+    },
+    "instrumentUid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
+    "positionUid": "",
+    "ticker": "SU26238RMFS4",
+    "classCode": "TQOB",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "62",
+     "nano": 400000000
+    }
+   },
+   {
+    "figi": "TCS60A101X76",
+    "instrumentType": "etf",
+    "quantity": {
+     "units": "500",
+     "nano": 0
+    },
+    "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+    "positionUid": "",
+    "ticker": "TMOS",
+    "classCode": "TQTF",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "7",
+     "nano": 100000000
+    }
+   },
+   {
+    "figi": "BBG0013HGFT4",
+    "instrumentType": "currency",
+    "quantity": {
+     "units": "100",
+     "nano": 0
+    },
+    "instrumentUid": "a22a1263-8e1b-4546-a1aa-416463f104d3",
+    "positionUid": "",
+    "ticker": "USD000UTSTOM",
+    "classCode": "CETS",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "81",
+     "nano": 200000000
+    }
+   },
+   {
+    "figi": "RUB000UTSTOM",
+    "instrumentType": "currency",
+    "quantity": {
+     "units": "652035",
+     "nano": 160000000
+    },
+    "instrumentUid": "a92e2e25-a698-45cc-a781-167cf465257c",
+    "positionUid": "",
+    "ticker": "RUB000UTSTOM",
+    "classCode": "",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "1",
+     "nano": 0
+    }
+   }
+  ]
+ },
+ "2000000002": {
+  "accountId": "2000000002",
+  "positions": [
+   {
+    "figi": "TCS60A101X76",
+    "instrumentType": "etf",
+    "quantity": {
+     "units": "10000",
+     "nano": 0
+    },
+    "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+    "positionUid": "",
+    "ticker": "TMOS",
+    "classCode": "TQTF",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "7",
+     "nano": 100000000
+    }
+   },
+   {
+    "figi": "RUB000UTSTOM",
+    "instrumentType": "currency",
+    "quantity": {
+     "units": "30979",
+     "nano": 300000000
+    },
+    "instrumentUid": "a92e2e25-a698-45cc-a781-167cf465257c",
+    "positionUid": "",
+    "ticker": "RUB000UTSTOM",
+    "classCode": "",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "1",
+     "nano": 0
+    }
+   }
+  ]
+ }
+}

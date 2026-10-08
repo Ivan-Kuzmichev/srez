@@ -1,0 +1,50 @@
+{
+ "e6123145-9665-43e0-8413-cd61b8aa9b13": [
+  {
+   "dividendNet": {
+    "currency": "rub",
+    "units": "33",
+    "nano": 300000000
+   },
+   "paymentDate": "2025-07-28T00:00:00Z",
+   "declaredDate": "2025-07-18T00:00:00Z",
+   "lastBuyDate": "2025-07-18T00:00:00Z",
+   "dividendType": "Regular Cash",
+   "recordDate": "2025-07-18T00:00:00Z",
+   "regularity": "Annual",
+   "closePrice": {
+    "currency": "rub",
+    "units": "300",
+    "nano": 0
+   },
+   "yieldValue": {
+    "units": "11",
+    "nano": 100000000
+   },
+   "createdAt": "2025-07-18T00:00:00Z"
+  },
+  {
+   "dividendNet": {
+    "currency": "rub",
+    "units": "36",
+    "nano": 500000000
+   },
+   "paymentDate": "2026-10-28T00:00:00Z",
+   "declaredDate": "2026-10-18T00:00:00Z",
+   "lastBuyDate": "2026-10-18T00:00:00Z",
+   "dividendType": "Regular Cash",
+   "recordDate": "2026-10-18T00:00:00Z",
+   "regularity": "Annual",
+   "closePrice": {
+    "currency": "rub",
+    "units": "300",
+    "nano": 0
+   },
+   "yieldValue": {
+    "units": "11",
+    "nano": 100000000
+   },
+   "createdAt": "2026-10-18T00:00:00Z"
+  }
+ ]
+}

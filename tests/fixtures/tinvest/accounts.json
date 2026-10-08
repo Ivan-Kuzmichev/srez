@@ -1,0 +1,40 @@
+{
+ "accounts": [
+  {
+   "id": "2000000001",
+   "type": "ACCOUNT_TYPE_TINKOFF",
+   "name": "Брокерский счёт",
+   "status": "ACCOUNT_STATUS_OPEN",
+   "openedDate": "2023-07-04T00:00:00Z",
+   "closedDate": "1970-01-01T00:00:00Z",
+   "accessLevel": "ACCOUNT_ACCESS_LEVEL_READ_ONLY"
+  },
+  {
+   "id": "2000000002",
+   "type": "ACCOUNT_TYPE_TINKOFF_IIS",
+   "name": "ИИС",
+   "status": "ACCOUNT_STATUS_OPEN",
+   "openedDate": "2025-07-04T00:00:00Z",
+   "closedDate": "1970-01-01T00:00:00Z",
+   "accessLevel": "ACCOUNT_ACCESS_LEVEL_READ_ONLY"
+  },
+  {
+   "id": "2000000003",
+   "type": "ACCOUNT_TYPE_TINKOFF_IIS",
+   "name": "ИИС",
+   "status": "ACCOUNT_STATUS_CLOSED",
+   "openedDate": "2020-01-17T00:00:00Z",
+   "closedDate": "2023-07-17T00:00:00Z",
+   "accessLevel": "ACCOUNT_ACCESS_LEVEL_READ_ONLY"
+  },
+  {
+   "id": "2000000004",
+   "type": "ACCOUNT_TYPE_DFA",
+   "name": "ЦФА",
+   "status": "ACCOUNT_STATUS_OPEN",
+   "openedDate": "2025-05-23T00:00:00Z",
+   "closedDate": "1970-01-01T00:00:00Z",
+   "accessLevel": "ACCOUNT_ACCESS_LEVEL_READ_ONLY"
+  }
+ ]
+}

@@ -12,6 +12,8 @@ const EnvSchema = z.object({
   AUTH_SECRET: z.preprocess(emptyToUndefined, z.string().min(32).optional()),
   TRUSTED_PROXIES: z.preprocess(emptyToUndefined, z.string().optional()),
   TINVEST_PROXY_URL: z.preprocess(emptyToUndefined, z.string().optional()),
+  /** Tests only: the local mock of the T-Invest gateway. */
+  TINVEST_API_URL: z.preprocess(emptyToUndefined, z.url().optional()),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   /** Sign-in attempts per minute per address (docs/07-auth-security.md, section 2). Raised only in e2e. */
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
