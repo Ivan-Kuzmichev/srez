@@ -216,3 +216,71 @@ describe('T-Invest sync', () => {
     expect(enqueueDueSyncs(s.db, now)).toBe(0);
   });
 });
+
+describe('history depth chosen in the wizard', () => {
+  it('starts at the floor date and never reads before it', async () => {
+    const s = await setup();
+    const a1 = s.ids.get('2000000001')!;
+    s.db
+      .update(finAccounts)
+      .set({ meta: { historyFrom: '2026-01-01T00:00:00.000Z' } })
+      .where(eq(finAccounts.id, a1))
+      .run();
+    await sync(s);
+    const dates = s.db
+      .select({ at: operations.executedAt })
+      .from(operations)
+      .where(eq(operations.accountId, a1))
+      .all();
+    expect(dates.length).toBeGreaterThan(0);
+    expect(dates.every((d) => d.at >= new Date('2026-01-01T00:00:00Z'))).toBe(true);
+  });
+
+  it('«current positions only» opens the account with the broker portfolio', async () => {
+    const s = await setup();
+    const a1 = s.ids.get('2000000001')!;
+    s.db
+      .update(finAccounts)
+      .set({ meta: { history: 'positions' } })
+      .where(eq(finAccounts.id, a1))
+      .run();
+    await sync(s);
+    const rows = s.db.select().from(operations).where(eq(operations.accountId, a1)).all();
+    expect(rows.every((r) => r.executedAt.getTime() === now.getTime())).toBe(true);
+    // Securities at the broker's average price; rubles and dollars as deposits.
+    expect(rows.map((r) => r.type).sort()).toEqual([
+      'deposit',
+      'deposit',
+      'transfer_in',
+      'transfer_in',
+      'transfer_in',
+      'transfer_in',
+    ]);
+    const sber = rows.find((r) => r.type === 'transfer_in' && r.price === '255')!;
+    expect(sber.quantity).toBe('80');
+
+    recalcAccount(s.db, a1);
+    const cash = s.db
+      .select({ quantity: positions.quantity })
+      .from(positions)
+      .innerJoin(instruments, eq(instruments.id, positions.instrumentId))
+      .where(and(eq(positions.accountId, a1), eq(instruments.ticker, 'RUB')))
+      .get();
+    expect(cash?.quantity).toBe('652035.16');
+
+    // The next run reads from the opening moment on, so nothing is counted twice.
+    mock.calls.length = 0;
+    const later = new Date(now.getTime() + 3_600_000);
+    const again = await syncSource(s.db, s.sourceId, {
+      client: s.client,
+      trigger: 'schedule',
+      now: later,
+      log,
+    });
+    expect(again.newOperations).toBe(0);
+    const call = mock.calls.find(
+      (c) => c.method === 'OperationsService/GetOperationsByCursor' && c.body.accountId === '2000000001',
+    )!;
+    expect(call.body.from).toBe(now.toISOString());
+  });
+});

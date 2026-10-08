@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Decimal } from '@/domain/decimal';
 import type { OperationType } from '@/domain/ledger-types';
-import { currencyOf, quotation, type OperationItem } from './client';
+import { currencyOf, quotation, type OperationItem, type PortfolioPosition } from './client';
 
 /**
  * Broker operations → journal entries (docs/05-integrations.md, section 1, «Соответствие типов»).
@@ -47,7 +47,7 @@ export interface MappedOperation {
   /** A broker fee whose trade is outside this batch: attach to it if it exists, else keep as a fee. */
   parentExternalId: string | null;
   note: string | null;
-  /** The broker operations behind this entry, for the `raw` column. */
+  /** The broker operations behind this entry, for the `raw` column (none for opening balances). */
   raw: OperationItem[];
 }
 
@@ -307,4 +307,70 @@ export function mapOperations(items: OperationItem[]): {
     (a, b) => a.executedAt.getTime() - b.executedAt.getTime() || a.externalId.localeCompare(b.externalId),
   );
   return { operations: out, warnings };
+}
+
+/**
+ * «Только текущие позиции»: the broker's portfolio as opening entries at `at`, securities at the
+ * broker's average price and money as deposits. Later syncs never read before `at`.
+ */
+export function openingBalance(
+  brokerAccountId: string,
+  positions: PortfolioPosition[],
+  at: Date,
+): MappedOperation[] {
+  const out: MappedOperation[] = [];
+  for (const p of positions) {
+    const quantity = quotation(p.quantity);
+    if (quantity.lte(0)) continue;
+    const key = p.instrumentUid || p.figi || p.ticker;
+    const base = {
+      externalId: externalIdOf({ brokerAccountId, id: `opening:${key}` }),
+      fingerprint: createHash('sha256')
+        .update(`${brokerAccountId}|opening|${key}|${at.toISOString()}`)
+        .digest('hex')
+        .slice(0, 32),
+      brokerAccountId,
+      executedAt: at,
+      fee: ZERO,
+      tax: ZERO,
+      accruedInterest: ZERO,
+      quantityFromHolding: false,
+      parentExternalId: null,
+      note: null,
+      raw: [],
+    };
+    if (p.instrumentType === 'currency') {
+      // RUB000UTSTOM, USD000UTSTOM, EUR_RUB__TOM: the code leads the ticker.
+      const code = p.ticker.slice(0, 3).toUpperCase();
+      out.push({
+        ...base,
+        type: 'deposit',
+        instrument: null,
+        quantity: ZERO,
+        price: ZERO,
+        currency: code,
+        amount: quantity,
+      });
+      continue;
+    }
+    out.push({
+      ...base,
+      type: 'transfer_in',
+      instrument: {
+        uid: p.instrumentUid,
+        positionUid: p.positionUid,
+        figi: p.figi,
+        ticker: p.ticker,
+        classCode: p.classCode,
+        kind: '',
+        type: p.instrumentType,
+        name: p.ticker,
+      },
+      quantity,
+      price: quotation(p.averagePositionPrice),
+      currency: currencyOf(p.averagePositionPrice) || 'RUB',
+      amount: ZERO,
+    });
+  }
+  return out;
 }

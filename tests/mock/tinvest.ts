@@ -205,7 +205,12 @@ function handle(state: MockState, method: string, body: Json, res: http.ServerRe
 }
 
 export async function startTinvestMock(
-  opts: { port?: number; state?: MockState } = {},
+  opts: {
+    port?: number;
+    state?: MockState;
+    /** Slows every answer: e2e watches the wizard's progress. */
+    delayMs?: number;
+  } = {},
 ): Promise<TinvestMock> {
   const state = opts.state ?? fixtureState();
   const calls: TinvestMock['calls'] = [];
@@ -213,7 +218,8 @@ export async function startTinvestMock(
   const server = http.createServer((req, res) => {
     const chunks: Buffer[] = [];
     req.on('data', (c: Buffer) => chunks.push(c));
-    req.on('end', () => {
+    req.on('end', async () => {
+      if (opts.delayMs) await new Promise((r) => setTimeout(r, opts.delayMs));
       const method = (req.url ?? '').startsWith(PREFIX) ? (req.url ?? '').slice(PREFIX.length) : '';
       if (req.method !== 'POST' || !method) return error(res, 404, '40000', 'Not found');
       if (!String(req.headers['content-type']).startsWith('application/json')) {
@@ -254,6 +260,9 @@ export async function startTinvestMock(
 }
 
 if (process.argv[1] && import.meta.filename === process.argv[1]) {
-  const mock = await startTinvestMock({ port: Number(process.argv[2] ?? 3199) });
+  const mock = await startTinvestMock({
+    port: Number(process.argv[2] ?? 3199),
+    delayMs: Number(process.env.TINVEST_MOCK_DELAY_MS ?? 0),
+  });
   console.log(`T-Invest mock on ${mock.url}`);
 }

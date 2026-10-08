@@ -68,7 +68,7 @@ describe('payout schedules', () => {
     const cells = loadValuedCells(db, 'u1', loadFx(db));
     const next = upcomingPayouts(db, cells, '2026-10-08');
     expect(next.map((p) => [p.payDate, p.name, p.kind, p.amount.toString(), p.currency])).toEqual([
-      ['2026-10-28', 'SBER', 'dividend', '2920', 'RUB'],
+      ['2026-10-28', 'Сбер Банк', 'dividend', '2920', 'RUB'],
       ['2027-01-13', 'ОФЗ 26238', 'coupon', '356.5', 'RUB'],
       ['2027-07-14', 'ОФЗ 26238', 'coupon', '356.5', 'RUB'],
     ]);

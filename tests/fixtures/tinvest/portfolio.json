@@ -17,6 +17,11 @@
      "currency": "rub",
      "units": "7100",
      "nano": 0
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "5400",
+     "nano": 0
     }
    },
    {
@@ -33,6 +38,11 @@
     "currentPrice": {
      "currency": "rub",
      "units": "300",
+     "nano": 0
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "255",
      "nano": 0
     }
    },
@@ -51,6 +61,11 @@
      "currency": "rub",
      "units": "62",
      "nano": 400000000
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "605",
+     "nano": 500000000
     }
    },
    {
@@ -68,6 +83,11 @@
      "currency": "rub",
      "units": "7",
      "nano": 100000000
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "6",
+     "nano": 890000000
     }
    },
    {
@@ -85,6 +105,11 @@
      "currency": "rub",
      "units": "81",
      "nano": 200000000
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "82",
+     "nano": 150000000
     }
    },
    {
@@ -99,6 +124,11 @@
     "ticker": "RUB000UTSTOM",
     "classCode": "",
     "currentPrice": {
+     "currency": "rub",
+     "units": "1",
+     "nano": 0
+    },
+    "averagePositionPrice": {
      "currency": "rub",
      "units": "1",
      "nano": 0
@@ -124,6 +154,11 @@
      "currency": "rub",
      "units": "7",
      "nano": 100000000
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "6",
+     "nano": 890000000
     }
    },
    {
@@ -138,6 +173,11 @@
     "ticker": "RUB000UTSTOM",
     "classCode": "",
     "currentPrice": {
+     "currency": "rub",
+     "units": "1",
+     "nano": 0
+    },
+    "averagePositionPrice": {
      "currency": "rub",
      "units": "1",
      "nano": 0

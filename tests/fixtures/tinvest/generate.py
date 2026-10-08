@@ -169,6 +169,8 @@ dump('instruments.json', {"instruments": [
 ]})
 
 by_ticker = {i["ticker"]: i for i in [SBER, LKOH, OFZ, OFZ29, TMOS, USD]}
+# The broker's average price, for the «current positions only» start.
+avg_price = {"SBER": 255, "LKOH": 5400, "SU26238RMFS4": 605.5, "TMOS": 6.89, "USD000UTSTOM": 82.15}
 # The IIS bought TMOS, the broker shows its holding as TMOS@.
 shown_as = {(A2, "TMOS"): TMOS_AT}
 last = {"SBER": 300, "LKOH": 7100, "SU26238RMFS4": 62.4, "TMOS": 7.1, "USD000UTSTOM": 81.2}
@@ -180,11 +182,12 @@ def portfolio(a):
         if acc == a and qty:
             i = shown_as.get((acc, ticker), by_ticker[ticker])
             positions.append({"figi": i["figi"], "instrumentType": i["type"], "quantity": q(qty), "instrumentUid": i["uid"],
-                              "positionUid": "", "ticker": i["ticker"], "classCode": i["classCode"], "currentPrice": mv(last[ticker])})
+                              "positionUid": "", "ticker": i["ticker"], "classCode": i["classCode"], "currentPrice": mv(last[ticker]),
+                              "averagePositionPrice": mv(avg_price.get(ticker, last[ticker]))})
     for (acc, cur), amount in sorted(cash.items()):
         if acc == a:
             positions.append({"figi": "RUB000UTSTOM", "instrumentType": "currency", "quantity": q(amount), "instrumentUid": RUB_UID,
-                              "positionUid": "", "ticker": "RUB000UTSTOM", "classCode": "", "currentPrice": mv(1)})
+                              "positionUid": "", "ticker": "RUB000UTSTOM", "classCode": "", "currentPrice": mv(1), "averagePositionPrice": mv(1)})
     return {"accountId": a, "positions": positions}
 
 

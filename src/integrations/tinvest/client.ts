@@ -112,6 +112,7 @@ const PortfolioPosition = z.object({
   ticker: z.string().default(''),
   classCode: z.string().default(''),
   currentPrice: MoneyValue.optional(),
+  averagePositionPrice: MoneyValue.optional(),
 });
 export type PortfolioPosition = z.infer<typeof PortfolioPosition>;
 const Portfolio = z.object({

@@ -6,7 +6,7 @@ import { finAccounts, operations, sources, syncRuns, SYNC_TRIGGERS, type SyncPro
 import { Decimal } from '@/domain/decimal';
 import { heldQuantity } from '@/domain/holdings';
 import { TinvestClient, TinvestError, type OperationItem } from '@/integrations/tinvest/client';
-import { mapOperations, type MappedOperation } from '@/integrations/tinvest/map';
+import { mapOperations, openingBalance, type MappedOperation } from '@/integrations/tinvest/map';
 import { ru } from '@/lib/i18n/ru';
 import { enqueuePayouts } from './payouts';
 import { enqueueRecalc } from './positions';
@@ -215,31 +215,55 @@ export async function syncSource(
         .all()
         .at(-1)?.at;
       const opened = account.openedAt ? new Date(`${account.openedAt}T00:00:00Z`) : EARLIEST;
-      const from = last ? new Date(Math.max(last.getTime() - OVERLAP_MS, opened.getTime())) : opened;
-      const windows = yearWindows(from < now ? from : now, now);
+      // The wizard's «глубина истории»: a floor no sync goes below (the opening balance moment included).
+      const floorAt =
+        typeof account.meta?.historyFrom === 'string' ? new Date(account.meta.historyFrom) : null;
+      const floor = new Date(Math.max(opened.getTime(), floorAt?.getTime() ?? 0));
+      let mapped: MappedOperation[];
+      let fetched = 0;
+      let meta = account.meta ?? {};
 
-      const items: OperationItem[] = [];
-      for (const [w, window] of windows.entries()) {
-        const share = (index + (w + 1) / Math.max(windows.length, 1)) / Math.max(accounts.length, 1);
+      if (account.meta?.history === 'positions' && !floorAt) {
+        // «Только текущие позиции»: the broker's portfolio now, no history before it.
         progress({
           stage: 'operations',
           accountIndex: index + 1,
           accountCount: accounts.length,
           accountName: account.name,
-          year: window.year,
-          percent: Math.round(share * 80),
+          percent: Math.round(((index + 1) / accounts.length) * 80),
         });
-        for await (const page of opts.client.operations({
-          accountId: account.externalId,
-          from: window.from,
-          to: window.to,
-        }))
-          items.push(...page);
+        mapped = openingBalance(account.externalId, await opts.client.getPortfolio(account.externalId), now);
+        meta = { ...meta, historyFrom: now.toISOString() };
+      } else {
+        const from = last ? new Date(Math.max(last.getTime() - OVERLAP_MS, floor.getTime())) : floor;
+        const windows = yearWindows(from < now ? from : now, now);
+        const items: OperationItem[] = [];
+        for (const [w, window] of windows.entries()) {
+          const share = (index + (w + 1) / Math.max(windows.length, 1)) / Math.max(accounts.length, 1);
+          progress({
+            stage: 'operations',
+            accountIndex: index + 1,
+            accountCount: accounts.length,
+            accountName: account.name,
+            year: window.year,
+            percent: Math.round(share * 80),
+          });
+          for await (const page of opts.client.operations({
+            accountId: account.externalId,
+            from: window.from,
+            to: window.to,
+          }))
+            items.push(...page);
+        }
+        fetched = items.length;
+        const result = mapOperations(items);
+        mapped = result.operations;
+        if (result.warnings.length)
+          opts.log?.warn(
+            { accountId: account.id, warnings: result.warnings },
+            'T-Invest operations without a mapping rule',
+          );
       }
-
-      const { operations: mapped, warnings } = mapOperations(items);
-      if (warnings.length)
-        opts.log?.warn({ accountId: account.id, warnings }, 'T-Invest operations without a mapping rule');
       progress({
         stage: 'instruments',
         accountIndex: index + 1,
@@ -253,11 +277,11 @@ export async function syncSource(
       newOperations += result.inserted;
       relinked += result.relinked;
       db.update(finAccounts)
-        .set({ meta: { ...account.meta, syncedAt: now.toISOString() } })
+        .set({ meta: { ...meta, syncedAt: now.toISOString() } })
         .where(eq(finAccounts.id, account.id))
         .run();
       if (result.inserted > 0) enqueueRecalc(db, account.id);
-      opts.log?.info({ accountId: account.id, fetched: items.length, ...result }, 'T-Invest account synced');
+      opts.log?.info({ accountId: account.id, fetched, ...result }, 'T-Invest account synced');
     }
 
     // New securities may have arrived: their coupons and dividends, after positions are recalculated.

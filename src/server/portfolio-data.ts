@@ -22,7 +22,6 @@ import { dayChange, externalFlows, type ExternalFlow, type FlowOperation } from 
 import type { LedgerContext } from '@/domain/ledger-types';
 import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope';
 import { valueOn } from '@/domain/timeline';
-import { assetLabel } from '@/lib/asset-label';
 import { addDays, localDate } from '@/lib/time';
 
 const ZERO = new Decimal(0);
@@ -446,7 +445,8 @@ export function upcomingPayouts(db: Db, cells: ValuedCell[], today: string, limi
         instrumentId: e.instrumentId,
         payDate: e.payDate,
         kind: e.kind,
-        name: assetLabel(h.cell).code ?? h.cell.name,
+        // By name, as in the mockup: «Лукойл», «ОФЗ 26238».
+        name: h.cell.name,
         amount: new Decimal(e.amountPerUnit).times(h.quantity),
         currency: e.currency,
         estimate: e.isEstimate,
