@@ -29,6 +29,16 @@ function formatNumber(value: DecimalValue, decimals: number, sign: 'auto' | 'alw
 
 const withCurrency = (number: string, currency: Currency) => `${number}${NBSP}${currencySymbol(currency)}`;
 
+/** A bare number with the given decimals: «38,4», «1 200». For labels like «38,4 / 40 %». */
+export function formatPlain(value: DecimalValue, decimals: number): string {
+  return formatNumber(value, decimals);
+}
+
+/** Fact against target: «38,4 / 40 %». */
+export function formatShareOfTarget(share: DecimalValue, target: DecimalValue | null): string {
+  return `${formatNumber(share, 1)} / ${target === null ? '0' : formatNumber(target, 0)}${NBSP}%`;
+}
+
 /** Summary amount, to the whole unit: «4 812 360 ₽». */
 export function formatMoney(money: Money): string {
   return withCurrency(formatNumber(money.amount, 0), money.currency);

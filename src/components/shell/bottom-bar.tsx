@@ -6,7 +6,12 @@ import { cn } from '@/lib/cn';
 import { ru } from '@/lib/i18n/ru';
 import { BOTTOM_ITEMS, isActive } from './nav';
 
-const FORM_ROUTES = [/^\/operations\/new$/, /^\/operations\/[^/]+\/edit$/];
+const FORM_ROUTES = [
+  /^\/operations\/new$/,
+  /^\/operations\/[^/]+\/edit$/,
+  /^\/portfolios\/new$/,
+  /^\/portfolios\/[^/]+\/edit$/,
+];
 
 /** Tab bar for phones (MMain mockup), pinned to the bottom with the safe area. */
 export function BottomBar() {

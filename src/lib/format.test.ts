@@ -9,6 +9,8 @@ import {
   formatDateLong,
   formatMoney,
   formatPercent,
+  formatPlain,
+  formatShareOfTarget,
   formatPp,
   formatQuantity,
   formatTime,
@@ -62,6 +64,15 @@ describe('percent and points', () => {
   it('formats percentage points', () => {
     expect(formatPp(3.1)).toBe(nb('+3,1 п.п.'));
     expect(formatPp(-0.04)).toBe(nb('0,0 п.п.'));
+  });
+});
+
+describe('plain numbers and targets', () => {
+  it('formats a bare number and fact against target', () => {
+    expect(formatPlain('100', 0)).toBe('100');
+    expect(formatPlain('1234.56', 1)).toBe(nb('1 234,6'));
+    expect(formatShareOfTarget('38.37', '40')).toBe('38,4 / 40\u00a0%');
+    expect(formatShareOfTarget('8.3', null)).toBe('8,3 / 0\u00a0%');
   });
 });
 
