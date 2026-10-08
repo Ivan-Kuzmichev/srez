@@ -29,6 +29,7 @@ import {
   formatQuantity,
   formatTradeAmount,
 } from '@/lib/format';
+import { assetLabel } from '@/lib/asset-label';
 import { ru } from '@/lib/i18n/ru';
 import { requireSession } from '@/server/session';
 
@@ -68,8 +69,10 @@ function toItem(r: JournalRow): JournalItem {
     date: formatDate(r.executedAt, tz),
     day: formatDateLong(r.executedAt, tz),
     typeLabel: ru.journal.types[r.type] ?? r.type,
-    ticker: r.ticker,
-    assetName: r.instrumentName,
+    ...(() => {
+      const l = assetLabel({ kind: r.instrumentKind, ticker: r.ticker, name: r.instrumentName });
+      return { ticker: l.code, assetName: l.name };
+    })(),
     quantityPrice:
       TRADE_TYPES.has(r.type) && r.quantity !== '0' ? `${qty} × ${formatTradeAmount(r.price)}` : null,
     amount: formatChange(Money.of(r.amount, r.currency)),

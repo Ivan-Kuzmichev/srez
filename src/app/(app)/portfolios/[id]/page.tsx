@@ -22,6 +22,7 @@ import {
   formatShareOfTarget,
   formatTradeAmount,
 } from '@/lib/format';
+import { assetLabel } from '@/lib/asset-label';
 import { ru } from '@/lib/i18n/ru';
 import {
   areaSeries,
@@ -74,9 +75,8 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
     return {
       key: `${c.accountId}|${c.instrumentId}|${c.tagId ?? ''}`,
       instrumentId: c.instrumentId,
-      // Bonds read better by name («ОФЗ 26238») than by their exchange code.
-      ticker: c.kind === 'bond' || !c.ticker ? c.name : c.ticker,
-      name: c.kind === 'bond' || !c.ticker ? null : c.name,
+      ticker: assetLabel(c).code ?? c.name,
+      name: assetLabel(c).code ? c.name : null,
       account: account ? ru.portfolio.accountChip(account.name, account.sourceKind === 'manual') : '',
       assetClass: c.assetClass,
       quantity:
