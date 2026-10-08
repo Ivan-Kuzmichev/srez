@@ -15,7 +15,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm next dev -p ${port}`,
+    command: `pnpm db:migrate && pnpm next dev -p ${port}`,
     url: `http://localhost:${port}/api/health`,
     reuseExistingServer: !process.env.CI,
     env: { DATABASE_PATH: './data/e2e.db' },
