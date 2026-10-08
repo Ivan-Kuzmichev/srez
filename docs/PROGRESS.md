@@ -69,7 +69,7 @@
 - [x] 1. Better Auth и таблицы: `createAuth()` в `src/server/auth.ts` (username, twoFactor, passkey, nextCookies), ленивый `auth()`, чтобы `next build` не требовал секретов; таблицы из CLI Better Auth (`pnpm auth:generate`) плюс свои `login_attempts` и `passkey_usage`; миграция `0003_auth`; uuid v7 для id. Плагин пасскеев не умеет добавлять поля, поэтому дата последнего входа лежит в `passkey_usage`. Плагин пасскеев сам не требует проверки пользователя на сервере (`requireUserVerification: false`), проверку добавлю в задаче 6 через `afterVerification`
 - [x] 2. CLI: `user:create`, `user:reset-password [--disable-2fa] [--remove-passkeys]`, пароль вводится дважды без эха (из канала — построчно), логика в `src/server/users.ts` с тестами, события в `logs` с источником `auth`. Логи CLI пишутся только в базу (`LOG_CONSOLE=0`)
 - [x] 3. Экран входа: `/login` по `Login`, `LoginError`, `LoginLocked`, `Passkey`; вход через server action (`signInWithPassword`), логин сохраняется после ошибки; `domain/lockout.ts` + хук перед `/sign-in/username`; попытки в `login_attempts`; события `auth` (вход, неудача, блокировка, выход) без паролей; лимит 20/мин по адресу в своём хуке, потому что прямые вызовы `auth.api` обходят лимит Better Auth
-- [ ] 4. Защита и выход
+- [x] 4. Защита и выход: `proxy.ts` без куки сессии отправляет GET на `/login?next=`, `requireSession()` в layout групп `(app)` и `(setup)`, `authedAction`/`publicAction` с Zod; тест обходит `src/server/actions/*` и проверяет, что каждый экспорт обёрнут и без сессии отвечает `UNAUTHORIZED`; «Выйти» в меню и на «Ещё»; порт web слушает `${SREZ_BIND:-127.0.0.1}`; e2e создают пользователей через CLI на свежей базе и входят один раз в global setup
 - [ ] 5. 2FA
 - [ ] 6. Пасскеи
 - [ ] 7. Экран безопасности

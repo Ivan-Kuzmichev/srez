@@ -22,7 +22,9 @@ services:
     <<: *app
     command: ['web']
     ports:
-      - '3000:3000'
+      # Loopback by default: the reverse proxy on the same host reaches it, the network does not.
+      # Set SREZ_BIND=0.0.0.0 only when the proxy runs on another machine.
+      - '${SREZ_BIND:-127.0.0.1}:3000:3000'
     healthcheck:
       test:
         [
