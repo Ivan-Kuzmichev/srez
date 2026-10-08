@@ -10,7 +10,7 @@ import { utcToZonedLocal } from '@/lib/time';
 import { getInstrument } from '@/server/instruments';
 import { formChoices } from '@/server/operation-page';
 import { requireSession } from '@/server/session';
-import { getSettings } from '@/server/settings';
+import { debugActive, getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.operationEdit };
 
@@ -60,6 +60,12 @@ export default async function EditOperationPage({ params }: PageProps<'/operatio
         current={ru.operation.breadcrumbEdit}
         backLabel={ru.operation.back}
       />
+      {debugActive(getSettings(db(), session.user.id)) ? (
+        <div className="num text-small text-muted" data-testid="debug-id">
+          id {op.id}
+          {op.externalId ? ` · external ${op.externalId}` : ''}
+        </div>
+      ) : null}
       <OperationForm
         operationId={op.id}
         accounts={accounts}

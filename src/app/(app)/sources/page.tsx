@@ -13,7 +13,7 @@ import { formatDate, formatPlain } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { ago } from '@/lib/relative-date';
 import { requireSession } from '@/server/session';
-import { getSettings } from '@/server/settings';
+import { debugActive, getSettings } from '@/server/settings';
 import { reconcileSummary, syncLog, tinvestSourceView } from '@/server/sources';
 
 export const metadata: Metadata = { title: ru.pages.sources };
@@ -77,7 +77,7 @@ export default async function SourcesPage() {
           <ConnectMore />
         </div>
       </div>
-      <SyncLog rows={syncLog(db(), userId)} timeZone={tz} />
+      <SyncLog rows={syncLog(db(), userId)} timeZone={tz} debug={debugActive(getSettings(db(), userId))} />
     </>
   );
 }

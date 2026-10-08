@@ -15,7 +15,15 @@ const tone = (r: SyncLogRow) =>
   r.status === 'ok' ? 'text-gain' : r.status === 'error' ? 'text-loss' : 'text-text';
 
 /** «Журнал синхронизации» (FR-SRC-3): a table on wide screens, a list on phones. */
-export function SyncLog({ rows, timeZone }: { rows: SyncLogRow[]; timeZone: string }) {
+export function SyncLog({
+  rows,
+  timeZone,
+  debug = false,
+}: {
+  rows: SyncLogRow[];
+  timeZone: string;
+  debug?: boolean;
+}) {
   return (
     <section
       className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6"
@@ -42,7 +50,10 @@ export function SyncLog({ rows, timeZone }: { rows: SyncLogRow[]; timeZone: stri
                     <Td mono className="text-caption text-muted">
                       {activity(r.startedAt, timeZone)}
                     </Td>
-                    <Td>{r.source}</Td>
+                    <Td>
+                      {r.source}
+                      {debug ? <span className="num text-small text-muted"> #{r.id}</span> : null}
+                    </Td>
                     <Td className={tone(r)}>{result(r)}</Td>
                     <Td align="right" mono>
                       {formatPlain(r.newOperations, 0)}

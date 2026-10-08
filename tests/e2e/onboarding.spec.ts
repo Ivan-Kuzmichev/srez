@@ -48,7 +48,7 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   await page.getByRole('link', { name: 'Разберу позже' }).click();
   await expect(page.getByTestId('overview-value')).toBeVisible();
   await page.goto('/operations?period=all');
-  await expect(page.getByTestId('journal-table')).toContainText('Т-Инвестиции');
+  await expect(page.getByTestId('journal-table').first()).toContainText('Т-Инвестиции');
 
   // «Источники»: status, the run log, a manual sync; the sidebar shows the source.
   await page.goto('/sources');
@@ -75,7 +75,7 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   const fixed = page.getByTestId('reconcile-fixed');
   await expect(fixed).toContainText('Газпром');
   await page.goto('/operations?period=all');
-  await expect(page.getByTestId('journal-table')).toContainText('Сверка');
+  await expect(page.getByTestId('journal-table').first()).toContainText('Сверка');
   await page.goBack();
   await fixed.getByRole('button', { name: 'Отменить' }).click();
   await expect(list).toContainText('Газпром');
