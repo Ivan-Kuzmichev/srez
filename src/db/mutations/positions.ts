@@ -2,7 +2,13 @@ import { and, eq, inArray } from 'drizzle-orm';
 import type { Executor } from '@/db/client';
 import { finAccounts, instruments, lotClosures, lots, operations, positions, tagRules } from '@/db/schema';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
-import { buildLedger, type LedgerIssue, type LedgerOperation, type Lot } from '@/domain/positions';
+import {
+  buildLedger,
+  type LedgerContext,
+  type LedgerIssue,
+  type LedgerOperation,
+  type Lot,
+} from '@/domain/positions';
 import { uuidv7 } from '@/lib/uuid';
 
 const CURRENCY_NAMES: Record<string, string> = { RUB: 'Рубли', USD: 'Доллары США', EUR: 'Евро', CNY: 'Юани' };
@@ -36,7 +42,7 @@ export function ensureCurrencyInstruments(db: Executor, codes: Iterable<string>)
   return found;
 }
 
-function toLedgerOperation(row: typeof operations.$inferSelect): LedgerOperation {
+export function toLedgerOperation(row: typeof operations.$inferSelect): LedgerOperation {
   return {
     id: row.id,
     type: row.type,
@@ -55,6 +61,39 @@ function toLedgerOperation(row: typeof operations.$inferSelect): LedgerOperation
   };
 }
 
+/** An account's operations and the context to replay them: tag rules, default tag, cash instruments. */
+export function loadAccountLedger(
+  db: Executor,
+  account: Pick<typeof finAccounts.$inferSelect, 'id' | 'currency' | 'defaultTagId'>,
+  extraCurrencies: string[] = [],
+): { ops: LedgerOperation[]; ctx: LedgerContext } {
+  const ops = db
+    .select()
+    .from(operations)
+    .where(eq(operations.accountId, account.id))
+    .all()
+    .map(toLedgerOperation);
+  const cash = ensureCurrencyInstruments(db, [
+    account.currency,
+    ...extraCurrencies,
+    ...ops.map((o) => o.currency),
+  ]);
+  const rules = db
+    .select({ instrumentId: tagRules.instrumentId, tagId: tagRules.tagId })
+    .from(tagRules)
+    .where(eq(tagRules.accountId, account.id))
+    .all();
+  return {
+    ops,
+    ctx: {
+      tagRules: new Map(rules.filter((r) => r.instrumentId).map((r) => [r.instrumentId!, r.tagId])),
+      accountDefaultTagId: account.defaultTagId,
+      cashInstrumentId: (code) => cash.get(code) ?? ensureCurrencyInstruments(db, [code]).get(code)!,
+      deductFees: true,
+    },
+  };
+}
+
 /**
  * Rebuilds positions, lots and closures of one account from its operations, in one transaction.
  * The journal is the source of truth: this can run any number of times with the same result.
@@ -64,21 +103,8 @@ export function recalcAccount(db: Executor, accountId: string, now = new Date())
     const account = tx.select().from(finAccounts).where(eq(finAccounts.id, accountId)).get();
     if (!account) return { issues: [] };
 
-    const rows = tx.select().from(operations).where(eq(operations.accountId, accountId)).all();
-    const ops = rows.map(toLedgerOperation);
-    const cash = ensureCurrencyInstruments(tx, [account.currency, ...ops.map((o) => o.currency)]);
-    const rules = tx
-      .select({ instrumentId: tagRules.instrumentId, tagId: tagRules.tagId })
-      .from(tagRules)
-      .where(eq(tagRules.accountId, accountId))
-      .all();
-
-    const ledger = buildLedger(ops, {
-      tagRules: new Map(rules.filter((r) => r.instrumentId).map((r) => [r.instrumentId!, r.tagId])),
-      accountDefaultTagId: account.defaultTagId,
-      cashInstrumentId: (code) => cash.get(code) ?? ensureCurrencyInstruments(tx, [code]).get(code)!,
-      deductFees: true,
-    });
+    const { ops, ctx } = loadAccountLedger(tx, account);
+    const ledger = buildLedger(ops, ctx);
 
     // Closures go with their lots (on delete cascade).
     tx.delete(lots).where(eq(lots.accountId, accountId)).run();

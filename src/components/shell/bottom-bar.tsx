@@ -6,9 +6,13 @@ import { cn } from '@/lib/cn';
 import { ru } from '@/lib/i18n/ru';
 import { BOTTOM_ITEMS, isActive } from './nav';
 
+const FORM_ROUTES = [/^\/operations\/new$/, /^\/operations\/[^/]+\/edit$/];
+
 /** Tab bar for phones (MMain mockup), pinned to the bottom with the safe area. */
 export function BottomBar() {
   const pathname = usePathname();
+  // Form screens pin their own action bar instead (docs/08-ui.md, section 2).
+  if (FORM_ROUTES.some((re) => re.test(pathname))) return null;
   return (
     <nav
       aria-label={ru.nav.label}
