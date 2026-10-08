@@ -6,6 +6,7 @@ import { insertOperation, seedAccount, seedShare } from '@/db/test-fixtures';
 import { createTestDb } from '@/db/test-db';
 import { Decimal } from '@/domain/decimal';
 import {
+  convertSeries,
   everything,
   listPortfolios,
   loadFx,
@@ -144,3 +145,24 @@ describe('areas', () => {
 function db0() {
   return setup();
 }
+
+describe('display currency', () => {
+  it('converts each day at the rate of that day, falling back to the earliest known', () => {
+    const fx = new Map([
+      [
+        'USD',
+        [
+          { date: '2026-01-02', rate: '100' },
+          { date: '2026-01-05', rate: '80' },
+        ],
+      ],
+    ]);
+    const series = [
+      { date: '2026-01-01', value: new Decimal(1000), invested: new Decimal(500) },
+      { date: '2026-01-03', value: new Decimal(1000), invested: new Decimal(500) },
+      { date: '2026-01-05', value: new Decimal(1000), invested: new Decimal(500) },
+    ];
+    expect(convertSeries(series, fx, 'USD').map((p) => p.value)).toEqual([10, 10, 12.5]);
+    expect(convertSeries(series, fx, 'RUB').map((p) => p.invested)).toEqual([500, 500, 500]);
+  });
+});

@@ -30,6 +30,7 @@ import {
 import { ru } from '@/lib/i18n/ru';
 import {
   areaSeries,
+  convertSeries,
   flowsFor,
   listPortfolios,
   loadFx,
@@ -107,10 +108,7 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   const conv = (v: Decimal) => v.div(nowRate);
   const money = (v: Decimal) => formatMoney(Money.of(conv(v), cur));
   const signed = (v: Decimal) => formatChange(Money.of(conv(v), cur));
-  const chartPoints = series.map((p) => {
-    const rate = rubPer(fx, cur, p.date) ?? nowRate;
-    return { date: p.date, value: p.value.div(rate).toNumber(), invested: p.invested.div(rate).toNumber() };
-  });
+  const chartPoints = convertSeries(series, fx, cur);
 
   const recent = listJournal(db(), userId, { period: 'all' }, 1).rows.slice(0, 5);
 

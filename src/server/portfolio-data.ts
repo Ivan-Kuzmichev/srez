@@ -397,3 +397,16 @@ export function areaSeries(
     return { date: p.date, value: p.value, invested };
   });
 }
+
+/** A ruble series in another display currency, each day at that day's CBR rate (FR-OVR-5). */
+export function convertSeries(
+  series: SeriesPoint[],
+  fx: FxSeries,
+  currency: string,
+): { date: string; value: number; invested: number }[] {
+  const fallback = rubPer(fx, currency) ?? ONE;
+  return series.map((p) => {
+    const rate = rubPer(fx, currency, p.date) ?? fallback;
+    return { date: p.date, value: p.value.div(rate).toNumber(), invested: p.invested.div(rate).toNumber() };
+  });
+}
