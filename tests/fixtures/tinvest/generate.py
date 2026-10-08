@@ -29,6 +29,8 @@ LKOH = I("02cfdf61-6298-4c0f-a9ca-9cabc82afaf3", "BBG004731032", "LKOH", "TQBR",
 OFZ = I("3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01", "BBG00Y3XYV94", "SU26238RMFS4", "TQOB", "INSTRUMENT_TYPE_BOND", "bond")
 OFZ29 = I("7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77", "BBG00R0Q6Y51", "SU29014RMFS6", "TQOB", "INSTRUMENT_TYPE_BOND", "bond")
 TMOS = I("9654c2dd-6993-427e-80fa-04e80a1cf4da", "TCS60A101X76", "TMOS", "TQTF", "INSTRUMENT_TYPE_ETF", "etf")
+# The same fund in another trading mode: another uid, FIGI and position uid, the same ISIN (seen in real data).
+TMOS_AT = I("5b0d3e1f-7a2c-4c8e-9e11-2f4a6b8c0d12", "TCS00A101X76", "TMOS@", "SPBRU", "INSTRUMENT_TYPE_ETF", "etf")
 # Operations carry the dollar's old uid; the directory knows only the new one (seen in real data).
 USD_OLD = I("4f8a1b2c-0000-4000-8000-0000000000aa", "BBG0013HGFT4", "USD000UTSTOM", "CETS", "INSTRUMENT_TYPE_CURRENCY", "currency")
 USD = dict(USD_OLD, uid="a22a1263-8e1b-4546-a1aa-416463f104d3")
@@ -40,8 +42,8 @@ ops = []
 cash = {}
 held = {}
 # Payments that never touch the account's cash: a security transfer carries its valuation,
-# a dividend paid to a card leaves at once, a purchase from a card is paid from outside.
-NO_CASH = {"DIV_EXT", "BUY_CARD"}
+# a dividend paid to a card leaves at once. A purchase «с карты» is paid from the account after a top-up.
+NO_CASH = {"DIV_EXT"}
 
 
 def op(acc, date, typ, name, payment, inst=NONE, qty=0, rest=0, price=0, parent="", state="EXECUTED", accrued=0, cur='rub', desc=None):
@@ -99,6 +101,7 @@ trade(A1, "2023-08-01T08:05:42Z", "BUY", OFZ, 10, 605.5, 1.82, accrued=85.9)
 trade(A1, "2023-08-02T10:00:00Z", "BUY", USD_OLD, 100, 82.15, 24.65, name="Покупка валюты")
 trade(A1, "2023-08-03T11:00:00Z", "BUY", LKOH, 2, 5400, 2.7, rest=1)  # an order for 2, one filled
 trade(A1, "2023-08-04T11:00:00Z", "BUY", SBER, 10, 300, 0, state="CANCELED")
+op(A1, "2023-08-07T08:59:00Z", "INPUT", "Пополнение брокерского счёта", 3050, desc="Пополнение с карты для покупки")
 trade(A1, "2023-08-07T09:00:00Z", "BUY_CARD", TMOS, 500, 6.1, 0.92, name="Покупка ценных бумаг с карты")
 op(A1, "2024-01-17T06:00:00Z", "COUPON", "Выплата купонов", 356.5, OFZ)
 op(A1, "2024-01-17T06:00:00Z", "BOND_TAX", "Удержание налога по купонам", -46, OFZ)
@@ -160,10 +163,13 @@ dump('instruments.json', {"instruments": [
     ins(OFZ, "ОФЗ 26238", "RU000A1038V6", 1, bond(1000, "2041-05-15T00:00:00Z")),
     ins(OFZ29, "ОФЗ 29014", "RU000A101N52", 1, bond(0, "2026-03-25T00:00:00Z")),
     ins(TMOS, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
+    ins(TMOS_AT, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
     ins(USD, "Доллар США", "", 1000),
 ]})
 
 by_ticker = {i["ticker"]: i for i in [SBER, LKOH, OFZ, OFZ29, TMOS, USD]}
+# The IIS bought TMOS, the broker shows its holding as TMOS@.
+shown_as = {(A2, "TMOS"): TMOS_AT}
 last = {"SBER": 300, "LKOH": 7100, "SU26238RMFS4": 62.4, "TMOS": 7.1, "USD000UTSTOM": 81.2}
 
 
@@ -171,9 +177,9 @@ def portfolio(a):
     positions = []
     for (acc, ticker), qty in sorted(held.items()):
         if acc == a and qty:
-            i = by_ticker[ticker]
+            i = shown_as.get((acc, ticker), by_ticker[ticker])
             positions.append({"figi": i["figi"], "instrumentType": i["type"], "quantity": q(qty), "instrumentUid": i["uid"],
-                              "positionUid": "", "ticker": ticker, "classCode": i["classCode"], "currentPrice": mv(last[ticker])})
+                              "positionUid": "", "ticker": i["ticker"], "classCode": i["classCode"], "currentPrice": mv(last[ticker])})
     for (acc, cur), amount in sorted(cash.items()):
         if acc == a:
             positions.append({"figi": "RUB000UTSTOM", "instrumentType": "currency", "quantity": q(amount), "instrumentUid": RUB_UID,
@@ -182,7 +188,7 @@ def portfolio(a):
 
 
 dump('portfolio.json', {A1: portfolio(A1), A2: portfolio(A2)})
-dump('last-prices.json', {by_ticker[t]["uid"]: q(p) for t, p in last.items()})
+dump('last-prices.json', {**{by_ticker[t]["uid"]: q(p) for t, p in last.items()}, TMOS_AT["uid"]: q(7.1)})
 
 
 def coupon(n, date):

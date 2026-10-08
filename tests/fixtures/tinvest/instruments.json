@@ -106,6 +106,21 @@
    "countryOfRisk": "RU"
   },
   {
+   "uid": "5b0d3e1f-7a2c-4c8e-9e11-2f4a6b8c0d12",
+   "figi": "TCS00A101X76",
+   "ticker": "TMOS@",
+   "classCode": "SPBRU",
+   "isin": "RU000A101X76",
+   "lot": 1,
+   "currency": "rub",
+   "name": "Т-Капитал Индекс МосБиржи",
+   "exchange": "MOEX",
+   "instrumentType": "etf",
+   "instrumentKind": "INSTRUMENT_TYPE_ETF",
+   "positionUid": "",
+   "countryOfRisk": "RU"
+  },
+  {
    "uid": "a22a1263-8e1b-4546-a1aa-416463f104d3",
    "figi": "BBG0013HGFT4",
    "ticker": "USD000UTSTOM",

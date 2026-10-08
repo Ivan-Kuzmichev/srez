@@ -1301,6 +1301,60 @@
    "brokerAccountId": "2000000001",
    "id": "80000000025",
    "parentOperationId": "",
+   "name": "Пополнение брокерского счёта",
+   "date": "2023-08-07T08:59:00Z",
+   "type": "OPERATION_TYPE_INPUT",
+   "description": "Пополнение с карты для покупки",
+   "state": "OPERATION_STATE_EXECUTED",
+   "instrumentUid": "",
+   "figi": "",
+   "instrumentType": "",
+   "instrumentKind": "INSTRUMENT_TYPE_UNSPECIFIED",
+   "positionUid": "",
+   "ticker": "",
+   "classCode": "",
+   "payment": {
+    "currency": "rub",
+    "units": "3050",
+    "nano": 0
+   },
+   "price": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "commission": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yield": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "yieldRelative": {
+    "units": "0",
+    "nano": 0
+   },
+   "accruedInt": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   },
+   "quantity": "0",
+   "quantityRest": "0",
+   "quantityDone": "0",
+   "cancelDateTime": "1970-01-01T00:00:00Z",
+   "cancelReason": "",
+   "assetUid": "",
+   "childOperations": []
+  },
+  {
+   "cursor": "",
+   "brokerAccountId": "2000000001",
+   "id": "80000000026",
+   "parentOperationId": "",
    "name": "Покупка ценных бумаг с карты",
    "date": "2023-08-07T09:00:00Z",
    "type": "OPERATION_TYPE_BUY_CARD",
@@ -1353,8 +1407,8 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000026",
-   "parentOperationId": "80000000025",
+   "id": "80000000027",
+   "parentOperationId": "80000000026",
    "name": "Удержание комиссии за операцию",
    "date": "2023-08-07T09:00:00Z",
    "type": "OPERATION_TYPE_BROKER_FEE",
@@ -1407,7 +1461,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000027",
+   "id": "80000000028",
    "parentOperationId": "",
    "name": "Выплата купонов",
    "date": "2024-01-17T06:00:00Z",
@@ -1461,7 +1515,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000028",
+   "id": "80000000029",
    "parentOperationId": "",
    "name": "Удержание налога по купонам",
    "date": "2024-01-17T06:00:00Z",
@@ -1515,7 +1569,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000029",
+   "id": "80000000030",
    "parentOperationId": "",
    "name": "Выплата дивидендов",
    "date": "2024-07-26T06:00:00Z",
@@ -1569,7 +1623,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000030",
+   "id": "80000000031",
    "parentOperationId": "",
    "name": "Удержание налога по дивидендам",
    "date": "2024-07-26T06:00:00Z",
@@ -1623,7 +1677,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000031",
+   "id": "80000000032",
    "parentOperationId": "",
    "name": "Выплата дивидендов",
    "date": "2024-10-03T06:00:00Z",
@@ -1677,7 +1731,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000032",
+   "id": "80000000033",
    "parentOperationId": "",
    "name": "Продажа ценных бумаг",
    "date": "2025-03-05T12:40:00Z",
@@ -1731,8 +1785,8 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000033",
-   "parentOperationId": "80000000032",
+   "id": "80000000034",
+   "parentOperationId": "80000000033",
    "name": "Удержание комиссии за операцию",
    "date": "2025-03-05T12:40:00Z",
    "type": "OPERATION_TYPE_BROKER_FEE",
@@ -1785,7 +1839,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000034",
+   "id": "80000000035",
    "parentOperationId": "",
    "name": "Комиссия за обслуживание счёта",
    "date": "2025-04-01T00:00:00Z",
@@ -1839,7 +1893,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000035",
+   "id": "80000000036",
    "parentOperationId": "",
    "name": "",
    "date": "2025-12-31T00:00:00Z",
@@ -1893,7 +1947,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000036",
+   "id": "80000000037",
    "parentOperationId": "",
    "name": "",
    "date": "2026-01-20T00:00:00Z",
@@ -1947,7 +2001,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000037",
+   "id": "80000000038",
    "parentOperationId": "",
    "name": "ОФЗ 29014",
    "date": "2026-03-25T06:00:00Z",
@@ -2001,7 +2055,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000038",
+   "id": "80000000039",
    "parentOperationId": "",
    "name": "Вывод денежных средств",
    "date": "2026-05-20T09:00:00Z",
@@ -2055,7 +2109,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000001",
-   "id": "80000000039",
+   "id": "80000000040",
    "parentOperationId": "",
    "name": "Новый вид операции",
    "date": "2026-06-01T09:00:00Z",
@@ -2109,7 +2163,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000002",
-   "id": "80000000040",
+   "id": "80000000041",
    "parentOperationId": "",
    "name": "Пополнение ИИС",
    "date": "2025-07-05T09:00:00Z",
@@ -2163,7 +2217,7 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000002",
-   "id": "80000000041",
+   "id": "80000000042",
    "parentOperationId": "",
    "name": "Покупка ценных бумаг",
    "date": "2025-07-06T07:15:00Z",
@@ -2217,8 +2271,8 @@
   {
    "cursor": "",
    "brokerAccountId": "2000000002",
-   "id": "80000000042",
-   "parentOperationId": "80000000041",
+   "id": "80000000043",
+   "parentOperationId": "80000000042",
    "name": "Удержание комиссии за операцию",
    "date": "2025-07-06T07:15:00Z",
    "type": "OPERATION_TYPE_BROKER_FEE",

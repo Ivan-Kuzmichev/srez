@@ -110,16 +110,16 @@
   "accountId": "2000000002",
   "positions": [
    {
-    "figi": "TCS60A101X76",
+    "figi": "TCS00A101X76",
     "instrumentType": "etf",
     "quantity": {
      "units": "10000",
      "nano": 0
     },
-    "instrumentUid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
+    "instrumentUid": "5b0d3e1f-7a2c-4c8e-9e11-2f4a6b8c0d12",
     "positionUid": "",
-    "ticker": "TMOS",
-    "classCode": "TQTF",
+    "ticker": "TMOS@",
+    "classCode": "SPBRU",
     "currentPrice": {
      "currency": "rub",
      "units": "7",
