@@ -31,6 +31,7 @@ COPY --from=build --chown=srez:srez /app/drizzle ./drizzle
 # Native SQLite driver for the bundled worker, migrations and CLI.
 COPY --from=native --chown=srez:srez /out/better-sqlite3 ./node_modules/better-sqlite3
 COPY --chown=srez:srez docker/entrypoint.sh ./entrypoint.sh
+COPY --chown=srez:srez scripts/remote-address.mjs ./scripts/remote-address.mjs
 USER srez
 VOLUME /data
 EXPOSE 3000

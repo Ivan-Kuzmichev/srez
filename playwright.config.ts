@@ -52,7 +52,7 @@ export default defineConfig({
       // «e2e» marks the worker so global teardown can stop it; Playwright only stops the server.
       // The T-Invest mock answers the wizard and the worker; it is stopped with the worker.
       `(TINVEST_MOCK_DELAY_MS=300 pnpm exec tsx tests/mock/tinvest.ts ${MOCK_PORT} &)`,
-      `(LOG_CONSOLE=0 pnpm exec tsx src/worker.ts e2e &) && pnpm next start -p ${port}`,
+      `(LOG_CONSOLE=0 pnpm exec tsx src/worker.ts e2e &) && pnpm start -p ${port}`,
     ].join(' && '),
     url: `http://localhost:${port}/api/health`,
     reuseExistingServer: false,

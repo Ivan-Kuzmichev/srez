@@ -4,7 +4,7 @@ import { passkey, session, twoFactor, user } from '@/db/schema';
 import { createTestAuth, TEST_BASE_URL } from './test-auth';
 import { createUser, resetPassword, UserError } from './users';
 
-const headers = () => new Headers({ origin: TEST_BASE_URL, 'x-forwarded-for': '203.0.113.10' });
+const headers = () => new Headers({ origin: TEST_BASE_URL, 'x-srez-client-ip': '203.0.113.10' });
 const PASSWORD = 'first password 1';
 
 async function signIn(auth: ReturnType<typeof createTestAuth>['auth'], username: string, password: string) {

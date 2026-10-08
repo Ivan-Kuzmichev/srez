@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createTestAuth, seedUser, TEST_BASE_URL } from './test-auth';
 
-const headers = () => new Headers({ origin: TEST_BASE_URL, 'x-forwarded-for': '203.0.113.10' });
+const headers = () => new Headers({ origin: TEST_BASE_URL, 'x-srez-client-ip': '203.0.113.10' });
 
 describe('auth setup', () => {
   it('signs in by username and issues a session with a uuid v7 id', async () => {

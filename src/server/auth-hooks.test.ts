@@ -6,7 +6,7 @@ import { createLogger } from './logger';
 import { createTestAuth, seedUser, TEST_BASE_URL } from './test-auth';
 
 const PASSWORD = 'correct horse battery';
-const headers = () => new Headers({ origin: TEST_BASE_URL, 'x-forwarded-for': '203.0.113.10' });
+const headers = () => new Headers({ origin: TEST_BASE_URL, 'x-srez-client-ip': '203.0.113.10' });
 
 function setup() {
   const t = createTestAuth();
@@ -88,7 +88,7 @@ describe('session address', () => {
     await seedUser(auth, 'owner', PASSWORD);
     await auth.api.signInUsername({
       body: { username: 'owner', password: PASSWORD },
-      headers: new Headers({ origin: TEST_BASE_URL, 'x-forwarded-for': '2001:db8::1234' }),
+      headers: new Headers({ origin: TEST_BASE_URL, 'x-srez-client-ip': '2001:db8::1234' }),
     });
     expect(db.select().from(session).get()?.ipAddress).toBe('2001:db8::1234');
   });

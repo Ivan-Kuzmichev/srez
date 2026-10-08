@@ -3,7 +3,7 @@ import { and, desc, eq, gte } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { loginAttempts, passkey, passkeyUsage } from '@/db/schema';
 import { LOCKOUT_DURATION_MS, lockoutState, type LockoutState } from '@/domain/lockout';
-import { clientIp, parseTrustedProxies } from './client-ip';
+import { CLIENT_IP_HEADER } from './client-ip';
 import { logger } from './logger';
 import { ChallengeFailures, RateLimiter } from './rate-limit';
 
@@ -61,11 +61,9 @@ export function loginLockout(db: Db, username: string, now = new Date()): Lockou
 }
 
 /** Client address resolver bound to the configured proxies. */
-export function createIpResolver(trustedProxies: string[]) {
-  const trusted = parseTrustedProxies(trustedProxies.join(','));
-  const hasTrusted = trustedProxies.length > 0;
-  return (headers: Headers | undefined | null) =>
-    clientIp(headers?.get('x-forwarded-for') ?? null, trusted, hasTrusted);
+export function createIpResolver(_trustedProxies: string[]) {
+  // proxy.ts resolved it from the socket and the trusted proxies (docs/06-api.md, section 3).
+  return (headers: Headers | undefined | null) => headers?.get(CLIENT_IP_HEADER) ?? null;
 }
 
 export function createAuthHooks(config: { db: Db; trustedProxies: string[]; rateLimit?: number }) {

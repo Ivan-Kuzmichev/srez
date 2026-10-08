@@ -8,10 +8,10 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_OPTIONS='--import ./scripts/remote-address.mjs' next dev",
     "build": "next build && pnpm build:node",
     "build:node": "node scripts/build-node.mjs",
-    "start": "next start",
+    "start": "NODE_OPTIONS='--import ./scripts/remote-address.mjs' next start",
     "worker:dev": "tsx watch src/worker.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",

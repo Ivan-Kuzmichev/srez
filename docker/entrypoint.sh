@@ -4,7 +4,8 @@ set -e
 case "$1" in
   web)
     node dist/migrate.mjs
-    exec node server.js
+    # The socket address for client-address checks (docs/06-api.md, section 3).
+    exec node --import ./scripts/remote-address.mjs server.js
     ;;
   worker)
     exec node dist/worker.mjs

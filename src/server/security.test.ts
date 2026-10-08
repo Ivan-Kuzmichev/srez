@@ -13,7 +13,7 @@ import {
 import { createTestAuth, seedUser, TEST_BASE_URL } from './test-auth';
 
 const PASSWORD = 'correct horse battery';
-const base = { origin: TEST_BASE_URL, 'x-forwarded-for': '203.0.113.10' };
+const base = { origin: TEST_BASE_URL, 'x-srez-client-ip': '203.0.113.10' };
 
 function cookieFrom(res: Response): string {
   return res.headers

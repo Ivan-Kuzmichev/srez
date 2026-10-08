@@ -7,3 +7,4 @@ export * from './ledger';
 export * from './market';
 export * from './sync';
 export * from './reconcile';
+export * from './api';

@@ -7,6 +7,7 @@ import { db, type Db } from '@/db/client';
 import * as schema from '@/db/schema';
 import { APP_NAME } from '@/lib/app';
 import { uuidv7 } from '@/lib/uuid';
+import { CLIENT_IP_HEADER } from './client-ip';
 import { createAuthHooks, createIpResolver, createPasskeyChecks, loginMethodForPath } from './auth-hooks';
 import { authSecret, env, trustedProxyList } from './env';
 import { BACKUP_CODES_COUNT, generateBackupCodes } from './two-factor';
@@ -77,7 +78,8 @@ export function createAuth(config: AuthConfig) {
       cookiePrefix: 'srez',
       useSecureCookies: url.protocol === 'https:',
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax' },
-      ipAddress: { ipAddressHeaders: ['x-forwarded-for'], trustedProxies: config.trustedProxies },
+      // Set by proxy.ts from the socket address; a client's X-Forwarded-For alone is never believed.
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
       database: { generateId: () => uuidv7() },
     },
     rateLimit: {

@@ -1,5 +1,10 @@
 import { getSessionCookie } from 'better-auth/cookies';
 import { NextResponse, type NextRequest } from 'next/server';
+import { CLIENT_IP_HEADER, parseTrustedProxies, resolveClientIp } from '@/server/client-ip';
+import { trustedProxyList } from '@/server/env';
+
+let trusted: ReturnType<typeof parseTrustedProxies> | undefined;
+const trustedList = () => (trusted ??= parseTrustedProxies(trustedProxyList().join(',')));
 
 export const REQUEST_ID_HEADER = 'x-request-id';
 
@@ -31,6 +36,10 @@ export function proxy(request: NextRequest) {
 
   const headers = new Headers(request.headers);
   headers.set(REQUEST_ID_HEADER, requestId);
+  // The one client address every check uses (sign-in limits, API tokens); never what a client sent.
+  headers.delete(CLIENT_IP_HEADER);
+  const ip = resolveClientIp(request.headers, trustedList());
+  if (ip) headers.set(CLIENT_IP_HEADER, ip);
   const response = NextResponse.next({ request: { headers } });
   response.headers.set(REQUEST_ID_HEADER, requestId);
   return response;
