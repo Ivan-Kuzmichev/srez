@@ -5,9 +5,13 @@ import { finAccounts } from '@/db/schema';
 import { enqueueRecalc } from '@/jobs/positions';
 import { enqueue } from '@/jobs/queue';
 import { startWorker } from '@/jobs/runner';
+import { secretKey } from '@/server/crypto';
 import { flushLogs, logger } from '@/server/logger';
 
 const log = logger('jobs');
+
+// Fail at start, not at the first sync, when production has no usable APP_SECRET_KEY.
+secretKey();
 
 const worker = startWorker({
   db: db(),

@@ -31,6 +31,24 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Secrets are decrypted only in the worker, right before an external call (docs/07, section 7).
+    files: ['src/**'],
+    ignores: ['src/domain/**', 'src/jobs/**', 'src/worker.ts', 'src/server/secret-read.ts', 'src/server/*.test.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/server/secret-read', '**/secret-read'],
+              message: 'Decrypt secrets in the worker only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
   globalIgnores([
     '.next/**',
     'out/**',

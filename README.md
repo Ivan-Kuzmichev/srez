@@ -93,7 +93,7 @@ docker compose run --rm web cli user:create --username admin
 |---|---|
 | `DATABASE_PATH` | Путь к файлу SQLite. В Docker всегда `/data/srez.db` |
 | `APP_URL` | Публичный адрес. Нужен для кук и пасскеев (с фазы 1) |
-| `APP_SECRET_KEY` | Ключ шифрования секретов в базе, `openssl rand -base64 32` |
+| `APP_SECRET_KEY` | Ключ шифрования секретов в базе (токен Т-Инвестиций и другие), `openssl rand -base64 32`. Обязателен в production. Сохраните его вместе с резервной копией базы: без него токены не расшифровать и их придётся ввести заново |
 | `AUTH_SECRET` | Секрет Better Auth, `openssl rand -base64 32` |
 | `TRUSTED_PROXIES` | Обратные прокси, которым можно верить в `X-Forwarded-For` |
 | `TINVEST_PROXY_URL` | Необязательный прокси для Т-Инвестиций |

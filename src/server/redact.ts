@@ -2,7 +2,7 @@ export const REDACTED = '[redacted]';
 
 // Field names that carry secrets, matched case-insensitively at the end of the name
 // so that accessToken, x-api-key, set-cookie and client_secret are all caught.
-const SECRET_KEY = /(token|password|passwd|secret|authorization|cookie|key)$/i;
+const SECRET_KEY = /(token|password|passwd|secret|authorization|cookie|key|encrypted)$/i;
 
 export function isSecretKey(key: string): boolean {
   return SECRET_KEY.test(key.replace(/[-_]/g, ''));
