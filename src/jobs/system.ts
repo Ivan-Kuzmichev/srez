@@ -10,7 +10,7 @@ export const heartbeat = defineJob({
   name: 'system.heartbeat',
   payload: z.null(),
   handler({ log }) {
-    log.info('Worker heartbeat');
+    log.debug('Worker heartbeat');
   },
 });
 

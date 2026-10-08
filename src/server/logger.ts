@@ -223,8 +223,12 @@ export function observeExternalRequest(r: ExternalRequest, database: () => Db = 
       error: r.error,
     };
     const log = instance().root.child({ source });
-    if (r.status === 0 || r.status >= 400) log.warn(entry, 'External request failed');
-    else log.info(entry, 'External request');
+    if (r.status === 0 || r.status >= 400)
+      log.warn(
+        entry,
+        `${r.integration} ${r.method} failed: ${r.status || r.error || 'no answer'}, ${r.durationMs} ms`,
+      );
+    else log.info(entry, `${r.integration} ${r.method} ${r.status}, ${r.durationMs} ms`);
   }
   if (!logConfig.debug || r.body === undefined) return;
   let body: unknown = r.body.length > RAW_LIMIT ? `${r.body.slice(0, RAW_LIMIT)}…` : r.body;

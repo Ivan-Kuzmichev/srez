@@ -13,7 +13,7 @@ const silent = new Writable({ write: (_c, _e, cb) => cb() });
 
 function setup() {
   const db = createTestDb();
-  const { root, sink } = createLogger({ level: 'info', getDb: () => db as Db, console: silent });
+  const { root, sink } = createLogger({ level: 'debug', getDb: () => db as Db, console: silent });
   return { db, sink, log: root.child({ source: 'jobs' }) };
 }
 
@@ -30,7 +30,8 @@ describe('runOnce', () => {
     });
     expect(worked).toBe(true);
     sink.flush();
-    const rows = db.select().from(logs).all();
+    // At debug level the runner's own «Job done» is there too.
+    const rows = db.select().from(logs).all().filter((r) => r.message === 'Worker heartbeat');
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ source: 'jobs', message: 'Worker heartbeat', jobId: `job_${id}` });
     expect(db.select().from(jobs).get()?.status).toBe('done');
