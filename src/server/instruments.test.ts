@@ -48,6 +48,12 @@ describe('directory', () => {
       currency: 'RUB',
       lot: '1',
     });
+    expect(db.select().from(instruments).get()!.meta).toMatchObject({
+      secid: 'SBER',
+      engine: 'stock',
+      market: 'shares',
+      board: 'TQBR',
+    });
     const again = await pickDirectoryHit(db, 'u1', 'moex:SBER', online);
     expect(again!.id).toBe(sber!.id);
 
