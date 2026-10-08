@@ -7,7 +7,7 @@ import { db, type Db } from '@/db/client';
 import * as schema from '@/db/schema';
 import { APP_NAME } from '@/lib/app';
 import { uuidv7 } from '@/lib/uuid';
-import { createAuthHooks, loginMethodForPath } from './auth-hooks';
+import { createAuthHooks, createPasskeyChecks, loginMethodForPath } from './auth-hooks';
 import { authSecret, env, trustedProxyList } from './env';
 import { BACKUP_CODES_COUNT, generateBackupCodes } from './two-factor';
 
@@ -96,6 +96,7 @@ export function createAuth(config: AuthConfig) {
         rpName: APP_NAME,
         origin: url.origin,
         authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+        ...createPasskeyChecks({ db: config.db }),
       }),
       // Must stay last: lets server actions set auth cookies.
       nextCookies(),

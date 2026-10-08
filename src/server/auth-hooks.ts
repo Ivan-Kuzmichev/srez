@@ -1,7 +1,7 @@
 import { APIError, createAuthMiddleware, isAPIError } from 'better-auth/api';
 import { and, desc, eq, gte } from 'drizzle-orm';
 import type { Db } from '@/db/client';
-import { loginAttempts } from '@/db/schema';
+import { loginAttempts, passkey, passkeyUsage } from '@/db/schema';
 import { LOCKOUT_DURATION_MS, lockoutState, type LockoutState } from '@/domain/lockout';
 import { clientIp, parseTrustedProxies } from './client-ip';
 import { logger } from './logger';
@@ -133,4 +133,58 @@ export function createAuthHooks(config: { db: Db; trustedProxies: string[] }) {
   });
 
   return { before, after };
+}
+
+export const USER_VERIFICATION_REQUIRED = 'USER_VERIFICATION_REQUIRED';
+
+/**
+ * Passkey checks the plugin leaves out: it verifies responses with `requireUserVerification: false`,
+ * but docs/07-auth-security.md, section 4 requires verification (fingerprint, face, PIN) every time.
+ */
+export function createPasskeyChecks(config: { db: Db }) {
+  return {
+    registration: {
+      afterVerification: async ({
+        verification,
+      }: {
+        verification: { registrationInfo?: { userVerified: boolean } };
+      }) => {
+        if (!verification.registrationInfo?.userVerified) {
+          throw new APIError('BAD_REQUEST', {
+            message: USER_VERIFICATION_REQUIRED,
+            code: USER_VERIFICATION_REQUIRED,
+          });
+        }
+      },
+    },
+    authentication: {
+      afterVerification: async ({
+        verification,
+        clientData,
+      }: {
+        verification: { authenticationInfo: { userVerified: boolean } };
+        clientData: { id: string };
+      }) => {
+        if (!verification.authenticationInfo.userVerified) {
+          throw new APIError('UNAUTHORIZED', {
+            message: USER_VERIFICATION_REQUIRED,
+            code: USER_VERIFICATION_REQUIRED,
+          });
+        }
+        const row = config.db
+          .select({ id: passkey.id })
+          .from(passkey)
+          .where(eq(passkey.credentialID, clientData.id))
+          .get();
+        if (row) {
+          const now = new Date();
+          config.db
+            .insert(passkeyUsage)
+            .values({ passkeyId: row.id, lastUsedAt: now })
+            .onConflictDoUpdate({ target: passkeyUsage.passkeyId, set: { lastUsedAt: now } })
+            .run();
+        }
+      },
+    },
+  };
 }
