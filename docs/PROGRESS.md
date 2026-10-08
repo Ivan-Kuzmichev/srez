@@ -65,7 +65,7 @@
 | Заголовки безопасности и CSP — в фазе 10 | По плану |
 | Порт web по умолчанию слушает только `127.0.0.1` (`SREZ_BIND`) | Без адреса сокета `X-Forwarded-For` подделывается при прямом доступе |
 
-- [ ] 1. Better Auth и таблицы
+- [x] 1. Better Auth и таблицы: `createAuth()` в `src/server/auth.ts` (username, twoFactor, passkey, nextCookies), ленивый `auth()`, чтобы `next build` не требовал секретов; таблицы из CLI Better Auth (`pnpm auth:generate`) плюс свои `login_attempts` и `passkey_usage`; миграция `0003_auth`; uuid v7 для id. Плагин пасскеев не умеет добавлять поля, поэтому дата последнего входа лежит в `passkey_usage`. Плагин пасскеев сам не требует проверки пользователя на сервере (`requireUserVerification: false`), проверку добавлю в задаче 6 через `afterVerification`
 - [ ] 2. CLI
 - [ ] 3. Экран входа
 - [ ] 4. Защита и выход
