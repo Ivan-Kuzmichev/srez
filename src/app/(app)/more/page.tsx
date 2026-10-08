@@ -5,6 +5,9 @@ import { PageHeader } from '@/components/shell/page-header';
 import { SyncCard } from '@/components/shell/sync-card';
 import { signOut } from '@/server/actions/auth';
 import { requireSession } from '@/server/session';
+import { syncSummary } from '@/server/sources';
+import { getSettings } from '@/server/settings';
+import { db } from '@/db/client';
 import { ru } from '@/lib/i18n/ru';
 
 export const metadata: Metadata = { title: ru.pages.more };
@@ -45,7 +48,10 @@ export default async function MorePage() {
   return (
     <>
       <PageHeader title={ru.pages.more} />
-      <SyncCard summary={null} variant="card" />
+      <SyncCard
+        summary={syncSummary(db(), session.user.id, getSettings(db(), session.user.id).display.timezone)}
+        variant="card"
+      />
       {groups.map((group) => (
         <section
           key={group.title}

@@ -45,4 +45,15 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   await expect(page.getByTestId('overview-value')).toBeVisible();
   await page.goto('/operations?period=all');
   await expect(page.getByTestId('journal-table')).toContainText('Т-Инвестиции');
+
+  // «Источники»: status, the run log, a manual sync; the sidebar shows the source.
+  await page.goto('/sources');
+  const card = page.getByTestId('tinvest-card');
+  await expect(card).toContainText('Работает');
+  await expect(card).toContainText('Только чтение');
+  await expect(page.getByTestId('sync-log')).toContainText('Успешно');
+  await expect(page.getByTestId('sync-card').first()).toContainText('Т-Инвестиции');
+  await card.getByRole('button', { name: 'Синхронизировать сейчас' }).click();
+  await expect(page.getByText('Синхронизация поставлена в очередь').first()).toBeVisible();
+  expect(await page.content()).not.toContain(MOCK_TOKEN);
 });

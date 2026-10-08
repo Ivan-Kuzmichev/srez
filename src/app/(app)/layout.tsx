@@ -3,7 +3,10 @@ import { BottomBar } from '@/components/shell/bottom-bar';
 import { Sidebar } from '@/components/shell/sidebar';
 import { SyncCard } from '@/components/shell/sync-card';
 import { UserRow } from '@/components/shell/user-row';
+import { db } from '@/db/client';
 import { requireSession } from '@/server/session';
+import { getSettings } from '@/server/settings';
+import { syncSummary } from '@/server/sources';
 
 // Every page reads live user data; nothing here is cached.
 export const dynamic = 'force-dynamic';
@@ -11,12 +14,12 @@ export const dynamic = 'force-dynamic';
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await requireSession();
   const username = session.user.displayUsername ?? session.user.username ?? session.user.name;
+  const summary = syncSummary(db(), session.user.id, getSettings(db(), session.user.id).display.timezone);
   return (
     <div className="flex min-h-dvh">
-      {/* Sources and their sync status arrive in phase 4. */}
       <Sidebar
         footer={
-          <SyncCard summary={null}>
+          <SyncCard summary={summary}>
             <UserRow username={username} />
           </SyncCard>
         }

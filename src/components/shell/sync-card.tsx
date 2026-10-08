@@ -24,6 +24,7 @@ export function SyncCard({
 }) {
   return (
     <div
+      data-testid="sync-card"
       className={cn(
         'flex flex-col gap-1',
         variant === 'sidebar'

@@ -129,7 +129,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
             <Button asChild variant="secondary">
               <Link href={`/portfolios/${id}/edit`}>{ru.portfolio.edit}</Link>
             </Button>
-            <Button asChild variant="primary" className="hidden wide:inline-flex">
+            <Button asChild variant="primary" className="max-wide:hidden">
               <Link href="/operations/new">{ru.portfolio.addOperation}</Link>
             </Button>
           </div>
