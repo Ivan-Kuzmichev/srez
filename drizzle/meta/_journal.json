@@ -85,6 +85,13 @@
       "when": 1791488694484,
       "tag": "0011_payout_events",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1791489896124,
+      "tag": "0012_reconcile",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import { AccountsStep } from '@/components/onboarding/accounts-step';
 import { LoadingStep } from '@/components/onboarding/loading-step';
 import { Stat, StepCard, StepsNav } from '@/components/onboarding/steps';
 import { TokenStep } from '@/components/onboarding/token-step';
+import { IconAlert, IconCheck } from '@/components/icons';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/client';
@@ -11,6 +12,7 @@ import { formatPlain } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { onboardingState, type OnboardingState } from '@/server/onboarding';
 import { requireSession } from '@/server/session';
+import { reconcileSummary } from '@/server/sources';
 
 export const metadata: Metadata = { title: ru.pages.onboarding };
 
@@ -54,6 +56,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<'/onboa
   const state = onboardingState(db(), session.user.id, requested);
   const reachable = state.sourceId ? (state.run ? 4 : 2) : 1;
   const s = state.stats;
+  const summary = state.step === 4 && state.sourceId ? reconcileSummary(db(), state.sourceId) : null;
 
   return (
     <main className="mx-auto flex w-full max-w-[720px] flex-col gap-7 px-4 py-8 wide:px-6 wide:py-14">
@@ -87,10 +90,39 @@ export default async function OnboardingPage({ searchParams }: PageProps<'/onboa
             />
             <Stat label={ru.onboarding.positionsNow} value={formatPlain(s.positions, 0)} />
           </div>
+          {summary ? (
+            <div className="flex flex-col" data-testid="onboarding-reconcile">
+              <div className="flex min-h-[52px] items-center gap-3 border-b border-border-subtle last:border-b-0">
+                <span className="flex text-gain">
+                  <IconCheck size={18} />
+                </span>
+                <span>{ru.onboarding.matched(summary.matched)}</span>
+              </div>
+              {summary.open > 0 ? (
+                <div className="flex min-h-[52px] items-center gap-3">
+                  <span className="flex text-loss">
+                    <IconAlert size={18} />
+                  </span>
+                  <span>{ru.onboarding.mismatched(summary.open)}</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button asChild variant="primary">
-              <Link href="/">{ru.onboarding.toOverview}</Link>
-            </Button>
+            {summary && summary.open > 0 && state.sourceId ? (
+              <>
+                <Button asChild variant="secondary">
+                  <Link href="/">{ru.onboarding.later}</Link>
+                </Button>
+                <Button asChild variant="primary">
+                  <Link href={`/sources/${state.sourceId}/reconcile`}>{ru.onboarding.review}</Link>
+                </Button>
+              </>
+            ) : (
+              <Button asChild variant="primary">
+                <Link href="/">{ru.onboarding.toOverview}</Link>
+              </Button>
+            )}
           </div>
         </StepCard>
       ) : null}

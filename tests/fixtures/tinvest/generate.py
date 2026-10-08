@@ -28,6 +28,7 @@ SBER = I("e6123145-9665-43e0-8413-cd61b8aa9b13", "BBG004730N88", "SBER", "TQBR",
 LKOH = I("02cfdf61-6298-4c0f-a9ca-9cabc82afaf3", "BBG004731032", "LKOH", "TQBR", "INSTRUMENT_TYPE_SHARE", "share")
 OFZ = I("3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01", "BBG00Y3XYV94", "SU26238RMFS4", "TQOB", "INSTRUMENT_TYPE_BOND", "bond")
 OFZ29 = I("7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77", "BBG00R0Q6Y51", "SU29014RMFS6", "TQOB", "INSTRUMENT_TYPE_BOND", "bond")
+GAZP = I("962e2a95-02a9-4171-abd7-aa198dbe643a", "BBG004730RP0", "GAZP", "TQBR", "INSTRUMENT_TYPE_SHARE", "share")
 TMOS = I("9654c2dd-6993-427e-80fa-04e80a1cf4da", "TCS60A101X76", "TMOS", "TQTF", "INSTRUMENT_TYPE_ETF", "etf")
 # The same fund in another trading mode: another uid, FIGI and position uid, the same ISIN (seen in real data).
 TMOS_AT = I("5b0d3e1f-7a2c-4c8e-9e11-2f4a6b8c0d12", "TCS00A101X76", "TMOS@", "SPBRU", "INSTRUMENT_TYPE_ETF", "etf")
@@ -161,6 +162,7 @@ def bond(nominal, maturity):
 dump('instruments.json', {"instruments": [
     ins(SBER, "Сбер Банк", "RU0009029540", 10),
     ins(LKOH, "Лукойл", "RU0009024277", 1),
+    ins(GAZP, "Газпром", "RU0007661625", 10),
     ins(OFZ, "ОФЗ 26238", "RU000A1038V6", 1, bond(1000, "2041-05-15T00:00:00Z")),
     ins(OFZ29, "ОФЗ 29014", "RU000A101N52", 1, bond(0, "2026-03-25T00:00:00Z")),
     ins(TMOS, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
@@ -168,12 +170,12 @@ dump('instruments.json', {"instruments": [
     ins(USD, "Доллар США", "", 1000, {"isoCurrencyName": "usd", "nominal": mv(1, "usd")}),
 ]})
 
-by_ticker = {i["ticker"]: i for i in [SBER, LKOH, OFZ, OFZ29, TMOS, USD]}
+by_ticker = {i["ticker"]: i for i in [SBER, LKOH, OFZ, OFZ29, TMOS, USD, GAZP]}
 # The broker's average price, for the «current positions only» start.
 avg_price = {"SBER": 255, "LKOH": 5400, "SU26238RMFS4": 605.5, "TMOS": 6.89, "USD000UTSTOM": 82.15}
 # The IIS bought TMOS, the broker shows its holding as TMOS@.
 shown_as = {(A2, "TMOS"): TMOS_AT}
-last = {"SBER": 300, "LKOH": 7100, "SU26238RMFS4": 62.4, "TMOS": 7.1, "USD000UTSTOM": 81.2}
+last = {"SBER": 300, "LKOH": 7100, "SU26238RMFS4": 62.4, "TMOS": 7.1, "USD000UTSTOM": 81.2, "GAZP": 130}
 
 
 def portfolio(a):
@@ -191,7 +193,15 @@ def portfolio(a):
     return {"accountId": a, "positions": positions}
 
 
-dump('portfolio.json', {A1: portfolio(A1), A2: portfolio(A2)})
+pf1 = portfolio(A1)
+# Two discrepancies on purpose (phase 4 acceptance): shares that arrived without an operation,
+# and a holding ten times the journal's, as after a split.
+pf1["positions"].append({"figi": GAZP["figi"], "instrumentType": "share", "quantity": q(50), "instrumentUid": GAZP["uid"], "positionUid": "",
+                         "ticker": "GAZP", "classCode": "TQBR", "currentPrice": mv(130), "averagePositionPrice": mv(125)})
+for p in pf1["positions"]:
+    if p["ticker"] == "LKOH":
+        p["quantity"] = q(10)
+dump('portfolio.json', {A1: pf1, A2: portfolio(A2)})
 dump('last-prices.json', {**{by_ticker[t]["uid"]: q(p) for t, p in last.items()}, TMOS_AT["uid"]: q(7.1)})
 
 

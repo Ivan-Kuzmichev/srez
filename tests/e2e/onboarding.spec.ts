@@ -41,7 +41,11 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   await expect(done).toContainText('2020–2026');
   await expect(done).toContainText('31');
 
-  await page.getByRole('link', { name: 'Перейти к обзору' }).click();
+  // The fixtures carry two discrepancies on purpose.
+  const summary = page.getByTestId('onboarding-reconcile');
+  await expect(summary).toContainText('2 позиции не сошлись');
+  await expect(page.getByRole('link', { name: 'Разобрать расхождения' })).toBeVisible();
+  await page.getByRole('link', { name: 'Разберу позже' }).click();
   await expect(page.getByTestId('overview-value')).toBeVisible();
   await page.goto('/operations?period=all');
   await expect(page.getByTestId('journal-table')).toContainText('Т-Инвестиции');
@@ -51,6 +55,7 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   const card = page.getByTestId('tinvest-card');
   await expect(card).toContainText('Работает');
   await expect(card).toContainText('Только чтение');
+  await expect(page.getByTestId('reconcile-status')).toContainText('2 расхождения');
   await expect(page.getByTestId('sync-log')).toContainText('Успешно');
   await expect(page.getByTestId('sync-card').first()).toContainText('Т-Инвестиции');
   await card.getByRole('button', { name: 'Синхронизировать сейчас' }).click();

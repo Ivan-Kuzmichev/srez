@@ -1,6 +1,16 @@
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import type { Db } from '@/db/client';
-import { finAccounts, jobs, operations, sources, syncRuns } from '@/db/schema';
+import {
+  discrepancies,
+  finAccounts,
+  instruments,
+  jobs,
+  operations,
+  positions,
+  sources,
+  syncRuns,
+} from '@/db/schema';
+import { Decimal } from '@/domain/decimal';
 import type { SyncSummary } from '@/components/shell/sync-card';
 import { ru } from '@/lib/i18n/ru';
 import { ago } from '@/lib/relative-date';
@@ -104,4 +114,44 @@ export function syncSummary(db: Db, userId: string, timeZone: string, now = new 
     state: 'ok',
     detail: s.lastSyncAt ? ru.shell.syncedAgo(ago(s.lastSyncAt, timeZone, now)) : ru.sources.never,
   };
+}
+
+export interface ReconcileSummary {
+  /** Securities checked against the broker that agree. */
+  matched: number;
+  /** Discrepancies waiting for the owner (cash included). */
+  open: number;
+}
+
+/** For the wizard's last step and the «Сверка с брокером» block. */
+export function reconcileSummary(db: Db, sourceId: string): ReconcileSummary {
+  const accountIds = db
+    .select({ id: finAccounts.id, closedAt: finAccounts.closedAt })
+    .from(finAccounts)
+    .where(eq(finAccounts.sourceId, sourceId))
+    .all()
+    .filter((a) => a.closedAt === null)
+    .map((a) => a.id);
+  if (accountIds.length === 0) return { matched: 0, open: 0 };
+  const open = db
+    .select({ instrumentId: discrepancies.instrumentId, kind: instruments.kind })
+    .from(discrepancies)
+    .innerJoin(instruments, eq(instruments.id, discrepancies.instrumentId))
+    .where(and(inArray(discrepancies.accountId, accountIds), eq(discrepancies.status, 'open')))
+    .all();
+  const held = db
+    .select({
+      accountId: positions.accountId,
+      instrumentId: positions.instrumentId,
+      quantity: positions.quantity,
+      kind: instruments.kind,
+    })
+    .from(positions)
+    .innerJoin(instruments, eq(instruments.id, positions.instrumentId))
+    .where(inArray(positions.accountId, accountIds))
+    .all()
+    .filter((p) => p.kind !== 'currency' && new Decimal(p.quantity).gt(0));
+  const pairs = new Set(held.map((p) => `${p.accountId}|${p.instrumentId}`));
+  const openSecurities = open.filter((d) => d.kind !== 'currency').length;
+  return { matched: Math.max(0, pairs.size - openSecurities), open: open.length };
 }

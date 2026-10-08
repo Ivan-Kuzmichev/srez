@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ManualAccountsCard } from '@/components/ledger/manual-accounts-card';
 import { PageHeader } from '@/components/shell/page-header';
 import { ConnectMore } from '@/components/sources/connect-more';
+import { ReconcileStatus } from '@/components/sources/reconcile-status';
 import { SyncLog } from '@/components/sources/sync-log';
 import { TinvestCard } from '@/components/sources/tinvest-card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { ru } from '@/lib/i18n/ru';
 import { ago } from '@/lib/relative-date';
 import { requireSession } from '@/server/session';
 import { getSettings } from '@/server/settings';
-import { syncLog, tinvestSourceView } from '@/server/sources';
+import { reconcileSummary, syncLog, tinvestSourceView } from '@/server/sources';
 
 export const metadata: Metadata = { title: ru.pages.sources };
 
@@ -54,7 +55,14 @@ export default async function SourcesPage() {
               operations: formatPlain(tinvest.operations, 0),
               accounts: tinvest.accounts,
             }}
-          />
+          >
+            {tinvest.lastSyncAt ? (
+              <ReconcileStatus
+                summary={reconcileSummary(db(), tinvest.id)}
+                href={`/sources/${tinvest.id}/reconcile`}
+              />
+            ) : null}
+          </TinvestCard>
         ) : (
           <section className="flex min-w-0 flex-[3_1_480px] flex-col items-start gap-3 rounded-card border border-border bg-surface p-4 wide:p-6">
             <h2 className="m-0 text-[18px] font-semibold">{ru.sources.notConnected}</h2>

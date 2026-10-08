@@ -8,12 +8,15 @@ import { heldQuantity } from '@/domain/holdings';
 import { TinvestClient, TinvestError, type OperationItem } from '@/integrations/tinvest/client';
 import { mapOperations, openingBalance, type MappedOperation } from '@/integrations/tinvest/map';
 import { ru } from '@/lib/i18n/ru';
+import { localDate } from '@/lib/time';
+import { getSettings } from '@/server/settings';
 import { enqueuePayouts } from './payouts';
 import { enqueueRecalc } from './positions';
 import { enqueue, retryDelayMs } from './queue';
 import { defineJob } from './runner';
 import { tinvestToken } from './source-token';
 import { tinvestClient } from './tinvest-client';
+import { reconcileAccount } from './tinvest-reconcile';
 import { instrumentKey, resolveInstruments } from './tinvest-instruments';
 
 export const SYNC_JOB = 'sync.tinvest';
@@ -282,6 +285,30 @@ export async function syncSource(
         .run();
       if (result.inserted > 0) enqueueRecalc(db, account.id);
       opts.log?.info({ accountId: account.id, fetched, ...result }, 'T-Invest account synced');
+    }
+
+    // FR-REC-1: after every sync, open accounts against the broker. A failure here does not fail the sync.
+    for (const [index, account] of accounts.entries()) {
+      if (account.meta?.closed) continue;
+      progress({
+        stage: 'reconcile',
+        accountIndex: index + 1,
+        accountCount: accounts.length,
+        accountName: account.name,
+        percent: 90,
+      });
+      try {
+        const tz = getSettings(db, account.userId).display.timezone;
+        await reconcileAccount(
+          db,
+          opts.client,
+          { id: account.id, externalId: account.externalId },
+          now,
+          localDate(now, tz),
+        );
+      } catch (err) {
+        opts.log?.warn({ accountId: account.id, err }, 'Reconcile failed');
+      }
     }
 
     // New securities may have arrived: their coupons and dividends, after positions are recalculated.

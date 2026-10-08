@@ -31,6 +31,21 @@
    "countryOfRisk": "RU"
   },
   {
+   "uid": "962e2a95-02a9-4171-abd7-aa198dbe643a",
+   "figi": "BBG004730RP0",
+   "ticker": "GAZP",
+   "classCode": "TQBR",
+   "isin": "RU0007661625",
+   "lot": 10,
+   "currency": "rub",
+   "name": "Газпром",
+   "exchange": "MOEX",
+   "instrumentType": "share",
+   "instrumentKind": "INSTRUMENT_TYPE_SHARE",
+   "positionUid": "",
+   "countryOfRisk": "RU"
+  },
+  {
    "uid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
    "figi": "BBG00Y3XYV94",
    "ticker": "SU26238RMFS4",

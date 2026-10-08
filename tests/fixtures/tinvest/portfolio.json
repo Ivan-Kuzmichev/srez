@@ -6,7 +6,7 @@
     "figi": "BBG004731032",
     "instrumentType": "share",
     "quantity": {
-     "units": "1",
+     "units": "10",
      "nano": 0
     },
     "instrumentUid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
@@ -131,6 +131,28 @@
     "averagePositionPrice": {
      "currency": "rub",
      "units": "1",
+     "nano": 0
+    }
+   },
+   {
+    "figi": "BBG004730RP0",
+    "instrumentType": "share",
+    "quantity": {
+     "units": "50",
+     "nano": 0
+    },
+    "instrumentUid": "962e2a95-02a9-4171-abd7-aa198dbe643a",
+    "positionUid": "",
+    "ticker": "GAZP",
+    "classCode": "TQBR",
+    "currentPrice": {
+     "currency": "rub",
+     "units": "130",
+     "nano": 0
+    },
+    "averagePositionPrice": {
+     "currency": "rub",
+     "units": "125",
      "nano": 0
     }
    }

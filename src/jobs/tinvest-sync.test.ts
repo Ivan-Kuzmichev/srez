@@ -166,7 +166,8 @@ describe('T-Invest sync', () => {
         ticker: string;
         quantity: { units: string; nano: number };
       }[];
-      for (const p of broker) {
+      // GAZP and LKOH differ on purpose: the reconcile fixtures.
+      for (const p of broker.filter((x) => x.ticker !== 'GAZP' && x.ticker !== 'LKOH')) {
         const ticker =
           p.ticker === 'RUB000UTSTOM'
             ? 'RUB'
@@ -251,6 +252,7 @@ describe('history depth chosen in the wizard', () => {
     expect(rows.map((r) => r.type).sort()).toEqual([
       'deposit',
       'deposit',
+      'transfer_in',
       'transfer_in',
       'transfer_in',
       'transfer_in',
