@@ -15,10 +15,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm db:migrate && pnpm next dev -p ${port}`,
+    // A production build: dev mode compiles routes on first hit and reloads pages mid-test.
+    command: `pnpm db:migrate && pnpm next build && pnpm next start -p ${port}`,
     url: `http://localhost:${port}/api/health`,
     reuseExistingServer: !process.env.CI,
     env: { DATABASE_PATH: './data/e2e.db' },
-    timeout: 120_000,
+    timeout: 300_000,
   },
 });

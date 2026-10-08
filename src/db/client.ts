@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
+import { env } from '@/server/env';
 import * as schema from './schema';
 
 export type Db = BetterSQLite3Database<typeof schema> & { $client: Database.Database };
@@ -25,6 +26,6 @@ const globalForDb = globalThis as unknown as { srezDb?: Db };
 
 /** Process-wide connection. Survives Next.js dev reloads. */
 export function db(): Db {
-  globalForDb.srezDb ??= openDb(process.env.DATABASE_PATH ?? './data/srez.db');
+  globalForDb.srezDb ??= openDb(env().DATABASE_PATH);
   return globalForDb.srezDb;
 }

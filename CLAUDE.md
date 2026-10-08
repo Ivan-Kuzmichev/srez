@@ -45,14 +45,18 @@ Self-hosted веб-приложение для одного владельца: 
 ```
 pnpm dev            # web, режим разработки
 pnpm worker:dev     # воркер, режим разработки
-pnpm db:generate    # сгенерировать миграцию из схемы
-pnpm db:migrate     # применить миграции
+pnpm db:generate    # сгенерировать миграцию из схемы (src/db/schema)
+pnpm db:migrate     # применить миграции к DATABASE_PATH
 pnpm test           # юнит-тесты
-pnpm test:e2e       # Playwright
+pnpm test:e2e       # Playwright, проекты desktop (1440) и phone (390)
 pnpm check          # typecheck + lint + test, обязателен перед завершением задачи
-pnpm cli <команда>  # служебные команды: user:create, user:reset-password
-docker compose up   # всё вместе: web, worker (база — файл на томе)
+pnpm build          # next build (standalone) + бандлы worker/migrate/cli в dist/
+pnpm cli <команда>  # служебные команды: user:create, user:reset-password (с фазы 1)
+docker compose up   # всё вместе: web, worker (база — файл ./data/srez.db на томе)
+SREZ_PLATFORM=linux/arm64 docker compose up --build   # сборка под Apple Silicon
 ```
+
+FTS5 и другие вещи, которые drizzle-kit не генерирует, — ручные миграции: `pnpm exec drizzle-kit generate --custom --name <имя>`.
 
 ## Жёсткие правила
 

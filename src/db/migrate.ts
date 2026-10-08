@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { env } from '@/server/env';
 import { openDb, type Db } from './client';
 
 export function migrationsFolder(): string {
@@ -17,7 +18,7 @@ export function runMigrations(database: Db): void {
 const isEntryPoint = process.argv[1] && /migrate\.(ts|mjs)$/.test(process.argv[1]);
 
 if (isEntryPoint) {
-  const path = process.env.DATABASE_PATH ?? './data/srez.db';
+  const path = env().DATABASE_PATH;
   const database = openDb(path);
   runMigrations(database);
   database.$client.close();

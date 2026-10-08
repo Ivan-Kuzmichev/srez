@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import pino, { type DestinationStream, type Logger } from 'pino';
 import { db, type Db } from '@/db/client';
 import { logs, type LogLevel } from '@/db/schema';
+import { env } from './env';
 import { redact } from './redact';
 
 export type { Logger } from 'pino';
@@ -118,11 +119,11 @@ const globalForLogger = globalThis as unknown as { srezLogger?: { root: Logger; 
 
 function instance() {
   if (!globalForLogger.srezLogger) {
-    const level = (process.env.LOG_LEVEL as LogLevel | undefined) ?? 'info';
+    const { LOG_LEVEL, NODE_ENV } = env();
     globalForLogger.srezLogger = createLogger({
-      level,
+      level: LOG_LEVEL,
       getDb: db,
-      pretty: process.env.NODE_ENV !== 'production' && process.env.LOG_PRETTY !== '0',
+      pretty: NODE_ENV !== 'production' && process.env.LOG_PRETTY !== '0',
     });
   }
   return globalForLogger.srezLogger;

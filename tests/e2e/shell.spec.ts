@@ -35,8 +35,7 @@ test('no horizontal scroll and a 404 page', async ({ page }) => {
 });
 
 test('keyboard focus is visible', async ({ page }) => {
-  await page.goto('/dev/ui');
+  await page.goto('/dev/ui', { waitUntil: 'networkidle' });
   await page.keyboard.press('Tab');
-  const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
-  expect(outline).toBe('solid');
+  await expect(page.locator(':focus')).toHaveCSS('outline-style', 'solid');
 });
