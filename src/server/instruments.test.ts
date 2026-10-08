@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { instruments, user } from '@/db/schema';
 import { createTestDb } from '@/db/test-db';
@@ -48,7 +49,7 @@ describe('directory', () => {
       currency: 'RUB',
       lot: '1',
     });
-    expect(db.select().from(instruments).get()!.meta).toMatchObject({
+    expect(db.select().from(instruments).where(eq(instruments.ticker, 'SBER')).get()!.meta).toMatchObject({
       secid: 'SBER',
       engine: 'stock',
       market: 'shares',
