@@ -35,9 +35,14 @@ export function createAuth(config: AuthConfig) {
     databaseHooks: {
       session: {
         create: {
-          // How the session was obtained, for the sessions table in settings.
+          // How the session was obtained, and the client address as we resolve it: Better Auth
+          // masks IPv6 to a /64 subnet, which reads as zeros in the sessions table.
           before: async (session, ctx) => ({
-            data: { ...session, loginMethod: loginMethodForPath(ctx?.path) },
+            data: {
+              ...session,
+              loginMethod: loginMethodForPath(ctx?.path),
+              ipAddress: ipOf(ctx?.headers) ?? session.ipAddress ?? null,
+            },
           }),
         },
       },

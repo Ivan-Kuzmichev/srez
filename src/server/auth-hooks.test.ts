@@ -82,6 +82,18 @@ describe('password lockout', () => {
   });
 });
 
+describe('session address', () => {
+  it('keeps a full IPv6 address instead of the /64 subnet', async () => {
+    const { auth, db } = setup();
+    await seedUser(auth, 'owner', PASSWORD);
+    await auth.api.signInUsername({
+      body: { username: 'owner', password: PASSWORD },
+      headers: new Headers({ origin: TEST_BASE_URL, 'x-forwarded-for': '2001:db8::1234' }),
+    });
+    expect(db.select().from(session).get()?.ipAddress).toBe('2001:db8::1234');
+  });
+});
+
 describe('sign-in events', () => {
   it('logs successes and failures under source auth without the password', async () => {
     const { auth, db, sink } = setup();
