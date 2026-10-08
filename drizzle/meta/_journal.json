@@ -50,6 +50,20 @@
       "when": 1791476803965,
       "tag": "0006_ledger_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791481744415,
+      "tag": "0007_market",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791481749512,
+      "tag": "0008_market_indexes",
+      "breakpoints": true
     }
   ]
 }
