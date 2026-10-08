@@ -7,11 +7,16 @@ x-app: &app
       - ${SREZ_PLATFORM:-linux/amd64}
   image: srez:latest
   platform: ${SREZ_PLATFORM:-linux/amd64}
-  env_file:
-    - path: .env
-      required: false
+  # Values come from .env next to this file (or the shell); see .env.example.
   environment:
     DATABASE_PATH: /data/srez.db
+    APP_URL: ${APP_URL:-http://localhost:3000}
+    APP_SECRET_KEY: ${APP_SECRET_KEY:-}
+    AUTH_SECRET: ${AUTH_SECRET:-}
+    TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+    TINVEST_PROXY_URL: ${TINVEST_PROXY_URL:-}
+    LOG_LEVEL: ${LOG_LEVEL:-info}
+    TZ: ${TZ:-UTC}
   volumes:
     # Must be a local disk on the host: SQLite locking is unreliable over SMB/NFS.
     - ./data:/data

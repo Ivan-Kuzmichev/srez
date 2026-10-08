@@ -51,7 +51,8 @@ pnpm test           # юнит-тесты
 pnpm test:e2e       # Playwright, проекты desktop (1440) и phone (390)
 pnpm check          # typecheck + lint + test, обязателен перед завершением задачи
 pnpm build          # next build (standalone) + бандлы worker/migrate/cli в dist/
-pnpm cli <команда>  # служебные команды: user:create, user:reset-password (с фазы 1)
+pnpm cli <команда>  # служебные команды: user:create, user:reset-password
+pnpm auth:generate  # таблицы Better Auth из его настроек, затем pnpm db:generate
 docker compose up   # всё вместе: web, worker (база — файл ./data/srez.db на томе)
 SREZ_PLATFORM=linux/arm64 docker compose up --build   # сборка под Apple Silicon
 ```

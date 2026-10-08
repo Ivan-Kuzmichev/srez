@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { db as globalDb } from '@/db/client';
+import { logs } from '@/db/schema';
+import { flushLogs } from './logger';
 import { totpFromUri } from '../../tests/helpers/totp';
 import {
   confirmTwoFactorSetup,
@@ -136,5 +139,24 @@ describe('sign-in with 2FA', () => {
       asResponse: true,
     });
     expect(await res.json()).not.toHaveProperty('twoFactorRedirect');
+  });
+});
+
+describe('privacy of sign-in logs', () => {
+  it('never contain the password, TOTP codes or backup codes', async () => {
+    const t = await signedIn();
+    const { uri, codes } = await enable(t);
+    const totp = totpFromUri(uri);
+    await signInWithSecondFactor(t, { totp });
+    await signInWithSecondFactor(t, { backup: codes[2] });
+    await signInWithSecondFactor(t, { backup: 'ZZZZ-ZZZZ' });
+    flushLogs();
+    // Messages and context only: a six-digit code could match part of a timestamp by chance.
+    const dump = JSON.stringify(
+      globalDb().select({ message: logs.message, context: logs.context }).from(logs).all(),
+    );
+    expect(dump).toContain('Sign-in');
+    for (const secret of [PASSWORD, totp, codes[2]!, 'ZZZZ-ZZZZ', ...codes])
+      expect(dump).not.toContain(secret);
   });
 });

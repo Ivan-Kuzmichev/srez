@@ -14,11 +14,24 @@
 
 ```sh
 pnpm install
-cp .env.example .env        # заполнить по комментариям в файле
-pnpm db:migrate             # создаст data/srez.db и применит миграции
-pnpm dev                    # web на http://localhost:3000
-pnpm worker:dev             # воркер в соседнем терминале
+cp .env.example .env                    # заполнить по комментариям в файле
+pnpm db:migrate                         # создаст ~/.srez/dev.db и применит миграции
+pnpm cli user:create --username admin   # пароль спросит дважды, не короче 12 символов
+pnpm dev                                # web на http://localhost:3000
+pnpm worker:dev                         # воркер в соседнем терминале
 ```
+
+В разработке база по умолчанию лежит в `~/.srez/dev.db`, а не в проекте: Turbopack следит за всем каталогом проекта и перезагружает страницу при каждой записи в файл базы. Другой путь задаётся `DATABASE_PATH`.
+
+Регистрации нет. Пользователь создаётся командой, пароль сбрасывается тоже командой:
+
+```sh
+pnpm cli user:reset-password --username admin                  # новый пароль, все сессии завершатся
+pnpm cli user:reset-password --username admin --disable-2fa    # заодно отключить 2FA
+pnpm cli user:reset-password --username admin --remove-passkeys
+```
+
+Пасскеи работают на `http://localhost` и по HTTPS с доменным именем. По IP-адресу или по HTTP с другого устройства кнопки пасскея скрыты.
 
 Витрина компонентов: http://localhost:3000/dev/ui (будет удалена перед выпуском).
 
@@ -36,7 +49,8 @@ pnpm worker:dev             # воркер в соседнем терминал�
 | `pnpm test:e2e` | сквозные тесты (Playwright, 1440 и 390 px); база `data/e2e.db` |
 | `pnpm check` | typecheck, lint и юнит-тесты; обязателен перед коммитом |
 | `pnpm build` | сборка Next.js (standalone) и бандлов воркера, миграций и CLI в `dist/` |
-| `pnpm cli <команда>` | служебные команды (`pnpm cli help`) |
+| `pnpm cli <команда>` | служебные команды (`pnpm cli help`): `user:create`, `user:reset-password` |
+| `pnpm auth:generate` | пересоздать таблицы Better Auth в `src/db/schema/auth.ts` после смены его настроек, затем `pnpm db:generate` |
 
 Перед первым `pnpm test:e2e`: `pnpm exec playwright install chromium`.
 
@@ -48,7 +62,7 @@ docker compose up --build
 
 Поднимаются два контейнера из одного образа:
 
-- `web` — интерфейс на порту 3000. При старте применяет миграции.
+- `web` — интерфейс на порту 3000. При старте применяет миграции. По умолчанию порт слушается только на `127.0.0.1`: обратный прокси на той же машине до него дотянется, сеть — нет. Если прокси стоит на другой машине, задайте `SREZ_BIND=0.0.0.0` и укажите его адрес в `TRUSTED_PROXIES`.
 - `worker` — фоновые задачи и расписание. Стартует, когда `web` здоров.
 
 База — файл `./data/srez.db` рядом с `docker-compose.yml`. Его видят оба контейнера.
@@ -59,6 +73,12 @@ docker compose up --build
 
 ```sh
 SREZ_PLATFORM=linux/arm64 docker compose up --build
+```
+
+Перед первым запуском заполните `.env`: в продакшене без `AUTH_SECRET` вход не заработает. Первый пользователь:
+
+```sh
+docker compose run --rm web cli user:create --username admin
 ```
 
 Служебные команды в контейнере: `docker compose run --rm web cli <команда>`.
