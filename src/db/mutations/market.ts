@@ -104,6 +104,8 @@ export interface InstrumentInUse {
   kind: (typeof instruments.$inferSelect)['kind'];
   ticker: string | null;
   currency: string;
+  /** T-Invest uid: prices come from the broker when a token is there. */
+  externalUid: string | null;
   meta: Record<string, unknown> | null;
   firstOperationAt: Date;
 }
@@ -116,6 +118,7 @@ export function instrumentsInUse(db: Executor): InstrumentInUse[] {
       kind: instruments.kind,
       ticker: instruments.ticker,
       currency: instruments.currency,
+      externalUid: instruments.externalUid,
       meta: instruments.meta,
       firstOperationAt: min(operations.executedAt),
     })

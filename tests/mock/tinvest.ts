@@ -44,6 +44,8 @@ export interface TinvestMock {
   calls: { method: string; body: Json }[];
   /** The next calls answer with these errors, in order (e.g. a 429, then a 503). */
   failNext(...errors: { status: number; code?: string; message?: string; resetSeconds?: number }[]): void;
+  /** Drops failures a test queued but did not use. */
+  clearFailures(): void;
   close(): Promise<void>;
 }
 
@@ -246,6 +248,7 @@ export async function startTinvestMock(
     state,
     calls,
     failNext: (...errors) => void failures.push(...errors),
+    clearFailures: () => void failures.splice(0),
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
 }

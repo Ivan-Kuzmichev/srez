@@ -7,13 +7,12 @@ import { Decimal } from '@/domain/decimal';
 import { heldQuantity } from '@/domain/holdings';
 import { TinvestClient, TinvestError, type OperationItem } from '@/integrations/tinvest/client';
 import { mapOperations, type MappedOperation } from '@/integrations/tinvest/map';
-import { nodeTransport } from '@/integrations/tinvest/transport';
 import { ru } from '@/lib/i18n/ru';
-import { env } from '@/server/env';
 import { enqueueRecalc } from './positions';
 import { enqueue, retryDelayMs } from './queue';
 import { defineJob } from './runner';
 import { tinvestToken } from './source-token';
+import { tinvestClient } from './tinvest-client';
 import { instrumentKey, resolveInstruments } from './tinvest-instruments';
 
 export const SYNC_JOB = 'sync.tinvest';
@@ -26,11 +25,6 @@ export type SyncTrigger = (typeof SYNC_TRIGGERS)[number];
 
 export function enqueueSync(db: Executor, sourceId: string, trigger: SyncTrigger): number | null {
   return enqueue(db, SYNC_JOB, { sourceId, trigger }, { singletonKey: `${SYNC_JOB}:${sourceId}` });
-}
-
-export function tinvestClient(token: string): TinvestClient {
-  const { TINVEST_API_URL, TINVEST_PROXY_URL } = env();
-  return new TinvestClient(token, { baseUrl: TINVEST_API_URL, transport: nodeTransport(TINVEST_PROXY_URL) });
 }
 
 /** The interface text for a failed run (docs/05-integrations.md, «Ошибки для интерфейса»). */

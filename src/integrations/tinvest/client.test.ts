@@ -1,5 +1,5 @@
 import { X509Certificate } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { MOCK_TOKEN, startTinvestMock, type TinvestMock } from '../../../tests/mock/tinvest';
 import { RUSSIAN_TRUSTED_ROOT_CA, RUSSIAN_TRUSTED_ROOT_CA_SHA256 } from './ca';
 import { quotation, TinvestClient, TinvestError } from './client';
@@ -12,6 +12,7 @@ beforeAll(async () => {
   client = new TinvestClient(MOCK_TOKEN, { baseUrl: mock.url });
 });
 afterAll(() => mock.close());
+afterEach(() => mock.clearFailures());
 
 describe('T-Invest client', () => {
   it('ships the genuine Russian Trusted Root CA', () => {

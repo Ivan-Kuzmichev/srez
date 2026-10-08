@@ -21,6 +21,8 @@ import { addDays, localDate, utcToZonedLocal } from '@/lib/time';
 import type { Logger } from '@/server/logger';
 import { ownerSettings } from '@/server/settings';
 import { enqueue } from './queue';
+import type { TinvestClient } from '@/integrations/tinvest/client';
+import { refreshTinvestPrices, tinvestForPrices, tinvestHistory } from './tinvest-market';
 import { defineJob } from './runner';
 
 /** Display currencies are always kept, so the ₽ / $ / € switch works from the first day. */
@@ -66,12 +68,23 @@ export async function refreshPrices(
   log: Logger,
   fetchFn: Fetch = fetch,
   now = new Date(),
+  tinvest: TinvestClient | null = null,
 ): Promise<void> {
   const tz = ownerSettings(db).display.timezone;
   const today = localDate(now, tz);
   const used = instrumentsInUse(db);
 
-  for (const inst of used.filter((i) => MOEX_KINDS.has(i.kind))) {
+  // The broker first; ISS for what it did not price (no token, an error, a security without a uid).
+  let fromBroker = new Set<string>();
+  if (tinvest) {
+    try {
+      fromBroker = await refreshTinvestPrices(db, tinvest, used, now, today);
+    } catch (err) {
+      log.warn({ err }, 'T-Invest price refresh failed, falling back to ISS');
+    }
+  }
+
+  for (const inst of used.filter((i) => MOEX_KINDS.has(i.kind) && !fromBroker.has(i.id))) {
     try {
       const ref = await moexRef(db, inst, fetchFn);
       const price = ref && (await getLastPrice(ref, fetchFn));
@@ -117,6 +130,7 @@ export async function backfillHistory(
   log: Logger,
   fetchFn: Fetch = fetch,
   now = new Date(),
+  tinvest: TinvestClient | null = null,
 ): Promise<number> {
   const tz = ownerSettings(db).display.timezone;
   const today = localDate(now, tz);
@@ -135,6 +149,15 @@ export async function backfillHistory(
     const since = localDate(inst.firstOperationAt, tz);
     for (const [from, to] of gaps(priceRange(db, inst.id), since)) {
       try {
+        if (tinvest && inst.externalUid && MOEX_KINDS.has(inst.kind)) {
+          try {
+            const n = await tinvestHistory(db, tinvest, inst, from, to);
+            added += n;
+            if (n > 0) continue;
+          } catch (err) {
+            log.warn({ instrument: inst.ticker, from, to, err }, 'T-Invest history failed, trying ISS');
+          }
+        }
         if (MOEX_KINDS.has(inst.kind)) {
           const ref = await moexRef(db, inst, fetchFn);
           if (!ref) continue;
@@ -210,7 +233,7 @@ export const refreshPricesJob = defineJob({
     // The schedule ticks every 15 minutes; hourly and daily settings skip the extra ticks.
     const minute = new Date().getUTCMinutes() + new Date().getUTCHours() * 60;
     if (s.prices.refreshMinutes > 15 && minute % s.prices.refreshMinutes >= 15) return;
-    await refreshPrices(db, log);
+    await refreshPrices(db, log, fetch, new Date(), tinvestForPrices(db));
   },
 });
 
@@ -219,7 +242,7 @@ export const snapshotJob = defineJob({
   payload: z.null(),
   lockMs: 30 * 60_000,
   async handler({ db, log }) {
-    const added = await backfillHistory(db, log);
+    const added = await backfillHistory(db, log, fetch, new Date(), tinvestForPrices(db));
     const rebuilt = updateSnapshots(db, new Date(), added > 0);
     if (added > 0 || rebuilt > 0)
       log.info({ pricesAdded: added, accountsRebuilt: rebuilt }, 'Snapshots updated');

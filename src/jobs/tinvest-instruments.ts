@@ -5,6 +5,7 @@ import { instruments } from '@/db/schema';
 import { TinvestClient, TinvestError, type Instrument } from '@/integrations/tinvest/client';
 import type { InstrumentRef } from '@/integrations/tinvest/map';
 import { uuidv7 } from '@/lib/uuid';
+import { ensureBondMeta } from './tinvest-market';
 
 type Row = typeof instruments.$inferSelect;
 
@@ -149,6 +150,21 @@ export async function resolveInstruments(
         },
       })
       .run();
+    if (kind.kind === 'bond' && (found?.uid || ref.uid)) {
+      // Nominal and maturity: bond prices are in percent of the nominal; reconcile needs the maturity.
+      try {
+        await ensureBondMeta(db, client, {
+          id,
+          kind: 'bond',
+          externalUid: found?.uid || ref.uid,
+          meta:
+            db.select({ meta: instruments.meta }).from(instruments).where(eq(instruments.id, id)).get()
+              ?.meta ?? null,
+        });
+      } catch (err) {
+        if (!(err instanceof TinvestError) || err.code !== 'NOT_FOUND') throw err;
+      }
+    }
     out.set(key, id);
   }
   return out;

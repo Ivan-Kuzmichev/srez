@@ -1,6 +1,6 @@
 import { Writable } from 'node:stream';
 import { and, eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { recalcAccount } from '@/db/mutations/positions';
 import { saveBrokerAccounts } from '@/db/mutations/broker-accounts';
 import { createTinvestSource } from '@/db/mutations/sources';
@@ -22,6 +22,7 @@ beforeAll(async () => {
   mock = await startTinvestMock();
 });
 afterAll(() => mock.close());
+afterEach(() => mock.clearFailures());
 
 const now = new Date('2026-10-08T12:00:00Z');
 
