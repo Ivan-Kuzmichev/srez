@@ -35,6 +35,8 @@ export interface PortfolioFormValues {
   targetsEnabled: boolean;
   targets: Record<string, string>;
   threshold: string;
+  /** '' takes the settings default. */
+  benchmarkId: string;
 }
 
 interface Preview {
@@ -52,11 +54,14 @@ export function PortfolioForm({
   initial,
   accounts,
   tags,
+  benchmarks,
 }: {
   id?: string;
   initial: PortfolioFormValues;
   accounts: AccountChoice[];
   tags: { id: string; name: string }[];
+  /** First option: the default, labelled with its name. */
+  benchmarks: { value: string; label: string }[];
 }) {
   const router = useRouter();
   const notify = useToast();
@@ -114,6 +119,7 @@ export function PortfolioForm({
       targetsEnabled: values.targetsEnabled,
       targets,
       deviationThreshold: values.threshold || '0',
+      benchmarkId: values.benchmarkId,
     });
     setBusy(false);
     if (!result.ok) {
@@ -246,6 +252,16 @@ export function PortfolioForm({
               </Field>
             </div>
           ) : null}
+          <Field label={ru.portfolio.benchmark}>
+            {(f) => (
+              <Select
+                id={f.id}
+                value={values.benchmarkId || 'default'}
+                onValueChange={(v) => setValues((s) => ({ ...s, benchmarkId: v === 'default' ? '' : v }))}
+                options={benchmarks.map((b) => ({ value: b.value || 'default', label: b.label }))}
+              />
+            )}
+          </Field>
           <Checkbox
             label={ru.portfolios.noTargets}
             checked={!values.targetsEnabled}

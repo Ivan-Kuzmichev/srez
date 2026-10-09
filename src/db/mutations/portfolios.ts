@@ -1,12 +1,12 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import type { Db } from '@/db/client';
-import { finAccounts, portfolioRules, portfolios, portfolioTargets, tags } from '@/db/schema';
+import { finAccounts, instruments, portfolioRules, portfolios, portfolioTargets, tags } from '@/db/schema';
 import { ASSET_CLASS_ORDER, targetsValid, type AssetClass } from '@/domain/allocation';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
 
 export class PortfolioError extends Error {
   override name = 'PortfolioError';
-  constructor(readonly code: 'NOT_FOUND' | 'ACCOUNT' | 'TAG' | 'TARGETS' | 'NO_ACCOUNTS') {
+  constructor(readonly code: 'NOT_FOUND' | 'ACCOUNT' | 'TAG' | 'TARGETS' | 'NO_ACCOUNTS' | 'BENCHMARK') {
     super(code);
   }
 }
@@ -17,10 +17,20 @@ export interface PortfolioInput {
   targetsEnabled: boolean;
   targets: Partial<Record<AssetClass, Decimal>>;
   deviationThreshold: Decimal;
+  /** An index instrument; null takes the settings default. */
+  benchmarkId?: string | null;
 }
 
 function check(db: Db, userId: string, input: PortfolioInput) {
   if (input.rules.length === 0) throw new PortfolioError('NO_ACCOUNTS');
+  if (input.benchmarkId) {
+    const index = db
+      .select({ kind: instruments.kind })
+      .from(instruments)
+      .where(eq(instruments.id, input.benchmarkId))
+      .get();
+    if (index?.kind !== 'index') throw new PortfolioError('BENCHMARK');
+  }
   const accountIds = input.rules.map((r) => r.accountId);
   const own = db
     .select({ id: finAccounts.id })
@@ -53,6 +63,7 @@ export function savePortfolio(db: Db, userId: string, input: PortfolioInput, id?
       name: input.name,
       targetsEnabled: input.targetsEnabled,
       deviationThreshold: toDbDecimal(input.deviationThreshold),
+      benchmarkInstrumentId: input.benchmarkId ?? null,
     };
     if (portfolioId) {
       const updated = db

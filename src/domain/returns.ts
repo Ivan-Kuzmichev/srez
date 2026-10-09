@@ -123,3 +123,22 @@ export function priceReturn(start: Decimal, end: Decimal): Decimal | null {
 export function excessPp(portfolio: Decimal | null, benchmark: Decimal | null): Decimal | null {
   return portfolio === null || benchmark === null ? null : portfolio.minus(benchmark).times(100);
 }
+
+/**
+ * Cumulative TWR growth per day: 1 on the first day, then × (1 + r_t). The return between any two
+ * days is G_b / G_a − 1, which is how a chart rebases to its period. Days before money arrives stay 1.
+ */
+export function twrGrowth(series: readonly TwrDay[]): Decimal[] {
+  const out: Decimal[] = [];
+  let growth = new Decimal(1);
+  let previous: Decimal | null = null;
+  for (const day of series) {
+    if (previous !== null) {
+      if (previous.gt(0)) growth = growth.times(day.value.minus(day.flow).div(previous));
+      else if (day.flow.gt(0)) growth = growth.times(day.value.div(day.flow));
+    }
+    out.push(growth);
+    previous = day.value;
+  }
+  return out;
+}

@@ -1,3 +1,6 @@
+import { getSettings } from './settings';
+import { benchmarkFor, benchmarkOptions } from './benchmarks';
+import { db } from '@/db/client';
 import type { AccountChoice, PortfolioFormValues } from '@/components/portfolio/portfolio-form';
 import type { Db } from '@/db/client';
 import { listAccounts, listTags } from '@/db/queries/accounts';
@@ -35,5 +38,18 @@ export function portfolioFormValues(p: PortfolioRow | null, accounts: AccountCho
     targetsEnabled: p ? p.targetsEnabled : false,
     targets: Object.fromEntries(ASSET_CLASS_ORDER.map((c) => [c, text(p?.targets.get(c))])),
     threshold: p ? text(p.deviationThreshold) : '5',
+    benchmarkId: p?.benchmarkId ?? '',
   };
+}
+
+/** The portfolio form's benchmark choice: the settings default first, then each index. */
+export function benchmarkChoices(userId: string): { value: string; label: string }[] {
+  const options = benchmarkOptions(db());
+  const defaultId = benchmarkFor(db(), null, getSettings(db(), userId).returns.defaultBenchmarkId);
+  const name = (ticker: string) => ru.benchmarks.full[ticker] ?? ticker;
+  const fallback = options.find((o) => o.id === defaultId)!;
+  return [
+    { value: '', label: ru.portfolio.benchmarkDefault(name(fallback.ticker)) },
+    ...options.map((o) => ({ value: o.id, label: name(o.ticker) })),
+  ];
 }

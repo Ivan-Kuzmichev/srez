@@ -19,6 +19,8 @@ import {
   loadUserLedger,
   loadValuedCells,
   portfolioScope,
+  areaXirr,
+  flowsFor,
   summarizeArea,
   tagNames,
 } from '@/server/portfolio-data';
@@ -58,7 +60,8 @@ export default async function PortfoliosPage() {
 
   const cards = portfolios.map((p) => {
     const s = summarizeArea(db(), userId, portfolioScope(p), cells, ledger, fx, tz, null);
-    return { p, s, positions: s.cells.filter((c) => !c.isCash).length };
+    const x = areaXirr(flowsFor(ledger, portfolioScope(p), fx, tz), s.value, tz);
+    return { p, s, x, positions: s.cells.filter((c) => !c.isCash).length };
   });
 
   return (
@@ -83,7 +86,7 @@ export default async function PortfoliosPage() {
             className="grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-3 wide:gap-4"
             data-testid="portfolio-cards"
           >
-            {cards.map(({ p, s, positions }) => (
+            {cards.map(({ p, s, x, positions }) => (
               <Link
                 key={p.id}
                 href={`/portfolios/${p.id}`}
@@ -91,15 +94,15 @@ export default async function PortfoliosPage() {
               >
                 <span className="flex items-baseline justify-between gap-3">
                   <span className="text-card font-semibold">{p.name}</span>
-                  {s.profitPct ? (
+                  {x ? (
                     <span
                       title={ru.portfolios.returnHint}
                       className={cn(
                         'num text-caption whitespace-nowrap',
-                        s.profitPct.gte(0) ? 'text-gain' : 'text-loss',
+                        x.rate.gte(0) ? 'text-gain' : 'text-loss',
                       )}
                     >
-                      {formatPercent(s.profitPct, { signed: true })}
+                      {formatPercent(x.rate.times(100), { signed: true })}
                     </span>
                   ) : null}
                 </span>

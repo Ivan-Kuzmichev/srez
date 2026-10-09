@@ -33,6 +33,7 @@ import { ru } from '@/lib/i18n/ru';
 import { localDate } from '@/lib/time';
 import {
   areaSeries,
+  areaXirr,
   convertSeries,
   flowsFor,
   listPortfolios,
@@ -104,7 +105,9 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   const selected = portfolios.find((p) => p.id === params.portfolio) ?? null;
   const scope = selected ? portfolioScope(selected) : everything;
   const s = summarizeArea(db(), userId, scope, cells, ledger, fx, tz, null);
-  const series = areaSeries(db(), userId, scope, flowsFor(ledger, scope, fx, tz), s.value, tz);
+  const flows = flowsFor(ledger, scope, fx, tz);
+  const series = areaSeries(db(), userId, scope, flows, s.value, tz);
+  const xirrAll = areaXirr(flows, s.value, tz);
 
   // Display currency: today's values at today's rate, the history at the rate of each day (FR-OVR-5).
   const cur = params.cur;
@@ -196,19 +199,18 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
                 {signed(s.profit)}
               </div>
             </div>
-            {s.profitPct ? (
-              <div className="flex flex-col gap-1">
-                <div className="text-small text-muted">{ru.overview.profitPct}</div>
-                <div
-                  className={cn(
-                    'num text-body whitespace-nowrap',
-                    s.profitPct.gte(0) ? 'text-gain' : 'text-loss',
-                  )}
-                >
-                  {formatPercent(s.profitPct, { signed: true })}
-                </div>
+            <div className="flex flex-col gap-1" data-testid="overview-xirr">
+              <div className="text-small text-muted">{ru.portfolio.xirr}</div>
+              <div
+                className={cn(
+                  'num text-body whitespace-nowrap',
+                  xirrAll && (xirrAll.rate.gte(0) ? 'text-gain' : 'text-loss'),
+                )}
+                title={xirrAll?.shortPeriod ? ru.portfolio.xirrShort : undefined}
+              >
+                {xirrAll ? formatPercent(xirrAll.rate.times(100), { signed: true }) : ru.common.none}
               </div>
-            ) : null}
+            </div>
           </div>
         </div>
         <div className="min-w-0 flex-[3_1_480px]">
@@ -245,6 +247,7 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
             <div className="flex flex-col">
               {portfolios.map((p) => {
                 const ps = summarizeArea(db(), userId, portfolioScope(p), cells, ledger, fx, tz, null);
+                const px = areaXirr(flowsFor(ledger, portfolioScope(p), fx, tz), ps.value, tz);
                 return (
                   <Link
                     key={p.id}
@@ -259,9 +262,9 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
                     </span>
                     <span className="num flex flex-col items-end gap-0.5 whitespace-nowrap">
                       <span className="text-row">{money(ps.value)}</span>
-                      {ps.profitPct ? (
-                        <span className={cn('text-small', ps.profitPct.gte(0) ? 'text-gain' : 'text-loss')}>
-                          {formatPercent(ps.profitPct, { signed: true })}
+                      {px ? (
+                        <span className={cn('text-small', px.rate.gte(0) ? 'text-gain' : 'text-loss')}>
+                          {formatPercent(px.rate.times(100), { signed: true })}
                         </span>
                       ) : null}
                     </span>

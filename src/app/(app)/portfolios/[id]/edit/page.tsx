@@ -4,6 +4,7 @@ import { PortfolioForm } from '@/components/portfolio/portfolio-form';
 import { FormHeader } from '@/components/shell/form-header';
 import { db } from '@/db/client';
 import { ru } from '@/lib/i18n/ru';
+import { benchmarkChoices } from '@/server/portfolio-page';
 import { listPortfolios } from '@/server/portfolio-data';
 import { portfolioChoices, portfolioFormValues } from '@/server/portfolio-page';
 import { requireSession } from '@/server/session';
@@ -29,6 +30,7 @@ export default async function EditPortfolioPage({ params }: PageProps<'/portfoli
         initial={portfolioFormValues(portfolio, accounts)}
         accounts={accounts}
         tags={tags}
+        benchmarks={benchmarkChoices(session.user.id)}
       />
     </>
   );

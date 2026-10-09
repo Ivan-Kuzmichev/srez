@@ -34,6 +34,8 @@ const PortfolioInput = z.object({
   targetsEnabled: z.boolean(),
   targets: z.partialRecord(z.enum(ASSET_CLASS_ORDER), percent).default({}),
   deviationThreshold: percent,
+  /** Empty: the default benchmark from the settings. */
+  benchmarkId: z.string().max(64).default(''),
 });
 
 function refused(err: unknown): ActionResult<never> {
@@ -54,6 +56,7 @@ export const savePortfolio = authedAction(PortfolioInput, async (input, session)
           Object.entries(input.targets).map(([k, v]) => [k, new Decimal(v)]),
         ) as Partial<Record<AssetClass, Decimal>>,
         deviationThreshold: new Decimal(input.deviationThreshold),
+        benchmarkId: input.benchmarkId || null,
       },
       input.id,
     );

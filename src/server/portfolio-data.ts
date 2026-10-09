@@ -1,5 +1,6 @@
 import { and, asc, eq, gte, inArray, max, ne } from 'drizzle-orm';
 import type { Db } from '@/db/client';
+import { loadPriceSeries } from '@/db/mutations/market';
 import { loadAccountLedger } from '@/db/mutations/positions';
 import {
   finAccounts,
@@ -21,6 +22,7 @@ import { Decimal } from '@/domain/decimal';
 import { dayChange, externalFlows, type ExternalFlow, type FlowOperation } from '@/domain/flows';
 import type { LedgerContext } from '@/domain/ledger-types';
 import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope';
+import { excessPp, priceReturn, twrGrowth, xirr, type Xirr } from '@/domain/returns';
 import { valueOn } from '@/domain/timeline';
 import { addDays, localDate } from '@/lib/time';
 
@@ -294,6 +296,8 @@ export interface PortfolioRow {
   name: string;
   deviationThreshold: Decimal;
   targetsEnabled: boolean;
+  /** Own benchmark; null takes the settings default. */
+  benchmarkId: string | null;
   rules: ScopeRule[];
   targets: Map<AssetClass, Decimal>;
 }
@@ -314,6 +318,7 @@ export function listPortfolios(db: Db, userId: string): PortfolioRow[] {
     name: p.name,
     deviationThreshold: new Decimal(p.deviationThreshold),
     targetsEnabled: p.targetsEnabled,
+    benchmarkId: p.benchmarkInstrumentId,
     rules: rules
       .filter((r) => r.portfolioId === p.id)
       .map((r) => ({ accountId: r.accountId, mode: r.mode, tagId: r.tagId })),
@@ -452,4 +457,83 @@ export function upcomingPayouts(db: Db, cells: ValuedCell[], today: string, limi
         estimate: e.isEstimate,
       };
     });
+}
+
+export interface AreaReturns {
+  xirr: Xirr | null;
+  /** Per day of the series: cumulative TWR growth and the benchmark close (carried over holidays). */
+  points: { date: string; growth: Decimal; bench: Decimal | null }[];
+  /** «К индексу за год»: the last 365 days, or since the start when the area is younger. */
+  year: {
+    from: string;
+    portfolio: Decimal | null;
+    benchmark: Decimal | null;
+    pp: Decimal | null;
+    fullYear: boolean;
+  };
+}
+
+/** XIRR, TWR growth against a benchmark, and the one-year gap (docs/04-calculations.md, sections 4, 5). */
+export function areaReturns(
+  db: Db,
+  series: SeriesPoint[],
+  flows: ExternalFlow[],
+  value: Decimal,
+  benchmarkId: string,
+  timeZone: string,
+  now = new Date(),
+): AreaReturns {
+  const today = localDate(now, timeZone);
+  const xirrResult = xirr([
+    ...flows.map((f) => ({ date: localDate(f.at, timeZone), amount: f.amountRub.neg() })),
+    { date: today, amount: value },
+  ]);
+
+  // The series starts at the first snapshot; days before money arrived carry nothing.
+  const started = series.findIndex((p) => !p.value.isZero() || !p.invested.isZero());
+  const live = started < 0 ? [] : series.slice(started);
+  const growth = twrGrowth(
+    live.map((p, i) => ({ value: p.value, flow: i === 0 ? ZERO : p.invested.minus(live[i - 1]!.invested) })),
+  );
+
+  const closes = loadPriceSeries(db, [benchmarkId]).get(benchmarkId) ?? [];
+  let k = 0;
+  let last: Decimal | null = null;
+  const points = live.map((p, i) => {
+    for (; k < closes.length && closes[k]!.date <= p.date; k++) last = new Decimal(closes[k]!.close);
+    return { date: p.date, growth: growth[i]!, bench: last };
+  });
+
+  const yearAgo = addDays(today, -365);
+  // The base is the value a year ago: the last day on or before it; a younger area starts at its first day.
+  const before = points.findLastIndex((p) => p.date <= yearAgo);
+  const startIdx = Math.max(0, before);
+  const first = points[startIdx];
+  const end = points.at(-1);
+  const portfolio = first && end && end !== first ? end.growth.div(first.growth).minus(1) : null;
+  const benchmark = first?.bench && end?.bench ? priceReturn(first.bench, end.bench) : null;
+  return {
+    xirr: xirrResult,
+    points,
+    year: {
+      from: first?.date ?? today,
+      portfolio,
+      benchmark,
+      pp: excessPp(portfolio, benchmark),
+      fullYear: before >= 0,
+    },
+  };
+}
+
+/** XIRR alone, for cards that do not need the daily series. */
+export function areaXirr(
+  flows: ExternalFlow[],
+  value: Decimal,
+  timeZone: string,
+  now = new Date(),
+): Xirr | null {
+  return xirr([
+    ...flows.map((f) => ({ date: localDate(f.at, timeZone), amount: f.amountRub.neg() })),
+    { date: localDate(now, timeZone), amount: value },
+  ]);
 }

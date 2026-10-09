@@ -165,7 +165,7 @@ export const ru = {
     wholeSingle: (account: string) => `Счёт ${account} целиком`,
     memberTag: (portfolio: string, tag: string) => `${portfolio}, тег «${tag}»`,
     positions: (n: number) => `${n} ${plural(n, 'позиция', 'позиции', 'позиций')}`,
-    returnHint: 'Прибыль к вложенному; XIRR появится в фазе 6',
+    returnHint: 'XIRR, годовых: с учётом пополнений и кэша',
     // Edit
     newTitle: 'Новый портфель',
     editTitle: 'Состав и цели портфеля',
@@ -200,6 +200,7 @@ export const ru = {
     rebalance: 'Рассчитать ребаланс',
     errors: {
       NO_ACCOUNTS: 'Выберите хотя бы один счёт.',
+      BENCHMARK: 'Такого бенчмарка нет.',
       TARGETS: 'Целевые доли должны давать в сумме 100 %.',
       TAG: 'Для счёта «по тегу» выберите тег.',
       ACCOUNT: 'Счёт не найден.',
@@ -540,6 +541,15 @@ export const ru = {
     saved: 'Настройки сохранены',
     failed: 'Не сохранилось. Проверьте поля.',
   },
+  benchmarks: {
+    names: { MCFTR: 'Индекс МосБиржи', RGBITR: 'Индекс гособлигаций' } as Record<string, string>,
+    /** «К индексу МосБиржи за год». */
+    dative: { MCFTR: 'индексу МосБиржи', RGBITR: 'индексу гособлигаций' } as Record<string, string>,
+    full: {
+      MCFTR: 'Индекс МосБиржи полной доходности',
+      RGBITR: 'Индекс гособлигаций полной доходности',
+    } as Record<string, string>,
+  },
   tinvest: {
     sourceName: 'Т-Инвестиции',
     accountKinds: { broker: 'Брокерский счёт', iis: 'ИИС', investBox: 'Инвесткопилка' },
@@ -612,6 +622,16 @@ export const ru = {
     profitSplit: (course: string, payouts: string) => `Курс ${course}, выплаты ${payouts}`,
     invested: 'Вложено',
     chartTitle: 'Стоимость и вложено',
+    xirr: 'XIRR, годовых',
+    xirrNote: 'С учётом пополнений и кэша',
+    xirrShort: 'Период короче года: значение пересчитано на год',
+    versusYear: (bench: string) => `К ${bench} за год`,
+    versusSince: (bench: string) => `К ${bench} с начала`,
+    twrVersus: (a: string, b: string) => `TWR ${a} против ${b}`,
+    returnsTitle: 'Портфель и бенчмарк',
+    returnsLabel: (name: string, bench: string) => `Доходность портфеля ${name} и ${bench}`,
+    benchmark: 'Бенчмарк',
+    benchmarkDefault: (name: string) => `По умолчанию: ${name}`,
     chartLabel: (name: string) => `Стоимость портфеля ${name} и вложенная сумма`,
     targetsTitle: 'Цели и ребаланс',
     targetsHint: 'факт / цель',

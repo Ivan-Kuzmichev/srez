@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Decimal } from './decimal';
-import { excessPp, priceReturn, twr, xirr } from './returns';
+import { excessPp, priceReturn, twr, twrGrowth, xirr } from './returns';
 
 const d = (v: string | number) => new Decimal(v);
 const pct = (r: Decimal | null | undefined, digits: number) => (r ? r.times(100).toFixed(digits) : null);
@@ -108,5 +108,25 @@ describe('TWR (04, section 5)', () => {
     expect(priceReturn(d(0), d(1))).toBeNull();
     expect(excessPp(d('0.182'), d('0.151'))?.toString()).toBe('3.1');
     expect(excessPp(null, d(1))).toBeNull();
+  });
+});
+
+describe('twrGrowth', () => {
+  it('chains the same daily returns as TWR, so any two days give the return between them', () => {
+    const days = [
+      { value: d(100_000), flow: d(0) },
+      { value: d(101_000), flow: d(0) },
+      { value: d(151_500), flow: d(50_000) },
+      { value: d(150_000), flow: d(0) },
+    ];
+    const g = twrGrowth(days);
+    expect(g.map((x) => x.toFixed(6))).toEqual(['1.000000', '1.010000', '1.015000', '1.004950']);
+    expect(g.at(-1)!.minus(1).toFixed(10)).toBe(twr(days)!.toFixed(10));
+    expect(
+      twrGrowth([
+        { value: d(0), flow: d(0) },
+        { value: d(0), flow: d(0) },
+      ]).map(String),
+    ).toEqual(['1', '1']);
   });
 });
