@@ -134,8 +134,7 @@
 **position_snapshots** — стоимость на конец дня.
 `date`, `account_id`, `instrument_id`, `tag_id`, `quantity`, `price`, `currency`, `value` (в валюте инструмента), `value_rub`. Первичный ключ `(date, account_id, instrument_id, tag_id)`.
 
-**cash_flows_daily** — внешние потоки по ячейке «счёт, тег» за день, для TWR и XIRR.
-`date`, `account_id`, `tag_id`, `amount_rub`. См. определение потока в `04-calculations.md`.
+Внешние потоки для XIRR и TWR не хранятся: поток области считается из операций по правилам `04-calculations.md`, раздел 3 (`domain/flows.ts`). Таблица потоков по ячейкам расходилась бы с этим правилом: сделка внутри портфеля в ней выглядела бы двумя потоками.
 
 **wallet_balances** — остатки доходных токенов для расчёта начислений.
 `date`, `account_id`, `instrument_id`, `balance`, `rate` (курс обёртки к базовой монете, если есть).
