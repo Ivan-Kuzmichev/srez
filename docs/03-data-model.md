@@ -34,6 +34,9 @@
 **login_attempts** — для блокировки.
 `id`, `username`, `ip`, `success bool`, `created_at`.
 
+**service_keys** — ключи внешних сервисов, общие на всё приложение (например, Blockscout для истории EVM).
+`name` (первичный ключ), `secret_encrypted bytea`, `last4`, `created_at`, `updated_at`. Шифрование — как у токена брокера (`07-auth-security.md`).
+
 **api_tokens**
 `id`, `user_id`, `name`, `token_hash` (sha-256), `last4`, `scopes text[]`, `local_only bool`, `expires_at`, `last_used_at`, `last_used_ip`, `last_used_path`, `revoked_at`, `created_at`.
 
@@ -106,7 +109,7 @@
 | `external_id` | text, nullable | Идентификатор во внешней системе |
 | `fingerprint` | text, nullable | Отпечаток импортированной операции: счёт, время, тип, бумага, сумма, количество. Если брокер сменил номер операции, по нему находится прежняя запись (`05-integrations.md`, раздел 1) |
 | `raw` | jsonb, nullable | Сырой ответ, только в режиме отладки, без секретов |
-| `voided_at` | timestamptz, nullable | Отмена исправления сверки |
+| `voided_at` | timestamptz, nullable | Отменена: исправление сверки отменено или ручная запись заменена транзакциями из сети (FR-CRY-5). Можно вернуть |
 | `created_at`, `updated_at` | | |
 
 Типы операций: `buy`, `sell`, `dividend`, `coupon`, `interest`, `accrual`, `deposit`, `withdrawal`, `fee`, `tax`, `transfer_in`, `transfer_out`, `fx_buy`, `fx_sell`, `redemption`, `amortization`, `split`, `other`.

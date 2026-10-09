@@ -151,6 +151,15 @@ describe('fees, accrued interest and order', () => {
     expect(ofz.avgPrice.toFixed()).toBe('990');
   });
 
+  it('counts the accrued interest received with a bond sale into the proceeds', () => {
+    const ops = [
+      op('buy', { instrumentId: 'ofz', qty: 10, price: 990, accruedInterest: D(150), amount: -10050 }),
+      op('sell', { instrumentId: 'ofz', qty: 10, price: 990, accruedInterest: D(250), amount: 10150 }),
+    ];
+    // The coupon accrued while held (250 − 150) is income, not a loss of 150.
+    expect(buildLedger(ops, ctx()).closures[0]!.pnl.toFixed()).toBe('100');
+  });
+
   it('sorts by execution time, then by creation', () => {
     const sell = op('sell', { qty: 5, price: 130, day: 10 });
     const buy = op('buy', { qty: 10, price: 100, day: 1 });

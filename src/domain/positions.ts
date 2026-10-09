@@ -135,7 +135,11 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
         issues.push({ operationId: op.id, code: 'MIXED_CURRENCY' });
       if (op.type === 'buy' && !c.firstBuyAt) c.firstBuyAt = op.executedAt;
     } else if (SELL.has(op.type)) {
-      const proceeds = op.quantity.times(op.price).minus(ctx.deductFees ? op.fee : ZERO);
+      // The accrued interest received with a bond sale is part of the proceeds (section 1).
+      const proceeds = op.quantity
+        .times(op.price)
+        .plus(op.accruedInterest)
+        .minus(ctx.deductFees ? op.fee : ZERO);
       const result = closeFifo(c.lots, {
         operationId: op.id,
         at: op.executedAt,

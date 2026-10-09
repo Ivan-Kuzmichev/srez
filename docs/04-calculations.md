@@ -24,7 +24,7 @@ unit_cost = (quantity × price + accrued_interest + (deductFees ? fee : 0)) / qu
 Каждое уменьшение закрывает лоты по FIFO и пишет `lot_closures`:
 
 ```
-proceeds = quantity × price − (deductFees ? fee : 0)
+proceeds = quantity × price + accrued_interest − (deductFees ? fee : 0)   -- НКД, полученный при продаже облигации, — часть выручки
 pnl      = proceeds − Σ(закрытое количество × unit_cost лота)
 ```
 
