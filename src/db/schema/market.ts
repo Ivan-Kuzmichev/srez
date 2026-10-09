@@ -183,3 +183,21 @@ export const rebalancePlans = sqliteTable(
   },
   (t) => [index('rebalance_plans_portfolio_idx').on(t.portfolioId, t.createdAt)],
 );
+
+/** Daily balances of yield tokens for accruals (docs/03-data-model.md, section 3; docs/04, section 10). */
+export const walletBalances = sqliteTable(
+  'wallet_balances',
+  {
+    date: date('date').notNull(),
+    accountId: text('account_id')
+      .notNull()
+      .references(() => finAccounts.id, { onDelete: 'cascade' }),
+    instrumentId: text('instrument_id')
+      .notNull()
+      .references(() => instruments.id, { onDelete: 'cascade' }),
+    balance: decimal('balance').notNull(),
+    /** Wrapped tokens: the rate to the base coin that day. */
+    rate: decimal('rate'),
+  },
+  (t) => [primaryKey({ columns: [t.date, t.accountId, t.instrumentId] })],
+);

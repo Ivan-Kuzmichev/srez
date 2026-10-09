@@ -101,7 +101,7 @@
 | `amount` | numeric | Денежный эффект со знаком: минус — деньги ушли со счёта |
 | `fee` | numeric | ≥ 0, в `currency` |
 | `tax` | numeric | ≥ 0 |
-| `accrued_interest` | numeric | НКД, только облигации |
+| `accrued_interest` | numeric | НКД облигации; у `accrual` по токену-обёртке (количество 0) — начисление в базовой монете (`04`, раздел 10) |
 | `tag_id` | uuid, nullable | Явный тег |
 | `note` | text | |
 | `origin` | enum | `tinvest` \| `chain` \| `manual` \| `reconcile` |

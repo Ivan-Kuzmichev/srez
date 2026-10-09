@@ -7,6 +7,7 @@ import { syncDue, syncTinvest } from './tinvest-sync';
 import { refreshPayoutsJob } from './payouts';
 import { accrueInterestJob } from './interest';
 import { syncWalletJob } from './wallet-sync';
+import { walletAccrueJob } from './wallet-accrue';
 
 export const jobDefinitions: JobDefinition<never>[] = [
   heartbeat as JobDefinition<never>,
@@ -19,6 +20,7 @@ export const jobDefinitions: JobDefinition<never>[] = [
   refreshPayoutsJob as JobDefinition<never>,
   accrueInterestJob as JobDefinition<never>,
   syncWalletJob as JobDefinition<never>,
+  walletAccrueJob as JobDefinition<never>,
 ];
 
 export const schedules: ScheduleDef[] = [
@@ -32,6 +34,8 @@ export const schedules: ScheduleDef[] = [
   // Coupon and dividend schedules change rarely: once a day, early morning UTC.
   { name: refreshPayoutsJob.name, cron: '0 3 * * *' },
   { name: accrueInterestJob.name, cron: '20 3 * * *' },
+  // Yield tokens: once a day, next to the daily snapshot (docs/04, section 10).
+  { name: walletAccrueJob.name, cron: '40 0 * * *' },
 ];
 
 /** Run once when the worker starts: fill gaps left while it was down. */
@@ -40,4 +44,5 @@ export const startupJobs = [
   snapshotJob.name,
   refreshPayoutsJob.name,
   accrueInterestJob.name,
+  walletAccrueJob.name,
 ];
