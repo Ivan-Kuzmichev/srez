@@ -20,7 +20,7 @@ import { getLastPrice, getPriceHistory, getSecurity, type MoexPriceRef } from '@
 import { addDays, localDate, utcToZonedLocal } from '@/lib/time';
 import type { Logger } from '@/server/logger';
 import { ownerSettings } from '@/server/settings';
-import { BENCHMARKS, ensureBenchmarks } from '@/server/benchmarks';
+import { BENCHMARKS, ensureBenchmarks, ensureBitcoin } from '@/server/benchmarks';
 import { enqueue } from './queue';
 import type { TinvestClient } from '@/integrations/tinvest/client';
 import { refreshTinvestPrices, tinvestForPrices, tinvestHistory } from './tinvest-market';
@@ -61,6 +61,29 @@ async function moexRef(db: Db, inst: InstrumentInUse, fetchFn: Fetch): Promise<M
   return { secid, ...sec.board, kind };
 }
 
+/**
+ * Instruments to price: those in the journal plus bitcoin, a benchmark and a display currency even when
+ * nothing is held (a year back: the free CoinGecko depth).
+ */
+function priced(db: Db, now: Date): InstrumentInUse[] {
+  const used = instrumentsInUse(db);
+  const btc = ensureBitcoin(db);
+  if (used.some((i) => i.id === btc)) return used;
+  const inst = db
+    .select({
+      id: instruments.id,
+      kind: instruments.kind,
+      ticker: instruments.ticker,
+      currency: instruments.currency,
+      externalUid: instruments.externalUid,
+      meta: instruments.meta,
+    })
+    .from(instruments)
+    .where(eq(instruments.id, btc))
+    .get()!;
+  return [...used, { ...inst, firstOperationAt: new Date(now.getTime() - 364 * 86_400_000) }];
+}
+
 const coinId = (inst: InstrumentInUse) => (inst.meta as { coingeckoId?: string } | null)?.coingeckoId ?? null;
 
 /** Latest prices and today's rates (job prices.refresh). Failures are logged per item, never fatal. */
@@ -73,7 +96,7 @@ export async function refreshPrices(
 ): Promise<void> {
   const tz = ownerSettings(db).display.timezone;
   const today = localDate(now, tz);
-  const used = instrumentsInUse(db);
+  const used = priced(db, now);
 
   // The broker first; ISS for what it did not price (no token, an error, a security without a uid).
   let fromBroker = new Set<string>();
@@ -146,7 +169,7 @@ export async function backfillHistory(
     return out;
   };
 
-  for (const inst of instrumentsInUse(db)) {
+  for (const inst of priced(db, now)) {
     const since = localDate(inst.firstOperationAt, tz);
     for (const [from, to] of gaps(priceRange(db, inst.id), since)) {
       try {

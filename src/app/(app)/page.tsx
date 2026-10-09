@@ -53,7 +53,7 @@ export const metadata: Metadata = { title: ru.pages.overview };
 
 const Params = z.object({
   portfolio: z.string().max(64).optional().catch(undefined),
-  cur: z.enum(['RUB', 'USD', 'EUR']).optional().catch(undefined),
+  cur: z.enum(['RUB', 'USD', 'EUR', 'BTC']).optional().catch(undefined),
 });
 
 export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
@@ -123,12 +123,11 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
 
   // Display currency: today's values at today's rate, the history at the rate of each day (FR-OVR-5).
   // «Валюты» (FR-SET-2): the base currency by default, the extra ones on the toggle.
-  const base = settings.display.baseCurrency;
-  const cur = params.cur ?? base;
-  const shown = [
-    base,
-    ...settings.display.extraCurrencies.filter((c): c is 'USD' | 'EUR' => c !== 'BTC' && c !== base),
-  ];
+  // A currency without a rate yet (bitcoin before its prices load) is neither offered nor shown.
+  const priced = (c: string) => c === 'RUB' || rubPer(fx, c) !== null;
+  const base = priced(settings.display.baseCurrency) ? settings.display.baseCurrency : 'RUB';
+  const cur = params.cur && priced(params.cur) ? params.cur : base;
+  const shown = [base, ...settings.display.extraCurrencies.filter((c) => c !== base && priced(c))];
   const nowRate = rubPer(fx, cur) ?? new Decimal(1);
   const conv = (v: Decimal) => v.div(nowRate);
   const money = (v: Decimal) => formatMoney(Money.of(conv(v), cur));

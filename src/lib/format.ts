@@ -9,7 +9,9 @@ import { plural, ru } from './i18n/ru';
 const NBSP = ' ';
 const MINUS = '−';
 
-const CURRENCY_SYMBOL: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€' };
+const CURRENCY_SYMBOL: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', BTC: '₿' };
+/** Whole units except bitcoin: a portfolio is a fraction of one. */
+const moneyDecimals = (currency: Currency) => (currency === 'BTC' ? 6 : 0);
 
 export function currencySymbol(currency: Currency): string {
   return CURRENCY_SYMBOL[currency] ?? currency;
@@ -46,12 +48,12 @@ export function formatShareOfTarget(share: DecimalValue, target: DecimalValue | 
 
 /** Summary amount, to the whole unit: «4 812 360 ₽». */
 export function formatMoney(money: Money): string {
-  return withCurrency(formatNumber(money.amount, 0), money.currency);
+  return withCurrency(formatNumber(money.amount, moneyDecimals(money.currency)), money.currency);
 }
 
 /** Change, always signed: «+12 480 ₽», «−16 400 ₽». */
 export function formatChange(money: Money): string {
-  return withCurrency(formatNumber(money.amount, 0, 'always'), money.currency);
+  return withCurrency(formatNumber(money.amount, moneyDecimals(money.currency), 'always'), money.currency);
 }
 
 /** Price or amount in a trade row, to kopecks, no symbol: «312,10». */

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Executor } from '@/db/client';
 import { instruments } from '@/db/schema';
 import { uuidv7 } from '@/lib/uuid';
@@ -40,9 +40,43 @@ export function ensureBenchmarks(db: Executor): Map<string, string> {
   return found;
 }
 
+/** The bitcoin instrument (CoinGecko «bitcoin»): a benchmark and a display currency, held or not. */
+export function ensureBitcoin(db: Executor): string {
+  const found = db
+    .select({ id: instruments.id })
+    .from(instruments)
+    .where(
+      and(
+        eq(instruments.kind, 'crypto'),
+        sql`json_extract(${instruments.meta}, '$.coingeckoId') = 'bitcoin'`,
+        sql`coalesce(json_extract(${instruments.meta}, '$.yieldKind'), 'none') = 'none'`,
+      ),
+    )
+    .get();
+  if (found) return found.id;
+  const id = uuidv7();
+  db.insert(instruments)
+    .values({
+      id,
+      kind: 'crypto',
+      assetClass: 'crypto',
+      ticker: 'BTC',
+      name: 'Bitcoin',
+      currency: 'USD',
+      lot: '1',
+      meta: { coingeckoId: 'bitcoin', yieldKind: 'none' },
+    })
+    .run();
+  return id;
+}
+
 export function benchmarkOptions(db: Executor): { id: string; ticker: string; name: string }[] {
   const ids = ensureBenchmarks(db);
-  return BENCHMARKS.map((b) => ({ id: ids.get(b.ticker)!, ticker: b.ticker, name: b.name }));
+  return [
+    ...BENCHMARKS.map((b) => ({ id: ids.get(b.ticker)!, ticker: b.ticker, name: b.name })),
+    // Bitcoin compares in rubles too; CoinGecko gives a year of history for free.
+    { id: ensureBitcoin(db), ticker: 'BTC', name: 'Биткоин' },
+  ];
 }
 
 /** Settings value for «Без бенчмарка». */
@@ -55,7 +89,7 @@ export function benchmarkFor(
   defaultId: string | null,
 ): string | null {
   const ids = ensureBenchmarks(db);
-  const known = new Set(ids.values());
+  const known = new Set([...ids.values(), ensureBitcoin(db)]);
   if (portfolioBenchmarkId && known.has(portfolioBenchmarkId)) return portfolioBenchmarkId;
   if (defaultId === NO_BENCHMARK) return null;
   if (defaultId && known.has(defaultId)) return defaultId;

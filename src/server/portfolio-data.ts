@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte, max, ne } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lte, max, ne, sql } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { loadPriceSeries } from '@/db/mutations/market';
 import { loadAccountLedger } from '@/db/mutations/positions';
@@ -45,6 +45,28 @@ export function loadFx(db: Db): FxSeries {
     const list = out.get(r.quote) ?? [];
     list.push({ date: r.date, rate: r.rate });
     out.set(r.quote, list);
+  }
+  // Bitcoin as a display currency: its dollar close times that day's dollar rate.
+  const btc = db
+    .select({ id: instruments.id })
+    .from(instruments)
+    .where(
+      and(
+        eq(instruments.kind, 'crypto'),
+        sql`json_extract(${instruments.meta}, '$.coingeckoId') = 'bitcoin'`,
+      ),
+    )
+    .get();
+  const usd = out.get('USD');
+  if (btc && usd?.length) {
+    const closes = loadPriceSeries(db, [btc.id]).get(btc.id) ?? [];
+    const series = closes
+      .filter((c) => c.currency === 'USD')
+      .map((c) => ({
+        date: c.date,
+        rate: new Decimal(c.close).times((valueOn(usd, c.date) ?? usd[0]!).rate).toString(),
+      }));
+    if (series.length) out.set('BTC', series);
   }
   return out;
 }
@@ -548,10 +570,16 @@ export function areaReturns(
   );
 
   const closes = benchmarkId ? (loadPriceSeries(db, [benchmarkId]).get(benchmarkId) ?? []) : [];
+  // A benchmark priced abroad (bitcoin in dollars) is compared in rubles at each day's rate.
+  const fx = closes.some((c) => c.currency !== 'RUB') ? loadFx(db) : null;
+  const inRub = (c: { date: string; close: string; currency: string }) =>
+    fx && c.currency !== 'RUB'
+      ? new Decimal(c.close).times(rubPer(fx, c.currency, c.date) ?? ONE)
+      : new Decimal(c.close);
   let k = 0;
   let last: Decimal | null = null;
   const points = live.map((p, i) => {
-    for (; k < closes.length && closes[k]!.date <= p.date; k++) last = new Decimal(closes[k]!.close);
+    for (; k < closes.length && closes[k]!.date <= p.date; k++) last = inRub(closes[k]!);
     return { date: p.date, growth: growth[i]!, bench: last };
   });
 

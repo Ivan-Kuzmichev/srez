@@ -543,11 +543,20 @@ export const ru = {
     failed: 'Не сохранилось. Проверьте поля.',
   },
   benchmarks: {
-    names: { MCFTR: 'Индекс МосБиржи', RGBITR: 'Индекс гособлигаций' } as Record<string, string>,
+    names: { MCFTR: 'Индекс МосБиржи', RGBITR: 'Индекс гособлигаций', BTC: 'Биткоин' } as Record<
+      string,
+      string
+    >,
     /** «К индексу МосБиржи за год». */
-    dative: { MCFTR: 'индексу МосБиржи', RGBITR: 'индексу гособлигаций' } as Record<string, string>,
+    dative: { MCFTR: 'индексу МосБиржи', RGBITR: 'индексу гособлигаций', BTC: 'биткоину' } as Record<
+      string,
+      string
+    >,
     /** «У индекса МосБиржи 21,5 %». */
-    genitive: { MCFTR: 'индекса МосБиржи', RGBITR: 'индекса гособлигаций' } as Record<string, string>,
+    genitive: { MCFTR: 'индекса МосБиржи', RGBITR: 'индекса гособлигаций', BTC: 'биткоина' } as Record<
+      string,
+      string
+    >,
     full: {
       MCFTR: 'Индекс МосБиржи полной доходности',
       RGBITR: 'Индекс гособлигаций полной доходности',
@@ -1062,7 +1071,7 @@ export const ru = {
     allPortfolios: 'Все портфели',
     portfolioFilter: 'Портфель',
     currency: 'Валюта отображения',
-    currencies: { RUB: 'Рубли', USD: 'Доллары', EUR: 'Евро' } as Record<string, string>,
+    currencies: { RUB: 'Рубли', USD: 'Доллары', EUR: 'Евро', BTC: 'Биткоины' } as Record<string, string>,
     add: 'Добавить операцию',
     totalAll: 'Стоимость всех портфелей',
     totalOne: (name: string) => `Стоимость портфеля «${name}»`,
@@ -1448,6 +1457,11 @@ export const ru = {
     limitStock: 'Одна акция, до %',
     limitCrypto: 'Крипта, до %',
     limitNotify: 'Сообщать в Telegram, когда лимит превышен',
+    limitNotifyShort: 'Сообщать о превышении в Telegram',
+    limitShort: { issuerPct: 'Эмитент, %', singleStockPct: 'Акция, %', cryptoPct: 'Крипта, %' } as Record<
+      string,
+      string
+    >,
   },
   security: {
     twoFactorTitle: 'Двухфакторная защита',

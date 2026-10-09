@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Button } from '@/components/ui/button';
 import { Checkbox, ChoiceGroup, Radio } from '@/components/ui/choice';
 import { Field, Input } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
@@ -196,7 +197,15 @@ export function GeneralSettingsForm({
               ['cryptoPct', r.limitCrypto],
             ] as const
           ).map(([name, label]) => (
-            <Field key={name} label={label}>
+            <Field
+              key={name}
+              label={
+                <>
+                  <span className="wide:hidden">{r.limitShort[name]}</span>
+                  <span className="max-wide:hidden">{label}</span>
+                </>
+              }
+            >
               {(f) => (
                 <Input
                   id={f.id}
@@ -215,10 +224,34 @@ export function GeneralSettingsForm({
           ))}
         </div>
         <Checkbox
-          label={r.limitNotify}
+          label={
+            <>
+              <span className="wide:hidden">{r.limitNotifyShort}</span>
+              <span className="max-wide:hidden">{r.limitNotify}</span>
+            </>
+          }
           checked={notifyLimits}
           onChange={(e) => setNotifyLimits(e.target.checked)}
         />
+      </section>
+      <section className={card} data-testid="settings-data">
+        <h2 className="m-0 text-card font-semibold">{ru.data.title}</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="secondary-raised">
+            <a href="/settings/data/operations" download>
+              {ru.data.exportCsv}
+            </a>
+          </Button>
+          <Button asChild variant="secondary-raised">
+            <a href="/settings/data/backup" download>
+              {ru.data.backup}
+            </a>
+          </Button>
+        </div>
+        <div className="text-caption text-pretty text-muted">
+          <span className="wide:hidden">{ru.data.noteShort}</span>
+          <span className="max-wide:hidden">{ru.data.note}</span>
+        </div>
       </section>
     </form>
   );

@@ -44,7 +44,7 @@ export function ValueChart({
   currency: string;
   label: string;
 }) {
-  const format = (v: number) => formatMoney(Money.of(v.toFixed(2), currency));
+  const format = (v: number) => formatMoney(Money.of(v.toFixed(currency === 'BTC' ? 8 : 2), currency));
   const formatDate = (date: string) => formatDay(new Date(`${date}T12:00:00Z`), 'UTC');
   const [period, setPeriod] = useState<Period>('1y');
   const [hover, setHover] = useState<number | null>(null);

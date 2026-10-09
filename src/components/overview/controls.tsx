@@ -48,7 +48,7 @@ export function PhonePortfolioFilter({
   );
 }
 
-const SIGNS: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€' };
+const SIGNS: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€', BTC: '₿' };
 
 /** Portfolio filter and display currency, kept in the address bar (FR-OVR-5, 6). */
 export function OverviewControls({
