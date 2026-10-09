@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { z } from 'zod';
 import { IconOperations, IconSources } from '@/components/icons';
 import { JournalFilters, PhoneFiltersButton } from '@/components/ledger/journal-filters';
+import type { AccrualGroupItem } from '@/components/ledger/accrual-group';
 import { JournalView, type JournalItem, type TotalCell } from '@/components/ledger/journal-view';
 import { PageHeader } from '@/components/shell/page-header';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { ActionTile, EmptyState } from '@/components/ui/empty-state';
 import { db } from '@/db/client';
 import { listAccounts, listTags } from '@/db/queries/accounts';
 import {
+  accrualGroups,
   journalTotals,
   listJournal,
   listOrigins,
@@ -19,18 +21,23 @@ import {
   type JournalFilters as Filters,
   type JournalRow,
 } from '@/db/queries/operations';
+import { Decimal } from '@/domain/decimal';
 import { Money } from '@/domain/money';
 import {
   formatChange,
   formatCrypto,
   formatDate,
   formatDateLong,
+  formatMonthYear,
   formatQuantity,
   formatTradeAmount,
+  formatTradeMoney,
 } from '@/lib/format';
 import { assetLabel } from '@/lib/asset-label';
 import { ru } from '@/lib/i18n/ru';
+import { loadFx, rubPer } from '@/server/portfolio-data';
 import { requireSession } from '@/server/session';
+import { localDate } from '@/lib/time';
 import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.operations };
@@ -154,7 +161,11 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
     );
   }
 
-  const t = journalTotals(db(), userId, filters);
+  const fx = loadFx(db());
+  const tz = getSettings(db(), userId).display.timezone;
+  const t = journalTotals(db(), userId, filters, 'RUB', new Date(), (c, at) =>
+    rubPer(fx, c, localDate(at, tz)),
+  );
   const money = (d: typeof t.deposits) => formatChange(Money.of(d, t.currency));
   const gain = (d: typeof t.deposits): TotalCell['tone'] => (d.gt(0) ? 'gain' : 'default');
   const totals: TotalCell[] = [
@@ -175,6 +186,53 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
       tone: gain(t.payouts.plus(t.accruals)),
     },
   ];
+
+  // Chain accruals fold into one row per month and account, placed among the page's dates (FR-OPS-6).
+  const rateAt = (c: string, at: Date) => (c === 'RUB' ? new Decimal(1) : rubPer(fx, c, localDate(at, tz)));
+  const oldest = rows.length === PAGE_SIZE ? rows.at(-1)!.executedAt : null;
+  const newest = p.page > 1 ? (rows[0]?.executedAt ?? null) : null;
+  const groupLast = new Map<string, number>();
+  const groups: AccrualGroupItem[] = accrualGroups(
+    db(),
+    userId,
+    filters,
+    (d) => localDate(d, tz).slice(0, 7),
+    rateAt,
+  )
+    .filter((g) => (!oldest || g.last >= oldest) && (!newest || g.last <= newest))
+    .map((g) => {
+      groupLast.set(`accruals:${g.key}`, g.last.getTime());
+      const firstDay = formatDate(g.first, tz);
+      const lastDay = formatDate(g.last, tz);
+      return {
+        kind: 'accruals',
+        id: `accruals:${g.key}`,
+        date: firstDay === lastDay ? lastDay : `${firstDay.split('\u00a0')[0]}–${lastDay}`,
+        day: formatDateLong(g.last, tz),
+        monthLabel: formatMonthYear(g.month).toLowerCase(),
+        assets: g.assets.join(', '),
+        count: g.rows.length,
+        amount: g.value ? formatChange(Money.of(g.value.round(), 'RUB')) : ru.common.none,
+        account: g.accountName,
+        rows: g.rows.map((r) => ({
+          id: r.id,
+          date: formatDate(r.at, tz),
+          asset: r.asset,
+          units: formatCrypto(r.units),
+          // A day's accrual is small: kopecks, not rounded rubles.
+          amount: r.value ? formatTradeMoney(Money.of(r.value.toDecimalPlaces(2), 'RUB')) : ru.common.none,
+        })),
+      };
+    });
+  const items: (JournalItem | AccrualGroupItem)[] = [
+    ...rows.map((r) => ({
+      item: toItem(r, tz) as JournalItem | AccrualGroupItem,
+      t: r.executedAt.getTime(),
+    })),
+    ...groups.map((g) => ({ item: g as JournalItem | AccrualGroupItem, t: groupLast.get(g.id)! })),
+  ]
+    .sort((a, b) => b.t - a.t)
+    .map((x) => x.item);
 
   const query = (page: number) => {
     const next = new URLSearchParams();
@@ -215,7 +273,7 @@ export default async function OperationsPage({ searchParams }: PageProps<'/opera
         />
       ) : (
         <JournalView
-          items={rows.map((r) => toItem(r, getSettings(db(), userId).display.timezone))}
+          items={items}
           totals={totals}
           phoneTotals={phoneTotals}
           totalsNote={t.otherCurrency > 0 ? ru.journal.otherCurrency(t.otherCurrency) : null}

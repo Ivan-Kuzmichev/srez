@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, or, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNull, not, or, type SQL } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { finAccounts, instruments, operations, tags } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
@@ -73,6 +73,82 @@ export interface JournalRow {
   tagName: string | null;
 }
 
+const CHAIN_ACCRUAL = and(eq(operations.type, 'accrual'), eq(operations.origin, 'chain'))!;
+
+export interface AccrualGroup {
+  key: string;
+  /** «YYYY-MM». */
+  month: string;
+  accountId: string;
+  accountName: string;
+  first: Date;
+  last: Date;
+  assets: string[];
+  /** In `currency` at each day's rate; null when a rate is missing. */
+  value: Decimal | null;
+  rows: { id: string; at: Date; asset: string; units: string; value: Decimal | null }[];
+}
+
+/**
+ * Chain accruals of the selection, one group per month and account, newest first (FR-OPS-6).
+ * A wrapper's accrual counts its base-coin amount (quantity is 0).
+ */
+export function accrualGroups(
+  db: Db,
+  userId: string,
+  filters: JournalFilters,
+  monthOf: (at: Date) => string,
+  rateAt: (from: string, at: Date) => Decimal | null,
+  now = new Date(),
+): AccrualGroup[] {
+  const rows = db
+    .select({
+      id: operations.id,
+      at: operations.executedAt,
+      quantity: operations.quantity,
+      accruedInterest: operations.accruedInterest,
+      price: operations.price,
+      currency: operations.currency,
+      accountId: operations.accountId,
+      accountName: finAccounts.name,
+      ticker: instruments.ticker,
+      name: instruments.name,
+    })
+    .from(operations)
+    .innerJoin(finAccounts, eq(finAccounts.id, operations.accountId))
+    .leftJoin(instruments, eq(instruments.id, operations.instrumentId))
+    .where(and(where(userId, filters, now), isNull(operations.voidedAt), CHAIN_ACCRUAL))
+    .orderBy(desc(operations.executedAt))
+    .all();
+  const groups = new Map<string, AccrualGroup>();
+  for (const r of rows) {
+    const month = monthOf(r.at);
+    const key = `${month}|${r.accountId}`;
+    const units = new Decimal(r.quantity).gt(0) ? new Decimal(r.quantity) : new Decimal(r.accruedInterest);
+    const rate = rateAt(r.currency, r.at);
+    const value = rate ? units.times(r.price).times(rate) : null;
+    const asset = r.ticker ?? r.name ?? '';
+    const g = groups.get(key) ?? {
+      key,
+      month,
+      accountId: r.accountId,
+      accountName: r.accountName,
+      first: r.at,
+      last: r.at,
+      assets: [],
+      value: new Decimal(0),
+      rows: [],
+    };
+    g.first = r.at < g.first ? r.at : g.first;
+    g.last = r.at > g.last ? r.at : g.last;
+    if (!g.assets.includes(asset)) g.assets.push(asset);
+    g.value = g.value && value ? g.value.plus(value) : null;
+    g.rows.push({ id: r.id, at: r.at, asset, units: units.toString(), value });
+    groups.set(key, g);
+  }
+  return [...groups.values()];
+}
+
 /** One page of the journal, newest first (FR-OPS-1). Voided operations are hidden. */
 export function listJournal(db: Db, userId: string, filters: JournalFilters, page: number, now = new Date()) {
   const base = db
@@ -99,7 +175,8 @@ export function listJournal(db: Db, userId: string, filters: JournalFilters, pag
     .innerJoin(finAccounts, eq(finAccounts.id, operations.accountId))
     .leftJoin(instruments, eq(instruments.id, operations.instrumentId))
     .leftJoin(tags, eq(tags.id, operations.tagId));
-  const condition = and(where(userId, filters, now), isNull(operations.voidedAt));
+  // Chain accruals come folded by month (FR-OPS-6): see accrualGroups.
+  const condition = and(where(userId, filters, now), isNull(operations.voidedAt), not(CHAIN_ACCRUAL));
   const rows: JournalRow[] = base
     .where(condition)
     .orderBy(desc(operations.executedAt), desc(operations.createdAt))
@@ -135,6 +212,8 @@ export function journalTotals(
   filters: JournalFilters,
   currency = 'RUB',
   now = new Date(),
+  /** Rate of a currency in `currency` on a day: accruals (coins, no cash) are valued with it. */
+  rateAt?: (from: string, at: Date) => Decimal | null,
 ): JournalTotals {
   const rows = db
     .select({
@@ -142,6 +221,10 @@ export function journalTotals(
       amount: operations.amount,
       fee: operations.fee,
       currency: operations.currency,
+      quantity: operations.quantity,
+      price: operations.price,
+      accruedInterest: operations.accruedInterest,
+      executedAt: operations.executedAt,
     })
     .from(operations)
     .leftJoin(instruments, eq(instruments.id, operations.instrumentId))
@@ -159,6 +242,14 @@ export function journalTotals(
     otherCurrency: 0,
   };
   for (const r of rows) {
+    if (r.type === 'accrual') {
+      // No money moves: the coins accrued (or a wrapper's base-coin amount) at that day's price.
+      const units = new Decimal(r.quantity).gt(0) ? new Decimal(r.quantity) : new Decimal(r.accruedInterest);
+      const rate = r.currency === currency ? new Decimal(1) : (rateAt?.(r.currency, r.executedAt) ?? null);
+      if (rate) t.accruals = t.accruals.plus(units.times(r.price).times(rate));
+      else t.otherCurrency += 1;
+      continue;
+    }
     if (r.currency !== currency) {
       t.otherCurrency += 1;
       continue;
@@ -181,9 +272,6 @@ export function journalTotals(
       case 'coupon':
       case 'interest':
         t.payouts = t.payouts.plus(amount);
-        break;
-      case 'accrual':
-        t.accruals = t.accruals.plus(amount);
         break;
       case 'fee':
         t.fees = t.fees.plus(amount);

@@ -789,6 +789,37 @@ export const ru = {
     ],
   },
   accruals: {
+    title: 'Начисления по крипте',
+    hint: 'Остаются в позиции, в суммы выплат выше не входят',
+    hintShort: 'Остаются в позиции, в суммы выше не входят',
+    columns: {
+      position: 'Позиция',
+      how: 'Как начисляется',
+      month: (m: string) => `За ${m}`,
+      year: (y: string) => `За ${y}`,
+      forecast: 'Прогноз на год',
+    },
+    how: {
+      continuous: 'Каждую секунду, растёт баланс',
+      daily: 'Раз в сутки, растёт баланс',
+      rate: (coin: string) => `Растёт курс к ${coin}`,
+    },
+    howShort: { continuous: 'Каждую секунду', daily: 'Раз в сутки', rate: 'Растёт курс' } as Record<
+      string,
+      string
+    >,
+    held: (qty: string, symbol: string, networks: string) =>
+      `${qty} ${symbol}${networks ? `, сеть ${networks}` : ''}`,
+    rateNow: (pct: string) => `ставка сейчас ${pct}`,
+    noForecast: 'мало истории',
+    forYear: (y: string) => `за ${y}`,
+    note: 'Считается раз в сутки: прирост баланса минус пополнения и выводы. Прогноз условный, ставки плавающие.',
+    total: (y: string, amount: string) => `Всего за ${y}: ${amount}`,
+    groupType: 'Начисления',
+    groupCount: (n: number) => `${n} ${plural(n, 'запись', 'записи', 'записей')}, по дням`,
+    expand: (month: string) => `Показать начисления по дням за ${month}`,
+    collapse: 'Свернуть',
+    origin: 'Сеть, авто',
     before: 'Начислено до подключения',
     penalty: 'Баланс уменьшился без перевода: штраф или слэшинг',
   },

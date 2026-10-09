@@ -194,7 +194,11 @@ export async function accrueWallet(
           // A wrapper's count does not change: the base-coin amount goes to accrued_interest.
           quantity: wrapped || kind === 'other' ? '0' : amount.toString(),
           accruedInterest: wrapped || kind === 'other' ? amount.abs().toString() : '0',
-          price: closeOn(db, instrumentId, today),
+          // A wrapper's accrual is in the base coin: its price is the wrapper's over the rate.
+          price:
+            wrapped && rate && rate.gt(0)
+              ? new Decimal(closeOn(db, instrumentId, today)).div(rate).toString()
+              : closeOn(db, instrumentId, today),
           currency: 'USD',
           amount: '0',
           executedAt: now,

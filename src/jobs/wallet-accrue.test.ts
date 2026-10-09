@@ -5,6 +5,7 @@ import { createTestDb } from '@/db/test-db';
 import { invested } from '@/domain/flows';
 import { everything } from '@/domain/scope';
 import { flowsFor, loadFx, loadUserLedger } from '@/server/portfolio-data';
+import { cryptoAccruals } from '@/server/accruals-data';
 import { addWallet } from '@/server/wallets';
 import {
   MOCK_BLOCKSCOUT_KEY,
@@ -100,5 +101,13 @@ describe('accruals of yield tokens', () => {
     );
     expect(db.select().from(walletBalances).all()).toHaveLength(4);
     expect(investedNow()).toBe(before);
+
+    // The payouts block: per token, units of the year and its protocol; too little history for a rate.
+    const block = cryptoAccruals(db, 'u1', everything, loadFx(db), '2026', 'Europe/Moscow', day2);
+    expect(block.rows.map((r) => [r.protocol, r.symbol, r.year.units.toFixed(), r.accrues, r.rate])).toEqual([
+      ['Lido', 'stETH', '0.0125', 'daily', null],
+      ['Lido', 'wstETH', '0.0003', 'rate', null],
+    ]);
+    expect(block.rows[0]!.networks).toEqual(['Ethereum']);
   });
 });

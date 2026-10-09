@@ -1,3 +1,10 @@
+import { AccrualsBlock } from '@/components/payouts/accruals-block';
+import { everything } from '@/domain/scope';
+import { formatMonthYear } from '@/lib/format';
+import { localDate } from '@/lib/time';
+import { cryptoAccruals } from '@/server/accruals-data';
+import { loadFx, portfolioScope } from '@/server/portfolio-data';
+import { getSettings } from '@/server/settings';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PayoutsControls } from '@/components/payouts/controls';
@@ -62,7 +69,7 @@ function Row({ r, received }: { r: PayoutRow; received: boolean }) {
   );
 }
 
-/** «Выплаты» (Payouts, MPayouts; FR-PAY-1…4, 6). Crypto accruals come with phase 8. */
+/** «Выплаты» (Payouts, MPayouts; FR-PAY-1…6). */
 export default async function PayoutsPage({ searchParams }: PageProps<'/payouts'>) {
   const session = await requireSession();
   const sp = await searchParams;
@@ -71,6 +78,15 @@ export default async function PayoutsPage({ searchParams }: PageProps<'/payouts'
     session.user.id,
     Number(sp.year) || undefined,
     typeof sp.portfolio === 'string' ? sp.portfolio : undefined,
+  );
+  const tz = getSettings(db(), session.user.id).display.timezone;
+  const crypto = cryptoAccruals(
+    db(),
+    session.user.id,
+    v.portfolio ? portfolioScope(v.portfolio) : everything,
+    loadFx(db()),
+    String(v.year),
+    tz,
   );
   const max = Math.max(...v.months.map((m) => m.received.plus(m.expected).toNumber()), 1);
 
@@ -209,6 +225,14 @@ export default async function PayoutsPage({ searchParams }: PageProps<'/payouts'
           )}
         </section>
       </div>
+      {crypto.rows.length > 0 ? (
+        <AccrualsBlock
+          rows={crypto.rows}
+          total={crypto.totalYearRub}
+          year={String(v.year)}
+          monthName={formatMonthYear(localDate(new Date(), tz)).split('\u00a0')[0]!.toLowerCase()}
+        />
+      ) : null}
     </>
   );
 }

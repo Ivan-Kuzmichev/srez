@@ -15,6 +15,12 @@ export interface KnownToken {
   yieldKind?: YieldKind;
   /** CoinGecko id of the coin a yield token accrues in. */
   underlyingId?: string;
+  /** Yield tokens: who pays and how it shows (the payouts screen). */
+  protocol?: string;
+  /** The coin a yield token is shown as: «USDT» for aEthUSDT. */
+  displaySymbol?: string;
+  /** «continuous» — the balance grows every second (Aave), «daily» — once a day (Lido), «rate» — a wrapper. */
+  accrues?: 'continuous' | 'daily' | 'rate';
   /** Wrapped tokens: where the rate to the underlying coin is read (an 18-decimal uint from eth_call). */
   rate?: { network: string; contract: string; selector: string };
 }
@@ -47,6 +53,8 @@ const WSTETH = {
   yieldKind: 'wrapped' as const,
   underlyingId: 'ethereum',
   rate: STETH_RATE,
+  protocol: 'Lido',
+  accrues: 'rate' as const,
 };
 const stable = (contract: string, symbol: 'USDT' | 'USDC', decimals: number): KnownToken => ({
   contract,
@@ -107,6 +115,8 @@ export const NETWORKS: Network[] = [
         coingeckoId: 'staked-ether',
         yieldKind: 'rebasing',
         underlyingId: 'ethereum',
+        protocol: 'Lido',
+        accrues: 'daily',
       },
       { contract: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', ...WSTETH },
       {
@@ -122,6 +132,8 @@ export const NETWORKS: Network[] = [
           contract: '0xae78736Cd615f374D3085123A210448E74Fc6393',
           selector: '0xe6aa216c',
         },
+        protocol: 'Rocket Pool',
+        accrues: 'rate',
       },
       {
         contract: '0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c',
@@ -131,6 +143,9 @@ export const NETWORKS: Network[] = [
         coingeckoId: 'usd-coin',
         yieldKind: 'rebasing',
         underlyingId: 'usd-coin',
+        protocol: 'Aave',
+        displaySymbol: 'USDC',
+        accrues: 'continuous',
       },
       {
         contract: '0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a',
@@ -140,6 +155,9 @@ export const NETWORKS: Network[] = [
         coingeckoId: 'tether',
         yieldKind: 'rebasing',
         underlyingId: 'tether',
+        protocol: 'Aave',
+        displaySymbol: 'USDT',
+        accrues: 'continuous',
       },
       {
         contract: '0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8',
@@ -149,6 +167,9 @@ export const NETWORKS: Network[] = [
         coingeckoId: 'ethereum',
         yieldKind: 'rebasing',
         underlyingId: 'ethereum',
+        protocol: 'Aave',
+        displaySymbol: 'ETH',
+        accrues: 'continuous',
       },
     ],
   },
@@ -177,6 +198,9 @@ export const NETWORKS: Network[] = [
         coingeckoId: 'usd-coin',
         yieldKind: 'rebasing',
         underlyingId: 'usd-coin',
+        protocol: 'Aave',
+        displaySymbol: 'USDC',
+        accrues: 'continuous',
       },
     ],
   },
@@ -264,4 +288,12 @@ export function endpointsOf(n: Network): string[] {
 export function blockscoutUrl(): string {
   const mock = process.env.CHAIN_MOCK_URL;
   return mock ? `${mock}/blockscout` : BLOCKSCOUT_URL;
+}
+
+/** A yield token by its symbol (instruments keep it as meta.yieldKey), with the networks it lives on. */
+export function yieldToken(symbol: string): { token: KnownToken; networks: string[] } | null {
+  const hits = NETWORKS.flatMap((n) =>
+    n.tokens.filter((t) => t.symbol === symbol).map((t) => ({ t, n: n.id })),
+  );
+  return hits[0] ? { token: hits[0].t, networks: hits.map((h) => h.n) } : null;
 }

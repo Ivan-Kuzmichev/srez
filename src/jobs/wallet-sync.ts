@@ -18,6 +18,7 @@ import type { WalletMeta } from '@/server/wallets';
 import { enqueue } from './queue';
 import { defineJob } from './runner';
 import { serviceKey } from './source-token';
+import { accrueWallet } from './wallet-accrue';
 
 export const WALLET_SYNC_JOB = 'sync.wallet';
 type Trigger = (typeof SYNC_TRIGGERS)[number];
@@ -274,5 +275,13 @@ export const syncWalletJob = defineJob({
       log,
     });
     log.info({ sourceId: payload.sourceId, ...result }, 'Wallet sync done');
+    // Today's accruals right away: the first sync books «начислено до подключения» (idempotent per day).
+    const account = db
+      .select({ id: finAccounts.id })
+      .from(finAccounts)
+      .where(eq(finAccounts.sourceId, payload.sourceId))
+      .get();
+    if (account)
+      await accrueWallet(db, account.id).catch((err) => log.warn({ err }, 'Wallet accruals failed'));
   },
 });
