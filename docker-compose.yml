@@ -17,6 +17,8 @@ x-app: &app
     TINVEST_PROXY_URL: ${TINVEST_PROXY_URL:-}
     LOG_LEVEL: ${LOG_LEVEL:-info}
     TZ: ${TZ:-UTC}
+    PUID: ${PUID:-}
+    PGID: ${PGID:-}
   volumes:
     # Must be a local disk on the host: SQLite locking is unreliable over SMB/NFS.
     - ./data:/data
