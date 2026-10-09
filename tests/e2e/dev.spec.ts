@@ -27,9 +27,12 @@ test('issue an API token, call the API with it, see the call on the screen and i
   await page.reload();
   await expect(card).toContainText('/sync/status');
 
-  await page.goto('/settings/dev/logs');
-  await page.locator('input[type=search]:visible').fill('sync/status');
-  await expect(page.getByTestId('logs')).toContainText('GET /api/v1/sync/status 200');
+  // Log lines reach the database in batches: look again until the call is there.
+  await expect(async () => {
+    await page.goto('/settings/dev/logs');
+    await page.locator('input[type=search]:visible').fill('sync/status');
+    await expect(page.getByTestId('logs')).toContainText('GET /api/v1/sync/status 200', { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
 
   await page.goto('/settings/dev');
   const [report] = await Promise.all([
