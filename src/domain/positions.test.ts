@@ -279,3 +279,23 @@ describe('corporate actions', () => {
     expect(l.closures).toHaveLength(0);
   });
 });
+
+describe('sales by the average method', () => {
+  it('costs each sale at the average before it; FIFO costs the oldest lots', () => {
+    const ops = [
+      op('buy', { qty: 10, price: 100, day: 1 }),
+      op('buy', { qty: 10, price: 200, day: 2 }),
+      op('sell', { id: 's1', qty: 5, price: 300, day: 3 }),
+      op('split', { qty: 15, day: 4 }),
+      op('sell', { id: 's2', qty: 10, price: 100, day: 5 }),
+    ];
+    const l = buildLedger(ops, ctx({ deductFees: false }));
+    expect(l.sales.map((s) => [s.operationId, s.averageCost.toFixed(), s.proceeds.toFixed()])).toEqual([
+      ['s1', '750', '1500'],
+      // After the sale 15 at 150 = 2 250; the split doubles them to 30 at 75.
+      ['s2', '750', '1000'],
+    ]);
+    const fifo = l.closures.filter((c) => c.closeOperationId === 's1');
+    expect(fifo.reduce((s, c) => s.plus(c.cost), D(0)).toFixed()).toBe('500');
+  });
+});

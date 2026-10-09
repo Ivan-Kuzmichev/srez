@@ -29,3 +29,30 @@ test('bonds: yield, the issue table, redemptions and the rate scenario', async (
   await expect(page.getByTestId('bonds-rates')).toContainText('Рост на 1 п.п.');
   await expect(page.getByTestId('bonds-rates')).toContainText('Фиксированный, 100,0 %');
 });
+
+test('the year’s profit: FIFO rows by holding, the average method, CSV', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await signIn(page);
+  await page.goto('/analytics/realized');
+  const trades = page.getByTestId('realized-trades');
+  // 100 from a lot bought 1 400 days ago, 20 from one bought 200 days ago.
+  await expect(trades).toContainText('+10 000 ₽');
+  await expect(trades).toContainText('+1 000 ₽');
+  await expect(page.getByTestId('realized-holding')).toContainText('Больше трёх лет, 1 сделка');
+  await expect(page.getByTestId('realized-holding')).toContainText('Меньше года, 1 сделка');
+  await expect(page.getByTestId('realized-cards')).toContainText('+1 000 ₽');
+
+  await page.getByLabel('Метод списания').click();
+  await page.getByRole('option', { name: 'По средней цене' }).click();
+  await expect(page).toHaveURL(/method=average/);
+  await expect(trades).not.toContainText('+10 000 ₽');
+
+  const [csv] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('link', { name: 'Выгрузить в CSV' }).first().click(),
+  ]);
+  expect(csv.suggestedFilename()).toMatch(/^srez-realized-\d{4}-average\.csv$/);
+  const text = await (await csv.createReadStream()).toArray().then((c) => Buffer.concat(c).toString('utf8'));
+  expect(text).toContain('Дата продажи;Тикер;Актив');
+  expect(text).toContain(';SBER;Сбербанк;Акции;');
+});

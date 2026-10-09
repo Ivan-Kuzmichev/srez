@@ -78,6 +78,21 @@ export interface LotClosure {
   holdingDays: number;
 }
 
+/**
+ * A sale with its cost by the average method (docs/04-calculations.md, section 13): quantity × the
+ * cell's average unit cost just before it. The average moves only with buys, sales, splits and amortization.
+ */
+export interface Sale {
+  operationId: string;
+  instrumentId: string;
+  tagId: string | null;
+  at: Date;
+  quantity: Decimal;
+  proceeds: Decimal;
+  averageCost: Decimal;
+  currency: string;
+}
+
 export interface Position {
   instrumentId: string;
   tagId: string | null;
@@ -102,5 +117,6 @@ export interface Ledger {
   positions: Position[];
   lots: Lot[];
   closures: LotClosure[];
+  sales: Sale[];
   issues: LedgerIssue[];
 }

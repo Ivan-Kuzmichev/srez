@@ -7,6 +7,7 @@ import type {
   Lot,
   LotClosure,
   Position,
+  Sale,
 } from './ledger-types';
 import { closeFifo, openLot, reduceLotCost, scaleLots } from './lots';
 
@@ -42,6 +43,9 @@ interface Cell {
   realizedPnl: Decimal;
   payoutsTotal: Decimal;
   firstBuyAt: Date | null;
+  /** The average method's running quantity and cost. */
+  avgQuantity: Decimal;
+  avgCost: Decimal;
 }
 
 function byTime(a: LedgerOperation, b: LedgerOperation): number {
@@ -55,6 +59,7 @@ function byTime(a: LedgerOperation, b: LedgerOperation): number {
 export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerContext): Ledger {
   const cells = new Map<string, Cell>();
   const closures: LotClosure[] = [];
+  const sales: Sale[] = [];
   const issues: LedgerIssue[] = [];
 
   const cell = (instrumentId: string, tagId: string | null, isCash: boolean): Cell => {
@@ -70,6 +75,8 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
         realizedPnl: ZERO,
         payoutsTotal: ZERO,
         firstBuyAt: null,
+        avgQuantity: ZERO,
+        avgCost: ZERO,
       };
       cells.set(key, c);
     }
@@ -121,6 +128,9 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
           currency: op.currency,
         }),
       );
+      const opened = c.lots.at(-1)!;
+      c.avgQuantity = c.avgQuantity.plus(opened.quantity);
+      c.avgCost = c.avgCost.plus(opened.quantity.times(opened.unitCost));
       if (c.lots.some((l) => l.currency !== op.currency))
         issues.push({ operationId: op.id, code: 'MIXED_CURRENCY' });
       if (op.type === 'buy' && !c.firstBuyAt) c.firstBuyAt = op.executedAt;
@@ -133,6 +143,20 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
         proceeds,
       });
       closures.push(...result.closures);
+      const taken = Decimal.min(op.quantity, c.avgQuantity);
+      const averageCost = c.avgQuantity.isZero() ? ZERO : c.avgCost.times(taken).div(c.avgQuantity);
+      sales.push({
+        operationId: op.id,
+        instrumentId: op.instrumentId,
+        tagId,
+        at: op.executedAt,
+        quantity: op.quantity,
+        proceeds,
+        averageCost,
+        currency: op.currency,
+      });
+      c.avgCost = c.avgCost.minus(averageCost);
+      c.avgQuantity = c.avgQuantity.minus(taken);
       c.realizedPnl = result.closures.reduce((s, x) => s.plus(x.pnl), c.realizedPnl);
       if (result.shortfall.gt(0)) issues.push({ operationId: op.id, code: 'OVERSOLD' });
     } else if (op.type === 'transfer_out') {
@@ -142,13 +166,21 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
         quantity: op.quantity,
         proceeds: null,
       });
+      const taken = Decimal.min(op.quantity, c.avgQuantity);
+      if (c.avgQuantity.gt(0)) c.avgCost = c.avgCost.minus(c.avgCost.times(taken).div(c.avgQuantity));
+      c.avgQuantity = c.avgQuantity.minus(taken);
       if (result.shortfall.gt(0)) issues.push({ operationId: op.id, code: 'OVERSOLD' });
     } else if (op.type === 'split') {
       const held = c.lots.reduce((s, l) => s.plus(l.remaining), ZERO);
       if (held.isZero()) issues.push({ operationId: op.id, code: 'NO_POSITION' });
-      else scaleLots(c.lots, held.plus(op.quantity).div(held));
+      else {
+        const ratio = held.plus(op.quantity).div(held);
+        scaleLots(c.lots, ratio);
+        c.avgQuantity = c.avgQuantity.times(ratio);
+      }
     } else if (op.type === 'amortization') {
       reduceLotCost(c.lots, op.amount.abs());
+      c.avgCost = Decimal.max(ZERO, c.avgCost.minus(op.amount.abs()));
     } else if (PAYOUT.has(op.type)) {
       c.payoutsTotal = c.payoutsTotal.plus(op.amount);
     }
@@ -190,7 +222,7 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
       isCash: false,
     });
   }
-  return { positions, lots, closures, issues };
+  return { positions, lots, closures, sales, issues };
 }
 
 /** value = quantity × price, unrealized = value − cost basis, and its share of the cost in percent. */

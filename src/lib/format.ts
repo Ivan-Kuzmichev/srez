@@ -4,7 +4,7 @@
  */
 import { Decimal, type DecimalValue } from '@/domain/decimal';
 import type { Currency, Money } from '@/domain/money';
-import { ru } from './i18n/ru';
+import { plural, ru } from './i18n/ru';
 
 const NBSP = ' ';
 const MINUS = '−';
@@ -202,6 +202,21 @@ export function formatMonthRange(from: string, to: string): string {
 /** «май» for chart axes. */
 export function formatMonthAxis(isoDate: string): string {
   return MONTHS_AXIS[monthOf(isoDate)]!;
+}
+
+/** Holding period: «7 месяцев», «1 год 2 месяца», «12 дней» under a month. */
+export function formatHolding(from: Date, to: Date): string {
+  let months = (to.getUTCFullYear() - from.getUTCFullYear()) * 12 + to.getUTCMonth() - from.getUTCMonth();
+  if (to.getUTCDate() < from.getUTCDate()) months -= 1;
+  if (months <= 0) {
+    const days = Math.max(0, Math.floor((to.getTime() - from.getTime()) / 86_400_000));
+    return `${days}${NBSP}${plural(days, 'день', 'дня', 'дней')}`;
+  }
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  const years = y ? `${y}${NBSP}${plural(y, 'год', 'года', 'лет')}` : '';
+  const rest = m ? `${m}${NBSP}${plural(m, 'месяц', 'месяца', 'месяцев')}` : '';
+  return [years, rest].filter(Boolean).join(' ');
 }
 
 /** A missing value is a word, not a dash: «нет». */

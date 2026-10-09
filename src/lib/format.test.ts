@@ -8,6 +8,7 @@ import {
   formatDateYear,
   formatDateLong,
   formatMoney,
+  formatHolding,
   formatMonthAxis,
   formatMonthRange,
   formatMonthYear,
@@ -160,5 +161,16 @@ describe('months', () => {
     expect(formatMonthRange('2026-03-01', '2026-03-20')).toBe('Март');
     expect(formatMonthRange('2025-11-01', '2026-02-01')).toBe('Ноябрь 2025 – февраль 2026');
     expect(formatMonthAxis('2026-05-10')).toBe('май');
+  });
+});
+
+describe('holding periods', () => {
+  const d = (s: string) => new Date(`${s}T12:00:00Z`);
+  it('years and months, days under a month', () => {
+    expect(formatHolding(d('2026-02-26'), d('2026-09-26'))).toBe('7\u00a0месяцев');
+    expect(formatHolding(d('2025-05-14'), d('2026-07-14'))).toBe('1\u00a0год 2\u00a0месяца');
+    expect(formatHolding(d('2024-05-03'), d('2026-06-03'))).toBe('2\u00a0года 1\u00a0месяц');
+    expect(formatHolding(d('2023-01-01'), d('2026-01-01'))).toBe('3\u00a0года');
+    expect(formatHolding(d('2026-09-20'), d('2026-10-02'))).toBe('12\u00a0дней');
   });
 });
