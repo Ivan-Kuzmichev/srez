@@ -24,6 +24,7 @@ import type { LedgerContext } from '@/domain/ledger-types';
 import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope';
 import { excessPp, priceReturn, twrGrowth, xirr, type Xirr } from '@/domain/returns';
 import { valueOn } from '@/domain/timeline';
+import { benchmarkFor } from './benchmarks';
 import { addDays, localDate } from '@/lib/time';
 
 const ZERO = new Decimal(0);
@@ -198,12 +199,19 @@ export function loadUserLedger(db: Db, userId: string): UserLedger {
   return { flowOps, ctxByAccount };
 }
 
-export function flowsFor(ledger: UserLedger, scope: Scope, fx: FxSeries, timeZone: string): ExternalFlow[] {
+export function flowsFor(
+  ledger: UserLedger,
+  scope: Scope,
+  fx: FxSeries,
+  timeZone: string,
+  includeCash = true,
+): ExternalFlow[] {
   return externalFlows(
     ledger.flowOps,
     ledger.ctxByAccount,
     scope,
     (currency, at) => rubPer(fx, currency, localDate(at, timeZone)) ?? ONE,
+    { includeCash },
   );
 }
 
@@ -213,6 +221,7 @@ export function valueSeries(
   userId: string,
   scope: Scope,
   from: string | null,
+  includeCash = true,
 ): { date: string; value: Decimal }[] {
   const rows = db
     .select({
@@ -220,8 +229,10 @@ export function valueSeries(
       accountId: positionSnapshots.accountId,
       tagId: positionSnapshots.tagId,
       valueRub: positionSnapshots.valueRub,
+      kind: instruments.kind,
     })
     .from(positionSnapshots)
+    .innerJoin(instruments, eq(instruments.id, positionSnapshots.instrumentId))
     .where(
       from
         ? and(eq(positionSnapshots.userId, userId), gte(positionSnapshots.date, from))
@@ -231,7 +242,7 @@ export function valueSeries(
     .all();
   const byDate = new Map<string, Decimal>();
   for (const r of rows) {
-    if (!scope(r.accountId, r.tagId)) continue;
+    if (!scope(r.accountId, r.tagId) || (!includeCash && r.kind === 'currency')) continue;
     byDate.set(r.date, (byDate.get(r.date) ?? ZERO).plus(r.valueRub));
   }
   return [...byDate].map(([date, value]) => ({ date, value }));
@@ -390,9 +401,10 @@ export function areaSeries(
   liveValue: Decimal,
   timeZone: string,
   now = new Date(),
+  includeCash = true,
 ): SeriesPoint[] {
   const today = localDate(now, timeZone);
-  const points = valueSeries(db, userId, scope, null).filter((p) => p.date < today);
+  const points = valueSeries(db, userId, scope, null, includeCash).filter((p) => p.date < today);
   points.push({ date: today, value: liveValue });
   const sorted = [...flows].sort((a, b) => a.at.getTime() - b.at.getTime());
   let i = 0;
@@ -479,7 +491,7 @@ export function areaReturns(
   series: SeriesPoint[],
   flows: ExternalFlow[],
   value: Decimal,
-  benchmarkId: string,
+  benchmarkId: string | null,
   timeZone: string,
   now = new Date(),
 ): AreaReturns {
@@ -496,7 +508,7 @@ export function areaReturns(
     live.map((p, i) => ({ value: p.value, flow: i === 0 ? ZERO : p.invested.minus(live[i - 1]!.invested) })),
   );
 
-  const closes = loadPriceSeries(db, [benchmarkId]).get(benchmarkId) ?? [];
+  const closes = benchmarkId ? (loadPriceSeries(db, [benchmarkId]).get(benchmarkId) ?? []) : [];
   let k = 0;
   let last: Decimal | null = null;
   const points = live.map((p, i) => {
@@ -536,4 +548,57 @@ export function areaXirr(
     ...flows.map((f) => ({ date: localDate(f.at, timeZone), amount: f.amountRub.neg() })),
     { date: localDate(now, timeZone), amount: value },
   ]);
+}
+
+export interface AreaMetrics {
+  /** settings.returns.primaryMetric */
+  primary: 'xirr' | 'twr';
+  xirr: Xirr | null;
+  /** TWR since the area started. */
+  twr: Decimal | null;
+  returns: AreaReturns;
+  benchmarkId: string | null;
+}
+
+/**
+ * Returns of an area as the settings ask (FR-SET-1): with or without free cash, against the
+ * portfolio's benchmark or the default one, the primary metric named.
+ */
+export function areaMetrics(
+  db: Db,
+  userId: string,
+  scope: Scope,
+  cells: ValuedCell[],
+  ledger: UserLedger,
+  fx: FxSeries,
+  settings: {
+    returns: { includeCash: boolean; primaryMetric: 'xirr' | 'twr'; defaultBenchmarkId: string | null };
+    display: { timezone: string };
+  },
+  portfolioBenchmarkId: string | null,
+  now = new Date(),
+): AreaMetrics {
+  const tz = settings.display.timezone;
+  const includeCash = settings.returns.includeCash;
+  const flows = flowsFor(ledger, scope, fx, tz, includeCash);
+  const value = cells
+    .filter((c) => scope(c.accountId, c.tagId) && (includeCash || !c.isCash))
+    .reduce((s, c) => s.plus(c.valueRub), ZERO);
+  const series = areaSeries(db, userId, scope, flows, value, tz, now, includeCash);
+  const benchmarkId = benchmarkFor(db, portfolioBenchmarkId, settings.returns.defaultBenchmarkId);
+  const returns = areaReturns(db, series, flows, value, benchmarkId, tz, now);
+  const last = returns.points.at(-1);
+  return {
+    primary: settings.returns.primaryMetric,
+    xirr: returns.xirr,
+    twr: last && returns.points.length > 1 ? last.growth.minus(1) : null,
+    returns,
+    benchmarkId,
+  };
+}
+
+/** The figure cards show: XIRR or TWR since the start, as the settings say. */
+export function primaryReturn(m: AreaMetrics): { rate: Decimal; shortPeriod: boolean } | null {
+  if (m.primary === 'twr') return m.twr ? { rate: m.twr, shortPeriod: false } : null;
+  return m.xirr;
 }

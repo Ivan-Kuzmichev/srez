@@ -41,7 +41,7 @@ export function ReturnsChart({
 }: {
   points: ReturnsPoint[];
   name: string;
-  benchName: string;
+  benchName: string | null;
   label: string;
 }) {
   const [period, setPeriod] = useState<Period>('1y');
@@ -109,12 +109,14 @@ export function ReturnsChart({
               {name}, {pct(end?.p)}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="h-0 w-[18px] border-t-2 border-dashed border-muted" />
-            <span>
-              {benchName}, {pct(end?.b)}
-            </span>
-          </div>
+          {benchName ? (
+            <div className="flex items-center gap-2">
+              <span className="h-0 w-[18px] border-t-2 border-dashed border-muted" />
+              <span>
+                {benchName}, {pct(end?.b)}
+              </span>
+            </div>
+          ) : null}
         </div>
         <Segmented
           aria-label={ru.chart.period}
@@ -195,9 +197,11 @@ export function ReturnsChart({
               <span className="num">
                 {name}: {pct(point.p)}
               </span>
-              <span className="num text-muted">
-                {benchName}: {pct(point.b)}
-              </span>
+              {benchName ? (
+                <span className="num text-muted">
+                  {benchName}: {pct(point.b)}
+                </span>
+              ) : null}
             </div>
           ) : null}
           <div className="relative mt-2 h-4 text-small text-muted" aria-hidden="true">

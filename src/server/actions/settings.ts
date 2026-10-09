@@ -1,20 +1,52 @@
 'use server';
 
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
+import { finAccounts } from '@/db/schema';
+import { enqueueRecalc } from '@/jobs/positions';
 import { authedAction } from '../action';
-import { updateSettings } from '../settings';
+import { benchmarkOptions, NO_BENCHMARK } from '../benchmarks';
+import { getSettings, updateSettings } from '../settings';
 
-/** «Цены и курсы» (FR-SET-3). */
-export const savePriceSettings = authedAction(
+/** «Общие» settings: returns, currencies, prices (FR-SET-1…3), saved by one button. */
+export const saveGeneralSettings = authedAction(
   z.object({
-    refreshMinutes: z.coerce.number().pipe(z.union([z.literal(15), z.literal(60), z.literal(1440)])),
-    snapshotTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    returns: z.object({
+      primaryMetric: z.enum(['xirr', 'twr']),
+      includeCash: z.boolean(),
+      deductFees: z.boolean(),
+      defaultBenchmarkId: z.string().min(1).max(64),
+    }),
+    display: z.object({
+      baseCurrency: z.enum(['RUB', 'USD', 'EUR']),
+      extraCurrencies: z.array(z.enum(['USD', 'EUR', 'BTC'])).max(3),
+    }),
+    prices: z.object({
+      refreshMinutes: z.coerce.number().pipe(z.union([z.literal(15), z.literal(60), z.literal(1440)])),
+      snapshotTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    }),
   }),
-  async (prices, session) => {
-    updateSettings(db(), session.user.id, { prices });
-    revalidatePath('/settings');
+  async ({ returns, display, prices }, session) => {
+    const userId = session.user.id;
+    const known = new Set([NO_BENCHMARK, ...benchmarkOptions(db()).map((b) => b.id)]);
+    if (!known.has(returns.defaultBenchmarkId)) return { ok: false, code: 'BENCHMARK' };
+    const before = getSettings(db(), userId);
+    updateSettings(db(), userId, {
+      returns,
+      display: { ...display, extraCurrencies: [...new Set(display.extraCurrencies)] },
+      prices,
+    });
+    // Fees go into lot cost and sale proceeds: every account is replayed.
+    if (before.returns.deductFees !== returns.deductFees)
+      for (const a of db()
+        .select({ id: finAccounts.id })
+        .from(finAccounts)
+        .where(eq(finAccounts.userId, userId))
+        .all())
+        enqueueRecalc(db(), a.id);
+    revalidatePath('/', 'layout');
     return { ok: true, data: null };
   },
 );

@@ -48,14 +48,20 @@ export function PhonePortfolioFilter({
   );
 }
 
+const SIGNS: Record<string, string> = { RUB: '₽', USD: '$', EUR: '€' };
+
 /** Portfolio filter and display currency, kept in the address bar (FR-OVR-5, 6). */
 export function OverviewControls({
   portfolios,
   currency,
+  base,
+  currencies,
   portfolioId,
 }: {
   portfolios: { id: string; name: string }[];
   currency: string;
+  base: string;
+  currencies: string[];
   portfolioId: string | null;
 }) {
   const router = useRouter();
@@ -85,17 +91,19 @@ export function OverviewControls({
           />
         </div>
       ) : null}
-      <Segmented
-        aria-label={ru.overview.currency}
-        mono
-        value={currency}
-        onValueChange={(c) => set('cur', c === 'RUB' ? null : c)}
-        options={[
-          { value: 'RUB', label: '₽', ariaLabel: ru.overview.currencies.RUB },
-          { value: 'USD', label: '$', ariaLabel: ru.overview.currencies.USD },
-          { value: 'EUR', label: '€', ariaLabel: ru.overview.currencies.EUR },
-        ]}
-      />
+      {currencies.length > 1 ? (
+        <Segmented
+          aria-label={ru.overview.currency}
+          mono
+          value={currency}
+          onValueChange={(c) => set('cur', c === base ? null : c)}
+          options={currencies.map((c) => ({
+            value: c,
+            label: SIGNS[c] ?? c,
+            ariaLabel: ru.overview.currencies[c],
+          }))}
+        />
+      ) : null}
     </>
   );
 }

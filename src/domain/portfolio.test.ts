@@ -115,6 +115,11 @@ describe('external flows', () => {
     expect(f.map((x) => x.amountRub.toFixed())).toEqual(['100000', '-3000', '150', '-5000', '9000']);
   });
 
+  it('without free cash: purchases are the money in, payouts and sales the money out', () => {
+    const f = externalFlows(ops, ctxs, everything, rub, { includeCash: false });
+    expect(f.map((x) => x.amountRub.toFixed())).toEqual(['3000', '7000', '-150']);
+  });
+
   it('an account outside the portfolio has no flows', () => {
     expect(externalFlows(ops, ctxs, scopeOf([]), rub)).toEqual([]);
   });

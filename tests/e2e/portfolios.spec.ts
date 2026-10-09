@@ -51,6 +51,23 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(all).toContainText('LKOH');
   await expect(all).toContainText('RUB');
 
+  // Rebalance: a hint without targets; with them, classes, orders from held stocks and a saved plan.
+  const whole = page.url();
+  await page.goto(`${whole}/rebalance`);
+  await expect(page.getByText('У портфеля нет целей по классам')).toBeVisible();
+  await page.goto(`${whole}/edit`);
+  await page.getByLabel('Без целей, только учёт').uncheck();
+  await page.getByLabel('Акции, %').fill('70');
+  await page.getByLabel('Кэш, %').fill('30');
+  await page.getByRole('button', { name: 'Сохранить' }).first().click();
+  await expect(page).toHaveURL(/\/portfolios\/[0-9a-f-]+$/);
+  await page.getByRole('link', { name: 'Рассчитать ребаланс' }).click();
+  await page.getByLabel('Сколько вношу, ₽').fill('100000');
+  await expect(page.getByTestId('rebalance-classes')).toContainText('Акции');
+  await expect(page.getByTestId('rebalance-orders')).toContainText(/SBER|LKOH/);
+  await page.getByRole('button', { name: 'Сохранить как план' }).click();
+  await expect(page.getByText('План сохранён').first()).toBeVisible();
+
   await page.goto('/portfolios');
   await expect(page.getByTestId('portfolio-cards')).toContainText('Пенсия');
   await expect(page.getByTestId('accounts-table')).toContainText('Пенсия, тег «пенсия»');
@@ -82,4 +99,16 @@ test('the overview switches the display currency, and price settings persist', a
   await expect(page.getByText('Настройки сохранены').first()).toBeVisible();
   await page.reload();
   await expect(page.getByLabel('Ежедневный снимок стоимости')).toHaveValue('22:30');
+
+  // «Расчёт доходности»: TWR as the primary figure shows on the portfolio cards; back to XIRR after.
+  await page.getByLabel('TWR, без влияния пополнений').check();
+  await page.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(page.getByText('Настройки сохранены').first()).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByText('TWR, с начала').first()).toBeVisible();
+  await page.goto('/settings');
+  await expect(page.getByLabel('TWR, без влияния пополнений')).toBeChecked();
+  await page.getByLabel('XIRR, с учётом дат пополнений').check();
+  await page.getByRole('button', { name: 'Сохранить' }).click();
+  await expect(page.getByText('Настройки сохранены').first()).toBeVisible();
 });

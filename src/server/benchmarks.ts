@@ -45,15 +45,19 @@ export function benchmarkOptions(db: Executor): { id: string; ticker: string; na
   return BENCHMARKS.map((b) => ({ id: ids.get(b.ticker)!, ticker: b.ticker, name: b.name }));
 }
 
-/** The benchmark of an area: the portfolio's own, else the settings default, else MCFTR. */
+/** Settings value for «Без бенчмарка». */
+export const NO_BENCHMARK = 'none';
+
+/** The benchmark of an area: the portfolio's own, else the settings default (maybe none), else MCFTR. */
 export function benchmarkFor(
   db: Executor,
   portfolioBenchmarkId: string | null,
   defaultId: string | null,
-): string {
+): string | null {
   const ids = ensureBenchmarks(db);
   const known = new Set(ids.values());
   if (portfolioBenchmarkId && known.has(portfolioBenchmarkId)) return portfolioBenchmarkId;
+  if (defaultId === NO_BENCHMARK) return null;
   if (defaultId && known.has(defaultId)) return defaultId;
   return ids.get(DEFAULT_BENCHMARK)!;
 }

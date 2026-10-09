@@ -19,8 +19,8 @@ import {
   loadUserLedger,
   loadValuedCells,
   portfolioScope,
-  areaXirr,
-  flowsFor,
+  areaMetrics,
+  primaryReturn,
   summarizeArea,
   tagNames,
 } from '@/server/portfolio-data';
@@ -38,7 +38,8 @@ const rub = (v: Decimal, isApprox = false) => {
 export default async function PortfoliosPage() {
   const session = await requireSession();
   const userId = session.user.id;
-  const tz = getSettings(db(), userId).display.timezone;
+  const settings = getSettings(db(), userId);
+  const tz = settings.display.timezone;
   const fx = loadFx(db());
   const cells = loadValuedCells(db(), userId, fx);
   const ledger = loadUserLedger(db(), userId);
@@ -60,7 +61,9 @@ export default async function PortfoliosPage() {
 
   const cards = portfolios.map((p) => {
     const s = summarizeArea(db(), userId, portfolioScope(p), cells, ledger, fx, tz, null);
-    const x = areaXirr(flowsFor(ledger, portfolioScope(p), fx, tz), s.value, tz);
+    const x = primaryReturn(
+      areaMetrics(db(), userId, portfolioScope(p), cells, ledger, fx, settings, p.benchmarkId),
+    );
     return { p, s, x, positions: s.cells.filter((c) => !c.isCash).length };
   });
 
@@ -96,7 +99,11 @@ export default async function PortfoliosPage() {
                   <span className="text-card font-semibold">{p.name}</span>
                   {x ? (
                     <span
-                      title={ru.portfolios.returnHint}
+                      title={
+                        settings.returns.primaryMetric === 'twr'
+                          ? ru.portfolios.returnHintTwr
+                          : ru.portfolios.returnHint
+                      }
                       className={cn(
                         'num text-caption whitespace-nowrap',
                         x.rate.gte(0) ? 'text-gain' : 'text-loss',

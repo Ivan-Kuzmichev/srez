@@ -26,13 +26,15 @@ export function externalFlows(
   ctxByAccount: ReadonlyMap<string, LedgerContext>,
   inScope: Scope,
   rubPer: (currency: string, at: Date) => Decimal,
+  /** «Учитывать свободный кэш» off: cash cells are outside the area, money moves in and out with trades. */
+  options: { includeCash?: boolean } = {},
 ): ExternalFlow[] {
   const flows: ExternalFlow[] = [];
   for (const op of operations) {
     if (op.voided) continue;
     const ctx = ctxByAccount.get(op.accountId);
     if (!ctx) continue;
-    const cashIn = inScope(op.accountId, ctx.accountDefaultTagId);
+    const cashIn = options.includeCash !== false && inScope(op.accountId, ctx.accountDefaultTagId);
     const securityTag = op.instrumentId ? resolveTag(op.instrumentId, op.tagId, ctx) : null;
     const securityIn = op.instrumentId ? inScope(op.accountId, securityTag) : false;
     const rub = (v: Decimal) => v.times(rubPer(op.currency, op.executedAt));

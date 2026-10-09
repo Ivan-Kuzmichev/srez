@@ -10,6 +10,7 @@ import {
   type Lot,
 } from '@/domain/positions';
 import { uuidv7 } from '@/lib/uuid';
+import { getSettings } from '@/server/settings';
 
 const CURRENCY_NAMES: Record<string, string> = { RUB: 'Рубли', USD: 'Доллары США', EUR: 'Евро', CNY: 'Юани' };
 
@@ -64,7 +65,7 @@ export function toLedgerOperation(row: typeof operations.$inferSelect): LedgerOp
 /** An account's operations and the context to replay them: tag rules, default tag, cash instruments. */
 export function loadAccountLedger(
   db: Executor,
-  account: Pick<typeof finAccounts.$inferSelect, 'id' | 'currency' | 'defaultTagId'>,
+  account: Pick<typeof finAccounts.$inferSelect, 'id' | 'userId' | 'currency' | 'defaultTagId'>,
   extraCurrencies: string[] = [],
 ): { ops: LedgerOperation[]; ctx: LedgerContext } {
   const ops = db
@@ -89,7 +90,7 @@ export function loadAccountLedger(
       tagRules: new Map(rules.filter((r) => r.instrumentId).map((r) => [r.instrumentId!, r.tagId])),
       accountDefaultTagId: account.defaultTagId,
       cashInstrumentId: (code) => cash.get(code) ?? ensureCurrencyInstruments(db, [code]).get(code)!,
-      deductFees: true,
+      deductFees: getSettings(db, account.userId).returns.deductFees,
     },
   };
 }

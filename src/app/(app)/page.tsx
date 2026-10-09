@@ -33,7 +33,8 @@ import { ru } from '@/lib/i18n/ru';
 import { localDate } from '@/lib/time';
 import {
   areaSeries,
-  areaXirr,
+  areaMetrics,
+  primaryReturn,
   convertSeries,
   flowsFor,
   listPortfolios,
@@ -52,14 +53,15 @@ export const metadata: Metadata = { title: ru.pages.overview };
 
 const Params = z.object({
   portfolio: z.string().max(64).optional().catch(undefined),
-  cur: z.enum(['RUB', 'USD', 'EUR']).catch('RUB'),
+  cur: z.enum(['RUB', 'USD', 'EUR']).optional().catch(undefined),
 });
 
 export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   const session = await requireSession();
   const userId = session.user.id;
   const params = Params.parse(await searchParams);
-  const tz = getSettings(db(), userId).display.timezone;
+  const settings = getSettings(db(), userId);
+  const tz = settings.display.timezone;
 
   const anyOperation = listJournal(db(), userId, { period: 'all' }, 1).total > 0;
   if (!anyOperation) {
@@ -107,10 +109,26 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   const s = summarizeArea(db(), userId, scope, cells, ledger, fx, tz, null);
   const flows = flowsFor(ledger, scope, fx, tz);
   const series = areaSeries(db(), userId, scope, flows, s.value, tz);
-  const xirrAll = areaXirr(flows, s.value, tz);
+  const metrics = areaMetrics(
+    db(),
+    userId,
+    scope,
+    cells,
+    ledger,
+    fx,
+    settings,
+    selected?.benchmarkId ?? null,
+  );
+  const xirrAll = primaryReturn(metrics);
 
   // Display currency: today's values at today's rate, the history at the rate of each day (FR-OVR-5).
-  const cur = params.cur;
+  // «Валюты» (FR-SET-2): the base currency by default, the extra ones on the toggle.
+  const base = settings.display.baseCurrency;
+  const cur = params.cur ?? base;
+  const shown = [
+    base,
+    ...settings.display.extraCurrencies.filter((c): c is 'USD' | 'EUR' => c !== 'BTC' && c !== base),
+  ];
   const nowRate = rubPer(fx, cur) ?? new Decimal(1);
   const conv = (v: Decimal) => v.div(nowRate);
   const money = (v: Decimal) => formatMoney(Money.of(conv(v), cur));
@@ -135,6 +153,8 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
             <OverviewControls
               portfolios={portfolios.map((p) => ({ id: p.id, name: p.name }))}
               currency={cur}
+              base={base}
+              currencies={shown.includes(cur) ? shown : [...shown, cur]}
               portfolioId={selected?.id ?? null}
             />
             <Button asChild variant="primary" className="max-wide:size-11 max-wide:px-0">
@@ -200,7 +220,9 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
               </div>
             </div>
             <div className="flex flex-col gap-1" data-testid="overview-xirr">
-              <div className="text-small text-muted">{ru.portfolio.xirr}</div>
+              <div className="text-small text-muted">
+                {metrics.primary === 'twr' ? ru.portfolio.twr : ru.portfolio.xirr}
+              </div>
               <div
                 className={cn(
                   'num text-body whitespace-nowrap',
@@ -247,7 +269,9 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
             <div className="flex flex-col">
               {portfolios.map((p) => {
                 const ps = summarizeArea(db(), userId, portfolioScope(p), cells, ledger, fx, tz, null);
-                const px = areaXirr(flowsFor(ledger, portfolioScope(p), fx, tz), ps.value, tz);
+                const px = primaryReturn(
+                  areaMetrics(db(), userId, portfolioScope(p), cells, ledger, fx, settings, p.benchmarkId),
+                );
                 return (
                   <Link
                     key={p.id}

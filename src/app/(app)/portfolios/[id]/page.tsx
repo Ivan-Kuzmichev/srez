@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { ReturnsChart } from '@/components/charts/returns-chart';
 import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
-import { benchmarkFor } from '@/server/benchmarks';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
 import { Button } from '@/components/ui/button';
 import { TargetBar } from '@/components/ui/target-bar';
@@ -29,9 +28,7 @@ import {
 import { assetLabel } from '@/lib/asset-label';
 import { ru } from '@/lib/i18n/ru';
 import {
-  areaReturns,
-  areaSeries,
-  flowsFor,
+  areaMetrics,
   listPortfolios,
   loadFx,
   loadUserLedger,
@@ -67,16 +64,26 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
     threshold: portfolio.deviationThreshold,
   });
   const split = profitSplit(db(), userId, scope, cells, fx);
-  const flows = flowsFor(ledger, scope, fx, tz);
-  const series = areaSeries(db(), userId, scope, flows, s.value, tz);
   const settings = getSettings(db(), userId);
-  const benchmarkId = benchmarkFor(db(), portfolio.benchmarkId, settings.returns.defaultBenchmarkId);
-  const benchTicker =
-    db().select({ t: instruments.ticker }).from(instruments).where(eq(instruments.id, benchmarkId)).get()
-      ?.t ?? 'MCFTR';
-  const benchName = ru.benchmarks.names[benchTicker] ?? benchTicker;
-  const benchDative = ru.benchmarks.dative[benchTicker] ?? benchTicker;
-  const returns = areaReturns(db(), series, flows, s.value, benchmarkId, tz);
+  const metrics = areaMetrics(db(), userId, scope, cells, ledger, fx, settings, portfolio.benchmarkId);
+  const returns = metrics.returns;
+  const benchTicker = metrics.benchmarkId
+    ? (db()
+        .select({ t: instruments.ticker })
+        .from(instruments)
+        .where(eq(instruments.id, metrics.benchmarkId))
+        .get()?.t ?? null)
+    : null;
+  const benchName = benchTicker ? (ru.benchmarks.names[benchTicker] ?? benchTicker) : null;
+  const benchDative = benchTicker ? (ru.benchmarks.dative[benchTicker] ?? benchTicker) : '';
+  const primary =
+    metrics.primary === 'twr'
+      ? { label: ru.portfolio.twr, value: metrics.twr, note: ru.portfolio.twrNote }
+      : {
+          label: ru.portfolio.xirr,
+          value: metrics.xirr?.rate ?? null,
+          note: metrics.xirr?.shortPeriod ? ru.portfolio.xirrShort : ru.portfolio.xirrNote,
+        };
   const accounts = new Map(listAccounts(db(), userId).map((a) => [a.id, a]));
   const tags = tagNames(db(), userId);
 
@@ -197,45 +204,45 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
           className="flex flex-col gap-1.5 rounded-card border border-border bg-surface px-6 py-5"
           data-testid="portfolio-xirr"
         >
-          <div className="text-caption text-muted">{ru.portfolio.xirr}</div>
+          <div className="text-caption text-muted">{primary.label}</div>
           <div
             className={cn(
               'num text-metric-phone font-medium tracking-[-0.01em] whitespace-nowrap wide:text-metric',
-              returns.xirr && (returns.xirr.rate.gte(0) ? 'text-gain' : 'text-loss'),
+              primary.value && (primary.value.gte(0) ? 'text-gain' : 'text-loss'),
             )}
           >
-            {returns.xirr ? formatPercent(returns.xirr.rate.times(100), { signed: true }) : ru.common.none}
+            {primary.value ? formatPercent(primary.value.times(100), { signed: true }) : ru.common.none}
           </div>
-          <div className="text-small text-muted">
-            {returns.xirr?.shortPeriod ? ru.portfolio.xirrShort : ru.portfolio.xirrNote}
-          </div>
+          <div className="text-small text-muted">{primary.note}</div>
         </section>
-        <section
-          className="flex flex-col gap-1.5 rounded-card border border-border bg-surface px-6 py-5"
-          data-testid="portfolio-benchmark"
-        >
-          <div className="text-caption text-muted">
-            {returns.year.fullYear
-              ? ru.portfolio.versusYear(benchDative)
-              : ru.portfolio.versusSince(benchDative)}
-          </div>
-          <div
-            className={cn(
-              'num text-metric-phone font-medium tracking-[-0.01em] whitespace-nowrap wide:text-metric',
-              returns.year.pp && (returns.year.pp.gte(0) ? 'text-gain' : 'text-loss'),
-            )}
+        {benchName ? (
+          <section
+            className="flex flex-col gap-1.5 rounded-card border border-border bg-surface px-6 py-5"
+            data-testid="portfolio-benchmark"
           >
-            {returns.year.pp ? formatPp(returns.year.pp) : ru.common.none}
-          </div>
-          {returns.year.portfolio && returns.year.benchmark ? (
-            <div className="num text-small text-muted">
-              {ru.portfolio.twrVersus(
-                formatPercent(returns.year.portfolio.times(100)),
-                formatPercent(returns.year.benchmark.times(100)),
-              )}
+            <div className="text-caption text-muted">
+              {returns.year.fullYear
+                ? ru.portfolio.versusYear(benchDative)
+                : ru.portfolio.versusSince(benchDative)}
             </div>
-          ) : null}
-        </section>
+            <div
+              className={cn(
+                'num text-metric-phone font-medium tracking-[-0.01em] whitespace-nowrap wide:text-metric',
+                returns.year.pp && (returns.year.pp.gte(0) ? 'text-gain' : 'text-loss'),
+              )}
+            >
+              {returns.year.pp ? formatPp(returns.year.pp) : ru.common.none}
+            </div>
+            {returns.year.portfolio && returns.year.benchmark ? (
+              <div className="num text-small text-muted">
+                {ru.portfolio.twrVersus(
+                  formatPercent(returns.year.portfolio.times(100)),
+                  formatPercent(returns.year.benchmark.times(100)),
+                )}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-3 wide:gap-4">
@@ -249,7 +256,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
             }))}
             name={portfolio.name}
             benchName={benchName}
-            label={ru.portfolio.returnsLabel(portfolio.name, benchName)}
+            label={ru.portfolio.returnsLabel(portfolio.name, benchName ?? '')}
           />
         </section>
         <section
