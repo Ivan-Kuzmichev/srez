@@ -62,8 +62,9 @@ pnpm cli user:reset-password --username admin --remove-passkeys
 
 ```sh
 mkdir -p srez/data && cd srez
-sudo chown -R 1001:1001 data        # контейнеры работают от uid 1001
 ```
+
+Права на `data` выставлять не нужно: контейнер стартует от root, отдаёт каталог пользователю приложения (uid 1001) и дальше работает от него. Если задать в compose свой `user:`, каталог должен быть доступен ему на запись — иначе контейнер скажет об этом при старте.
 
 Рядом с `data` положите `docker-compose.yml`:
 

@@ -42,7 +42,7 @@ RUN for d in node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3; do
     done; true
 COPY --chown=srez:srez docker/entrypoint.sh ./entrypoint.sh
 COPY --chown=srez:srez scripts/remote-address.mjs ./scripts/remote-address.mjs
-USER srez
+# No USER: the entrypoint starts as root only to hand /data to uid 1001, then runs everything as it.
 VOLUME /data
 EXPOSE 3000
 ENTRYPOINT ["./entrypoint.sh"]
