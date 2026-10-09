@@ -24,10 +24,25 @@ const days = (a: string, b: string) => (Date.parse(`${b}T00:00:00Z`) - Date.pars
 
 /**
  * XIRR (docs/04-calculations.md, section 4): Σ CF_i / (1 + r)^((d_i − d_0) / 365) = 0.
- * Newton from 0.1, bisection on [−0.99; 10] when it does not converge. Null for fewer than two
+ * Newton from a float-found start, bisection on [−0.99; 10] when it does not converge. Null for fewer than two
  * flows, a period shorter than a day, or flows of one sign.
  */
 export function xirr(flows: readonly CashFlow[]): Xirr | null {
+  const prepared = prepare(flows);
+  if (!prepared) return null;
+  // Owner's decision (phase 10): a float search only picks where Decimal starts; the answer is
+  // Decimal's. From a close start Decimal Newton needs one or two steps instead of a dozen.
+  const seed = floatSeed(prepared.terms.map(({ t, a }) => ({ t: t.toNumber(), a: a.toNumber() })));
+  return solve(prepared.terms, seed === null ? '0.1' : String(seed), prepared.span);
+}
+
+/** XIRR from a given start, with no float help: the Decimal path itself, for tests. */
+export function xirrFrom(flows: readonly CashFlow[], start: string): Xirr | null {
+  const prepared = prepare(flows);
+  return prepared && solve(prepared.terms, start, prepared.span);
+}
+
+function prepare(flows: readonly CashFlow[]): { terms: { t: R; a: R }[]; span: number } | null {
   const byDay = new Map<string, Decimal>();
   for (const f of flows) byDay.set(f.date, (byDay.get(f.date) ?? new Decimal(0)).plus(f.amount));
   const list = [...byDay].filter(([, a]) => !a.isZero()).sort(([a], [b]) => a.localeCompare(b));
@@ -36,24 +51,31 @@ export function xirr(flows: readonly CashFlow[]): Xirr | null {
   const span = days(first, list.at(-1)![0]);
   if (span < 1) return null;
   if (!list.some(([, a]) => a.lt(0)) || !list.some(([, a]) => a.gt(0))) return null;
-  const terms = list.map(([d, a]) => ({ t: new R(days(first, d)).div(365), a: new R(a.toString()) }));
+  return {
+    terms: list.map(([d, a]) => ({ t: new R(days(first, d)).div(365), a: new R(a.toString()) })),
+    span,
+  };
+}
 
+/** Decimal Newton from `start`, bisection on [−0.99; 10] when it does not converge. */
+function solve(terms: { t: R; a: R }[], start: string, span: number): Xirr | null {
+  const done = (r: R) => ({ rate: new Decimal(r.toString()), shortPeriod: span < 365 });
+  // Relative to the money moved: with millions in flows an absolute 1e-12 is past 20 digits.
+  const tolerance = terms.reduce((sum, { a }) => sum.plus(a.abs()), new R(0)).times('1e-12');
   const npv = (r: R) => {
     const base = r.plus(1);
+    // (1 + r)^t = e^(t·ln(1 + r)): the logarithm once per evaluation, not once per flow.
+    const ln = base.ln();
     let value = new R(0);
     let slope = new R(0);
     for (const { t, a } of terms) {
-      const disc = base.pow(t);
+      const disc = t.times(ln).exp();
       value = value.plus(a.div(disc));
       slope = slope.minus(a.times(t).div(disc.times(base)));
     }
     return { value, slope };
   };
-
-  const done = (r: R) => ({ rate: new Decimal(r.toString()), shortPeriod: span < 365 });
-  const tolerance = new R('1e-12');
-
-  let r = new R('0.1');
+  let r = new R(start);
   for (let i = 0; i < 50; i++) {
     const { value, slope } = npv(r);
     if (value.abs().lt(tolerance)) return done(r);
@@ -141,4 +163,41 @@ export function twrGrowth(series: readonly TwrDay[]): Decimal[] {
     previous = day.value;
   }
   return out;
+}
+
+/** A rate close to the root, in plain numbers; null when no root shows up between −0.99 and 10. */
+function floatSeed(terms: readonly { t: number; a: number }[]): number | null {
+  const npv = (r: number) => {
+    let value = 0;
+    let slope = 0;
+    for (const { t, a } of terms) {
+      const disc = Math.pow(1 + r, t);
+      value += a / disc;
+      slope -= (a * t) / (disc * (1 + r));
+    }
+    return { value, slope };
+  };
+  let r = 0.1;
+  for (let i = 0; i < 100; i++) {
+    const { value, slope } = npv(r);
+    if (!Number.isFinite(value) || slope === 0) break;
+    const next = r - value / slope;
+    if (!Number.isFinite(next) || next <= -0.99 || next > 10) break;
+    if (Math.abs(next - r) < 1e-12) return next;
+    r = next;
+  }
+  let lo = -0.99;
+  let hi = 10;
+  let fLo = npv(lo).value;
+  if (!Number.isFinite(fLo) || fLo * npv(hi).value > 0) return null;
+  for (let i = 0; i < 200 && hi - lo > 1e-12; i++) {
+    const mid = (lo + hi) / 2;
+    const f = npv(mid).value;
+    if (f * fLo < 0) hi = mid;
+    else {
+      lo = mid;
+      fLo = f;
+    }
+  }
+  return (lo + hi) / 2;
 }

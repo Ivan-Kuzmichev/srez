@@ -1,11 +1,13 @@
 import { and, eq, inArray, max } from 'drizzle-orm';
 import type { Executor } from '@/db/client';
-import { finAccounts, instruments, positionSnapshots } from '@/db/schema';
+import { finAccounts, instruments, positionSnapshots, snapshotTotals } from '@/db/schema';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
 import { dailyQuantities, valueOn } from '@/domain/timeline';
 import { eachDay, localDate } from '@/lib/time';
 import { loadFxSeries, loadPriceSeries } from './market';
 import { loadAccountLedger } from './positions';
+
+const ZERO = new Decimal(0);
 
 const ONE = new Decimal(1);
 
@@ -24,6 +26,7 @@ export function rebuildAccountSnapshots(
   return db.transaction((tx) => {
     const account = tx.select().from(finAccounts).where(eq(finAccounts.id, accountId)).get();
     tx.delete(positionSnapshots).where(eq(positionSnapshots.accountId, accountId)).run();
+    tx.delete(snapshotTotals).where(eq(snapshotTotals.accountId, accountId)).run();
     if (!account) return 0;
     const { ops, ctx } = loadAccountLedger(tx, account);
     const live = ops.filter((o) => !o.voided);
@@ -64,6 +67,7 @@ export function rebuildAccountSnapshots(
 
     let written = 0;
     for (const date of dates) {
+      const totals = new Map<string, { tagId: string | null; value: Decimal; cash: Decimal }>();
       for (const c of timeline.get(date) ?? []) {
         const inst = meta.get(c.instrumentId);
         if (!inst) continue;
@@ -86,6 +90,11 @@ export function rebuildAccountSnapshots(
         }
         const value = c.quantity.times(price);
         const rate = rubPer(currency, date);
+        const valueRub = rate ? value.times(rate) : value;
+        const cell = totals.get(c.tagId ?? '') ?? { tagId: c.tagId, value: ZERO, cash: ZERO };
+        cell.value = cell.value.plus(valueRub);
+        if (inst.kind === 'currency') cell.cash = cell.cash.plus(valueRub);
+        totals.set(c.tagId ?? '', cell);
         tx.insert(positionSnapshots)
           .values({
             userId: account.userId,
@@ -97,24 +106,39 @@ export function rebuildAccountSnapshots(
             price: toDbDecimal(price),
             currency,
             value: toDbDecimal(value),
-            valueRub: toDbDecimal(rate ? value.times(rate) : value),
+            valueRub: toDbDecimal(valueRub),
             approx: approx || !rate,
           })
           .run();
         written += 1;
       }
+      for (const t of totals.values())
+        tx.insert(snapshotTotals)
+          .values({
+            userId: account.userId,
+            date,
+            accountId,
+            tagId: t.tagId,
+            valueRub: toDbDecimal(t.value),
+            cashRub: toDbDecimal(t.cash),
+          })
+          .run();
     }
     return written;
   });
 }
 
 /** Last snapshot date per account, to find accounts that are behind. */
+/**
+ * The last day each account is rebuilt through, read from the totals: an account with snapshots but
+ * no totals (a database from before migration 0019) counts as behind and is rebuilt by the daily job.
+ */
 export function lastSnapshotDates(db: Executor, accountIds: string[]): Map<string, string | null> {
   const rows = db
-    .select({ accountId: positionSnapshots.accountId, last: max(positionSnapshots.date) })
-    .from(positionSnapshots)
-    .where(inArray(positionSnapshots.accountId, accountIds.length ? accountIds : ['']))
-    .groupBy(positionSnapshots.accountId)
+    .select({ accountId: snapshotTotals.accountId, last: max(snapshotTotals.date) })
+    .from(snapshotTotals)
+    .where(inArray(snapshotTotals.accountId, accountIds.length ? accountIds : ['']))
+    .groupBy(snapshotTotals.accountId)
     .all();
   const out = new Map<string, string | null>(accountIds.map((id) => [id, null]));
   for (const r of rows) out.set(r.accountId, r.last);
@@ -125,4 +149,5 @@ export function deleteAccountSnapshots(db: Executor, accountId: string): void {
   db.delete(positionSnapshots)
     .where(and(eq(positionSnapshots.accountId, accountId)))
     .run();
+  db.delete(snapshotTotals).where(eq(snapshotTotals.accountId, accountId)).run();
 }

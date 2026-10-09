@@ -201,3 +201,28 @@ export const walletBalances = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.date, t.accountId, t.instrumentId] })],
 );
+
+/**
+ * Daily totals of an account's cell (account, tag), written with the snapshots and rebuilt with them
+ * (docs/03-data-model.md, section 3): value series read thousands of rows instead of every position.
+ */
+export const snapshotTotals = sqliteTable(
+  'snapshot_totals',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    date: date('date').notNull(),
+    accountId: text('account_id')
+      .notNull()
+      .references(() => finAccounts.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id'),
+    valueRub: decimal('value_rub').notNull(),
+    /** The cash part of value_rub: «Учитывать свободный кэш» off takes it out. */
+    cashRub: decimal('cash_rub').notNull(),
+  },
+  (t) => [
+    index('snapshot_totals_user_date_idx').on(t.userId, t.date),
+    index('snapshot_totals_account_idx').on(t.accountId, t.date),
+  ],
+);

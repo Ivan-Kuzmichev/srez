@@ -17,6 +17,7 @@ import {
 } from '@/domain/realized';
 import { everything, type Scope } from '@/domain/scope';
 import { localDate } from '@/lib/time';
+import { memoByLedger } from './ledger-cache';
 import { loadFx, portfolioScope, rubPer, type PortfolioRow } from './portfolio-data';
 
 const ZERO = new Decimal(0);
@@ -66,6 +67,7 @@ export function realizedData(
   let fees = ZERO;
   let taxes = ZERO;
   const accounts = db.select().from(finAccounts).where(eq(finAccounts.userId, userId)).all();
+  const pendingIds = new Set<string>();
   const pendingSales: {
     saleId: string;
     instrumentId: string;
@@ -74,9 +76,23 @@ export function realizedData(
     at: Date;
   }[] = [];
 
+  // The replay without fees is the same for every year, method and portfolio: once per journal change.
+  const replays = memoByLedger(
+    db,
+    userId,
+    'realizedReplay',
+    () =>
+      new Map(
+        accounts.map((account) => {
+          const { ops, ctx } = loadAccountLedger(db, account);
+          return [account.id, { ops, ctx, ledger: buildLedger(ops, { ...ctx, deductFees: false }) }] as const;
+        }),
+      ),
+  );
   for (const account of accounts) {
-    const { ops, ctx } = loadAccountLedger(db, account);
-    const ledger = buildLedger(ops, { ...ctx, deductFees: false });
+    const replay = replays.get(account.id);
+    if (!replay) continue;
+    const { ops, ctx, ledger } = replay;
     for (const c of ledger.closures) {
       years.add(yearOf(c.closedAt));
       if (yearOf(c.closedAt) !== chosen || !scope(account.id, c.lot.tagId)) continue;
@@ -88,7 +104,8 @@ export function realizedData(
         costRub: c.cost.times(rub(c.lot.currency, c.lot.openedAt)),
         proceedsRub: c.proceeds.times(rub(c.lot.currency, c.closedAt)),
       });
-      if (!sales.has(c.closeOperationId) && !pendingSales.some((p) => p.saleId === c.closeOperationId))
+      if (!pendingIds.has(c.closeOperationId)) {
+        pendingIds.add(c.closeOperationId);
         pendingSales.push({
           saleId: c.closeOperationId,
           instrumentId: c.lot.instrumentId,
@@ -96,6 +113,7 @@ export function realizedData(
           accountName: account.name,
           at: c.closedAt,
         });
+      }
     }
     for (const s of ledger.sales) {
       const rate = rub(s.currency, s.at);

@@ -1,7 +1,9 @@
-/** Offset of `timeZone` from UTC at `date`, in minutes (Moscow: +180). */
-function offsetMinutes(date: Date, timeZone: string): number {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', {
+// Building a formatter costs far more than using one: one per time zone (phase 10, NFR-4).
+const formatters = new Map<string, Intl.DateTimeFormat>();
+function formatterFor(timeZone: string): Intl.DateTimeFormat {
+  let f = formatters.get(timeZone);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
       timeZone,
       hourCycle: 'h23',
       year: 'numeric',
@@ -10,7 +12,29 @@ function offsetMinutes(date: Date, timeZone: string): number {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-    })
+    });
+    formatters.set(timeZone, f);
+  }
+  return f;
+}
+
+// Offsets change only at DST switches, on the hour: one lookup per zone and UTC hour is exact.
+const offsets = new Map<string, number>();
+
+/** Offset of `timeZone` from UTC at `date`, in minutes (Moscow: +180). */
+function offsetMinutes(date: Date, timeZone: string): number {
+  const key = `${timeZone}|${Math.floor(date.getTime() / 3_600_000)}`;
+  const known = offsets.get(key);
+  if (known !== undefined) return known;
+  if (offsets.size > 100_000) offsets.clear();
+  const value = computeOffset(date, timeZone);
+  offsets.set(key, value);
+  return value;
+}
+
+function computeOffset(date: Date, timeZone: string): number {
+  const parts = Object.fromEntries(
+    formatterFor(timeZone)
       .formatToParts(date)
       .map((p) => [p.type, p.value]),
   );

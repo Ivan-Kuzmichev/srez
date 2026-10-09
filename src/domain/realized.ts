@@ -69,8 +69,10 @@ export function tradeRows(
   averages: ReadonlyMap<string, SaleTotal> = new Map(),
 ): TradeRow[] {
   const rows: TradeRow[] = [];
+  const bySale = new Map<string, ClosedPiece[]>();
+  for (const p of pieces) bySale.set(p.saleId, [...(bySale.get(p.saleId) ?? []), p]);
   for (const sale of sales) {
-    const mine = pieces.filter((p) => p.saleId === sale.saleId);
+    const mine = bySale.get(sale.saleId) ?? [];
     if (mine.length === 0) continue;
     const total = mine.reduce((s, p) => s.plus(p.quantity), ZERO);
     const avg = averages.get(sale.saleId);

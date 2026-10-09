@@ -134,6 +134,13 @@
       "when": 1791538271432,
       "tag": "0018_notifications_state",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1791541330366,
+      "tag": "0019_snapshot_totals",
+      "breakpoints": true
     }
   ]
 }

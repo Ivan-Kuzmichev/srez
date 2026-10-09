@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Decimal } from './decimal';
-import { excessPp, priceReturn, twr, twrGrowth, xirr } from './returns';
+import { excessPp, priceReturn, twr, twrGrowth, xirr, xirrFrom } from './returns';
 
 const d = (v: string | number) => new Decimal(v);
 const pct = (r: Decimal | null | undefined, digits: number) => (r ? r.times(100).toFixed(digits) : null);
@@ -74,6 +74,36 @@ describe('XIRR (04, section 4)', () => {
     const started = Date.now();
     expect(xirr(flows)).not.toBeNull();
     expect(Date.now() - started).toBeLessThan(3000);
+  });
+});
+
+describe('XIRR without the float start', () => {
+  const ref = [
+    { date: '2025-01-01', amount: d(-100_000) },
+    { date: '2026-01-01', amount: d(110_000) },
+  ];
+  it('the Decimal path alone gives the same answers from the old start 0,1 and from far away', () => {
+    expect(pct(xirrFrom(ref, '0.1')?.rate, 2)).toBe('10.00');
+    expect(pct(xirrFrom(ref, '9')?.rate, 2)).toBe('10.00');
+  });
+
+  it('a deep loss: Newton leaves the range and bisection finds the root', () => {
+    const loss = [
+      { date: '2025-01-01', amount: d(-1000) },
+      { date: '2026-01-01', amount: d(100) },
+    ];
+    expect(pct(xirr(loss)?.rate, 2)).toBe('-90.00');
+    expect(pct(xirrFrom(loss, '5')?.rate, 2)).toBe('-90.00');
+  });
+
+  it('a rate beyond 1 000 % a year has no answer', () => {
+    const wild = [
+      { date: '2025-01-01', amount: d(-1) },
+      { date: '2026-01-01', amount: d(20) },
+    ];
+    expect(xirr(wild)).toBeNull();
+    expect(xirrFrom(wild, '0.1')).toBeNull();
+    expect(xirrFrom([{ date: '2025-01-01', amount: d(-1) }], '0.1')).toBeNull();
   });
 });
 

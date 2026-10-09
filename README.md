@@ -110,3 +110,14 @@ docker compose run --rm web cli user:create --username admin
   ```
 
 Развёртывание на NAS за обратным прокси с HTTPS будет описано в фазе 10.
+
+## Нагрузочная проверка
+
+```sh
+export DATABASE_PATH=/tmp/srez-perf.db
+pnpm db:migrate
+pnpm cli user:create --username owner
+pnpm exec tsx scripts/perf/generate.ts owner        # 20 000 операций, 5 лет цен и снимков
+pnpm build && pnpm start -p 3400                    # в другом терминале
+node scripts/perf/measure.mjs http://localhost:3400 owner '<пароль>'
+```

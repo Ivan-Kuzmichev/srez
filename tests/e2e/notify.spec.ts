@@ -9,7 +9,8 @@ test('Telegram: a refused token is not kept; the right one sends a test message,
 }, info) => {
   test.skip(info.project.name !== 'desktop');
   await page.goto('/settings');
-  const card = page.getByTestId('settings-notify');
+  // While the page streams in, React keeps a hidden copy for a moment: take the first match.
+  const card = page.getByTestId('settings-notify').first();
   await expect(card).toContainText('Бот не подключён');
   await card.getByRole('button', { name: 'Подключить' }).click();
   const dialog = page.getByRole('dialog');
@@ -32,7 +33,7 @@ test('Telegram: a refused token is not kept; the right one sends a test message,
 test('«Данные»: the journal as CSV and a database backup without sessions', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   await page.goto('/settings');
-  const data = page.getByTestId('settings-data');
+  const data = page.getByTestId('settings-data').first();
   const [csv] = await Promise.all([
     page.waitForEvent('download'),
     data.getByRole('link', { name: 'Выгрузить операции в CSV' }).click(),

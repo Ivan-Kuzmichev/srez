@@ -11,7 +11,7 @@ import {
   portfolios,
   portfolioTargets,
   positions,
-  positionSnapshots,
+  snapshotTotals,
   prices,
   pricesLast,
   sources,
@@ -25,6 +25,7 @@ import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope'
 import { excessPp, priceReturn, twrGrowth, xirr, type Xirr } from '@/domain/returns';
 import { valueOn } from '@/domain/timeline';
 import { benchmarkFor } from './benchmarks';
+import { memoByLedger } from './ledger-cache';
 import { getSettings } from './settings';
 import { addDays, localDate } from '@/lib/time';
 
@@ -242,6 +243,10 @@ export interface UserLedger {
 
 /** All operations of the user with the tag context of their accounts, for flows. */
 export function loadUserLedger(db: Db, userId: string): UserLedger {
+  return memoByLedger(db, userId, 'userLedger', () => readUserLedger(db, userId));
+}
+
+function readUserLedger(db: Db, userId: string): UserLedger {
   const accounts = db.select().from(finAccounts).where(eq(finAccounts.userId, userId)).all();
   const flowOps: FlowOperation[] = [];
   const ctxByAccount = new Map<string, LedgerContext>();
@@ -277,27 +282,28 @@ export function valueSeries(
   from: string | null,
   includeCash = true,
 ): { date: string; value: Decimal }[] {
+  // Daily totals per (account, tag), written with the snapshots (NFR-4): not every position of every day.
   const rows = db
     .select({
-      date: positionSnapshots.date,
-      accountId: positionSnapshots.accountId,
-      tagId: positionSnapshots.tagId,
-      valueRub: positionSnapshots.valueRub,
-      kind: instruments.kind,
+      date: snapshotTotals.date,
+      accountId: snapshotTotals.accountId,
+      tagId: snapshotTotals.tagId,
+      valueRub: snapshotTotals.valueRub,
+      cashRub: snapshotTotals.cashRub,
     })
-    .from(positionSnapshots)
-    .innerJoin(instruments, eq(instruments.id, positionSnapshots.instrumentId))
+    .from(snapshotTotals)
     .where(
       from
-        ? and(eq(positionSnapshots.userId, userId), gte(positionSnapshots.date, from))
-        : eq(positionSnapshots.userId, userId),
+        ? and(eq(snapshotTotals.userId, userId), gte(snapshotTotals.date, from))
+        : eq(snapshotTotals.userId, userId),
     )
-    .orderBy(asc(positionSnapshots.date))
+    .orderBy(asc(snapshotTotals.date))
     .all();
   const byDate = new Map<string, Decimal>();
   for (const r of rows) {
-    if (!scope(r.accountId, r.tagId) || (!includeCash && r.kind === 'currency')) continue;
-    byDate.set(r.date, (byDate.get(r.date) ?? ZERO).plus(r.valueRub));
+    if (!scope(r.accountId, r.tagId)) continue;
+    const value = includeCash ? new Decimal(r.valueRub) : new Decimal(r.valueRub).minus(r.cashRub);
+    byDate.set(r.date, (byDate.get(r.date) ?? ZERO).plus(value));
   }
   return [...byDate].map(([date, value]) => ({ date, value }));
 }
