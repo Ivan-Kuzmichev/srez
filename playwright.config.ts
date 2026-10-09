@@ -31,11 +31,28 @@ export default defineConfig({
   globalTeardown: './tests/e2e/global-teardown.ts',
   use: { baseURL: `http://localhost:${port}`, storageState: 'test-results/.auth/owner.json' },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      testIgnore: /browsers\.spec\.ts/,
+    },
     {
       name: 'phone',
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, isMobile: false },
+      testIgnore: /browsers\.spec\.ts/,
     },
+    // NFR-8: current Firefox and Safari (WebKit) on a desktop, Safari on an iPhone — the main round.
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'], viewport: { width: 1440, height: 900 } },
+      testMatch: /browsers\.spec\.ts/,
+    },
+    {
+      name: 'safari',
+      use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },
+      testMatch: /browsers\.spec\.ts/,
+    },
+    { name: 'iphone', use: { ...devices['iPhone 15'] }, testMatch: /browsers\.spec\.ts/ },
   ],
   webServer: {
     // A production build on a fresh database: dev mode compiles routes on first hit and reloads pages mid-test.

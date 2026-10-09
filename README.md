@@ -44,13 +44,13 @@ pnpm cli user:reset-password --username admin --remove-passkeys
 | `pnpm db:generate` | миграция из изменений схемы в `src/db/schema` |
 | `pnpm db:migrate` | применить миграции к `DATABASE_PATH` |
 | `pnpm test` | юнит-тесты (Vitest) |
-| `pnpm test:e2e` | сквозные тесты (Playwright, 1440 и 390 px); база `data/e2e.db` |
+| `pnpm test:e2e` | сквозные тесты (Playwright: Chromium на 1440 и 390, Firefox, Safari, iPhone); база `data/e2e.db`, после прогона — проверка, что секретов в базе нет |
 | `pnpm check` | typecheck, lint и юнит-тесты; обязателен перед коммитом |
 | `pnpm build` | сборка Next.js (standalone) и бандлов воркера, миграций и CLI в `dist/` |
 | `pnpm cli <команда>` | служебные команды (`pnpm cli help`): `user:create`, `user:reset-password`, `db:backup` |
 | `pnpm auth:generate` | пересоздать таблицы Better Auth в `src/db/schema/auth.ts` после смены его настроек, затем `pnpm db:generate` |
 
-Перед первым `pnpm test:e2e`: `pnpm exec playwright install chromium`.
+Перед первым `pnpm test:e2e`: `pnpm exec playwright install chromium firefox webkit`. Основные сценарии идут в Chromium на 1440 и 390, главный путь — ещё в Firefox, Safari (WebKit) и Safari на iPhone.
 
 ## Развёртывание на NAS
 
