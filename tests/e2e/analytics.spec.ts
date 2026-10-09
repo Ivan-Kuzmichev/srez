@@ -94,7 +94,10 @@ test('a wallet by address: preview, add, the first sync brings the balances in',
   }).toPass({ timeout: 45_000 });
   const table = page.getByTestId('journal-table').first();
   await expect(table).toContainText('Ввод бумаг');
-  await page.getByRole('button', { name: /Показать начисления по дням/ }).first().click();
+  await page
+    .getByRole('button', { name: /Показать начисления по дням/ })
+    .first()
+    .click();
   await expect(table).toContainText('0,0123');
   await page.goto('/payouts');
   await expect(page.getByTestId('crypto-accruals')).toContainText('Lido, stETH');

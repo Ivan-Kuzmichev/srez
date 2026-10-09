@@ -8,6 +8,7 @@ import { refreshPayoutsJob } from './payouts';
 import { accrueInterestJob } from './interest';
 import { syncWalletJob } from './wallet-sync';
 import { walletAccrueJob } from './wallet-accrue';
+import { telegramTestJob } from './notify-send';
 
 export const jobDefinitions: JobDefinition<never>[] = [
   heartbeat as JobDefinition<never>,
@@ -21,6 +22,7 @@ export const jobDefinitions: JobDefinition<never>[] = [
   accrueInterestJob as JobDefinition<never>,
   syncWalletJob as JobDefinition<never>,
   walletAccrueJob as JobDefinition<never>,
+  telegramTestJob as JobDefinition<never>,
 ];
 
 export const schedules: ScheduleDef[] = [

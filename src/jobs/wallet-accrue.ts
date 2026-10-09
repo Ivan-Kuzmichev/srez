@@ -56,7 +56,11 @@ export async function accrueWallet(
   const wallet = (account?.meta as WalletMeta | null)?.wallet;
   if (!account || !wallet || wallet.family !== 'evm') return 0;
   // Before the first sync the history is not in the journal yet: «before connection» would take it all.
-  const synced = db.select({ at: sources.lastSyncAt }).from(sources).where(eq(sources.id, account.sourceId)).get()?.at;
+  const synced = db
+    .select({ at: sources.lastSyncAt })
+    .from(sources)
+    .where(eq(sources.id, account.sourceId))
+    .get()?.at;
   if (!synced) return 0;
   const today = localDate(now, getSettings(db, account.userId).display.timezone);
 

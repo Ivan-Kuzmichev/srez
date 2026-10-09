@@ -1,14 +1,18 @@
 import { eq } from 'drizzle-orm';
 import type { Executor } from '@/db/client';
 import { serviceKeys } from '@/db/schema';
-import { encryptSecret } from './crypto';
+import { encryptSecret, type SecretPurpose } from './crypto';
 
-export type ServiceKeyName = 'blockscout';
+export type ServiceKeyName = 'blockscout' | 'telegram';
+
+/** The encryption purpose of each key: a blob of one cannot be read as another. */
+export const keyPurpose = (name: ServiceKeyName): SecretPurpose =>
+  name === 'telegram' ? 'telegram-token' : 'blockscout-key';
 
 /** Stores a key encrypted; only its last four characters stay readable for the screen. */
 export function setServiceKey(db: Executor, name: ServiceKeyName, plain: string, now = new Date()): void {
   const values = {
-    secretEncrypted: encryptSecret(plain, `${name}-key`),
+    secretEncrypted: encryptSecret(plain, keyPurpose(name)),
     last4: plain.slice(-4),
     updatedAt: now,
   };

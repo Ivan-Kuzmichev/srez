@@ -27,6 +27,13 @@ export const saveGeneralSettings = authedAction(
       refreshMinutes: z.coerce.number().pipe(z.union([z.literal(15), z.literal(60), z.literal(1440)])),
       snapshotTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
     }),
+    notify: z.object({
+      events: z.object({ payout: z.boolean(), syncError: z.boolean(), weekly: z.boolean() }),
+      thresholds: z.object({
+        deviationPp: z.coerce.number().min(0.1).max(100),
+        dayMovePct: z.coerce.number().min(0.1).max(100),
+      }),
+    }),
     limits: z.object({
       issuerPct: z.coerce.number().min(1).max(100),
       singleStockPct: z.coerce.number().min(1).max(100),
@@ -34,7 +41,7 @@ export const saveGeneralSettings = authedAction(
       notify: z.boolean(),
     }),
   }),
-  async ({ returns, display, prices, limits }, session) => {
+  async ({ returns, display, prices, notify, limits }, session) => {
     const userId = session.user.id;
     const known = new Set([NO_BENCHMARK, ...benchmarkOptions(db()).map((b) => b.id)]);
     if (!known.has(returns.defaultBenchmarkId)) return { ok: false, code: 'BENCHMARK' };
@@ -44,6 +51,7 @@ export const saveGeneralSettings = authedAction(
       display: { ...display, extraCurrencies: [...new Set(display.extraCurrencies)] },
       prices,
       limits,
+      notify,
     });
     // Fees go into lot cost and sale proceeds: every account is replayed.
     if (before.returns.deductFees !== returns.deductFees)

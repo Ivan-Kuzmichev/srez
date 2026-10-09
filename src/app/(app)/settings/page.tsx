@@ -7,6 +7,8 @@ import { ru } from '@/lib/i18n/ru';
 import { benchmarkFor, benchmarkOptions, NO_BENCHMARK } from '@/server/benchmarks';
 import { requireSession } from '@/server/session';
 import { getSettings } from '@/server/settings';
+import { serviceKeyInfo } from '@/server/service-keys';
+import { ago } from '@/lib/relative-date';
 
 export const metadata: Metadata = { title: ru.pages.settings };
 
@@ -37,6 +39,15 @@ export default async function SettingsPage() {
             display: { baseCurrency: s.display.baseCurrency, extraCurrencies: s.display.extraCurrencies },
             prices: s.prices,
             limits: s.limits,
+            notify: {
+              connected: s.notify.telegram.enabled && serviceKeyInfo(db(), 'telegram') !== null,
+              lastError: s.notify.telegram.lastError,
+              lastSent: s.notify.telegram.lastSentAt
+                ? ago(new Date(s.notify.telegram.lastSentAt), s.display.timezone)
+                : null,
+              events: s.notify.events,
+              thresholds: s.notify.thresholds,
+            },
           }}
           benchmarks={benchmarks}
         />

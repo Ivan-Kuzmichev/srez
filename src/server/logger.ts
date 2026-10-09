@@ -221,7 +221,9 @@ export function observeExternalRequest(r: ExternalRequest, database: () => Db = 
       ? 'collector'
       : r.integration === 'bitcoin' || r.integration === 'evm' || r.integration === 'blockscout'
         ? 'chains'
-        : 'prices';
+        : r.integration === 'telegram'
+          ? 'notify'
+          : 'prices';
   if (logConfig.externalRequests) {
     const entry = {
       integration: r.integration,

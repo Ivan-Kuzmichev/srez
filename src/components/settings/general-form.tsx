@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select';
 import { useToast } from '@/components/ui/toast';
 import { ru } from '@/lib/i18n/ru';
 import { saveGeneralSettings } from '@/server/actions/settings';
+import { NotifyCard, type NotifyState } from './notify-card';
 
 export const SETTINGS_FORM_ID = 'settings-form';
 
@@ -22,6 +23,7 @@ export interface GeneralSettings {
   display: { baseCurrency: 'RUB' | 'USD' | 'EUR'; extraCurrencies: Extra[] };
   prices: { refreshMinutes: number; snapshotTime: string };
   limits: { issuerPct: number; singleStockPct: number; cryptoPct: number; notify: boolean };
+  notify: NotifyState;
 }
 
 const card = 'flex flex-col gap-4 rounded-card border border-border bg-surface p-4 wide:p-6';
@@ -40,6 +42,7 @@ export function GeneralSettingsForm({
   const [display, setDisplay] = useState(initial.display);
   const [refresh, setRefresh] = useState(String(initial.prices.refreshMinutes));
   const [notifyLimits, setNotifyLimits] = useState(initial.limits.notify);
+  const [events, setEvents] = useState(initial.notify.events);
   const r = ru.settings;
   const toggleExtra = (c: Extra, on: boolean) =>
     setDisplay((d) => ({
@@ -56,6 +59,10 @@ export function GeneralSettingsForm({
             returns,
             display,
             prices: { refreshMinutes: refresh, snapshotTime: form.get('snapshotTime') },
+            notify: {
+              events,
+              thresholds: { deviationPp: form.get('deviationPp'), dayMovePct: form.get('dayMovePct') },
+            },
             limits: {
               issuerPct: form.get('issuerPct'),
               singleStockPct: form.get('singleStockPct'),
@@ -177,6 +184,8 @@ export function GeneralSettingsForm({
           </Field>
         </div>
       </section>
+      <NotifyCard state={initial.notify} events={events} onEvents={setEvents} />
+
       <section id="limits" className={card} data-testid="settings-limits">
         <h2 className="m-0 text-card font-semibold">{r.limitsTitle}</h2>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))] gap-3">

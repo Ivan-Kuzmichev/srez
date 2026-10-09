@@ -16,6 +16,7 @@ const port = Number(process.env.E2E_PORT ?? 3100);
 const db = './data/e2e.db';
 const MOCK_PORT = 3199;
 const CHAINS_MOCK_PORT = 3198;
+const TELEGRAM_MOCK_PORT = 3197;
 
 const createUser = (u: { username: string; password: string }) =>
   `printf '%s\\n%s\\n' '${u.password}' '${u.password}' | pnpm -s cli user:create --username ${u.username}`;
@@ -57,6 +58,7 @@ export default defineConfig({
       `(TINVEST_MOCK_DELAY_MS=300 pnpm exec tsx tests/mock/tinvest.ts ${MOCK_PORT} &)`,
       // Public blockchain nodes and Blockscout, from fixtures.
       `(pnpm exec tsx tests/mock/chains.ts ${CHAINS_MOCK_PORT} &)`,
+      `(pnpm exec tsx tests/mock/telegram.ts ${TELEGRAM_MOCK_PORT} &)`,
       `(LOG_CONSOLE=0 pnpm exec tsx src/worker.ts e2e &) && pnpm start -p ${port}`,
     ].join(' && '),
     url: `http://localhost:${port}/api/health`,
@@ -71,6 +73,7 @@ export default defineConfig({
       AUTH_RATE_LIMIT: '1000',
       TINVEST_API_URL: `http://127.0.0.1:${MOCK_PORT}/rest`,
       CHAIN_MOCK_URL: `http://127.0.0.1:${CHAINS_MOCK_PORT}`,
+      TELEGRAM_API_URL: `http://127.0.0.1:${TELEGRAM_MOCK_PORT}`,
     },
     timeout: 300_000,
   },

@@ -51,6 +51,32 @@ export const SettingsSchema = z.object({
       notify: z.boolean().default(true),
     })
     .prefault({}),
+  notify: z
+    .object({
+      telegram: z
+        .object({
+          chatId: z.string().nullable().default(null),
+          enabled: z.boolean().default(false),
+          /** The last test or event message: when it went, or why it did not. */
+          lastSentAt: z.number().int().nullable().default(null),
+          lastError: z.enum(['TOKEN', 'CHAT', 'NETWORK']).nullable().default(null),
+        })
+        .prefault({}),
+      events: z
+        .object({
+          payout: z.boolean().default(true),
+          syncError: z.boolean().default(true),
+          weekly: z.boolean().default(false),
+        })
+        .prefault({}),
+      thresholds: z
+        .object({
+          deviationPp: z.number().min(0.1).max(100).default(5),
+          dayMovePct: z.number().min(0.1).max(100).default(7),
+        })
+        .prefault({}),
+    })
+    .prefault({}),
   logging: z
     .object({
       /** The level outside debug mode. */
@@ -90,6 +116,11 @@ export function updateSettings(db: Executor, userId: string, patch: DeepPartial<
     prices: { ...current.prices, ...patch.prices },
     limits: { ...current.limits, ...patch.limits },
     crypto: { ...current.crypto, ...patch.crypto },
+    notify: {
+      telegram: { ...current.notify.telegram, ...patch.notify?.telegram },
+      events: { ...current.notify.events, ...patch.notify?.events },
+      thresholds: { ...current.notify.thresholds, ...patch.notify?.thresholds },
+    },
     logging: { ...current.logging, ...patch.logging },
     debug: { ...current.debug, ...patch.debug },
   });
