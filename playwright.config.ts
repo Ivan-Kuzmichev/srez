@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import {
   E2E_ANALYTICS_USER,
+  E2E_JOURNEY_USER,
   E2E_EMPTY_USER,
   E2E_LEDGER_USER,
   E2E_LOCKOUT_USER,
@@ -51,6 +52,7 @@ export default defineConfig({
       createUser(E2E_PORTFOLIO_USER),
       createUser(E2E_ONBOARDING_USER),
       createUser(E2E_ANALYTICS_USER),
+      createUser(E2E_JOURNEY_USER),
       'pnpm exec tsx tests/e2e/seed.ts',
       'pnpm next build',
       // «e2e» marks the worker so global teardown can stop it; Playwright only stops the server.

@@ -8,4 +8,5 @@ export const E2E_LEDGER_USER = { username: 'ledger', password: 'e2e ledger passw
 export const E2E_EMPTY_USER = { username: 'fresh', password: 'e2e fresh password' };
 export const E2E_PORTFOLIO_USER = { username: 'portfolios', password: 'e2e portfolio password' };
 export const E2E_ANALYTICS_USER = { username: 'analytics', password: 'e2e analytics password' };
+export const E2E_JOURNEY_USER = { username: 'journey', password: 'e2e journey password' };
 export const E2E_ONBOARDING_USER = { username: 'onboarding', password: 'e2e onboarding password' };
