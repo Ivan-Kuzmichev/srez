@@ -168,3 +168,18 @@ export const payoutEvents = sqliteTable(
     ),
   ],
 );
+
+/** «Сохранить как план» (FR-RBL-4): what was entered and what came out, as of that moment. */
+export const rebalancePlans = sqliteTable(
+  'rebalance_plans',
+  {
+    id: id(),
+    portfolioId: text('portfolio_id')
+      .notNull()
+      .references(() => portfolios.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+    input: text('input', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+    result: text('result', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [index('rebalance_plans_portfolio_idx').on(t.portfolioId, t.createdAt)],
+);
