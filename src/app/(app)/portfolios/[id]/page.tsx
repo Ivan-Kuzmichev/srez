@@ -89,6 +89,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
     return {
       key: `${c.accountId}|${c.instrumentId}|${c.tagId ?? ''}`,
       instrumentId: c.instrumentId,
+      href: c.isCash ? null : `/assets/${c.instrumentId}?portfolio=${id}`,
       ticker: assetLabel(c).code ?? c.name,
       name: assetLabel(c).code ? c.name : null,
       account: account ? ru.portfolio.accountChip(account.name, account.sourceKind === 'manual') : '',

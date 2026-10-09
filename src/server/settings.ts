@@ -33,6 +33,14 @@ export const SettingsSchema = z.object({
         .default('23:50'),
     })
     .prefault({}),
+  limits: z
+    .object({
+      issuerPct: z.number().min(0).max(100).default(15),
+      singleStockPct: z.number().min(0).max(100).default(8),
+      cryptoPct: z.number().min(0).max(100).default(15),
+      notify: z.boolean().default(true),
+    })
+    .prefault({}),
   logging: z
     .object({
       /** The level outside debug mode. */
@@ -70,6 +78,7 @@ export function updateSettings(db: Executor, userId: string, patch: DeepPartial<
     display: { ...current.display, ...patch.display },
     returns: { ...current.returns, ...patch.returns },
     prices: { ...current.prices, ...patch.prices },
+    limits: { ...current.limits, ...patch.limits },
     logging: { ...current.logging, ...patch.logging },
     debug: { ...current.debug, ...patch.debug },
   });

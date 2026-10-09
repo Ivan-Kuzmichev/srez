@@ -1,11 +1,33 @@
 import { Table, Td, Th } from '@/components/ui/table';
 import { cn } from '@/lib/cn';
 import { ru } from '@/lib/i18n/ru';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { PriceButton } from './price-button';
+
+function AssetName({
+  href,
+  className,
+  children,
+}: {
+  href: string | null;
+  className?: string;
+  children: ReactNode;
+}) {
+  return href ? (
+    <Link href={href} className={cn('text-text no-underline hover:text-accent-text', className)}>
+      {children}
+    </Link>
+  ) : (
+    <span className={className}>{children}</span>
+  );
+}
 
 export interface PositionItem {
   key: string;
   instrumentId: string;
+  /** The asset page; cash has none. */
+  href: string | null;
   ticker: string;
   name: string | null;
   account: string;
@@ -62,10 +84,10 @@ export function PositionsTable({ items, count }: { items: PositionItem[]; count:
                   <tr key={i.key} className="[&:last-child>td]:border-b-0">
                     <Td>
                       <div className="flex flex-col gap-0.5">
-                        <span>
+                        <AssetName href={i.href}>
                           <span className="num text-caption font-medium">{i.ticker}</span>
                           {i.name ? <span className="text-muted"> {i.name}</span> : null}
-                        </span>
+                        </AssetName>
                         <span className="flex items-center gap-2 text-small text-muted">
                           {i.account}
                           {i.canSetPrice ? (
@@ -114,7 +136,9 @@ export function PositionsTable({ items, count }: { items: PositionItem[]; count:
                 className="flex min-h-[60px] items-center justify-between gap-3 border-b border-border-subtle py-2 last:border-b-0"
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="num truncate text-row font-medium">{i.ticker}</span>
+                  <AssetName href={i.href} className="num truncate text-row font-medium">
+                    {i.ticker}
+                  </AssetName>
                   <span className="text-small text-muted">
                     {i.quantity} · {i.share}
                   </span>
