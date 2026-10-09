@@ -33,3 +33,29 @@ export function Pill({ tone = 'neutral', className, ...props }: PillProps) {
 export function LevelTag({ tone = 'neutral', className, ...props }: PillProps) {
   return <span className={cn('num rounded-tag px-2 py-0.5 text-small', tones[tone], className)} {...props} />;
 }
+
+/** «В норме» with a dot, «Превышен» with an exclamation mark (Risk, Asset mockups). */
+export function LimitPill({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <Pill tone={ok ? 'gain' : 'loss'} className="px-2.5 py-1">
+      {ok ? (
+        <span className="size-[7px] rounded-full bg-gain" aria-hidden="true" />
+      ) : (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 5v9M12 19h.01" />
+        </svg>
+      )}
+      {label}
+    </Pill>
+  );
+}

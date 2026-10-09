@@ -69,6 +69,8 @@ export interface ValuedCell {
   name: string;
   /** Instrument currency: the currency a manual price is given in. */
   currency: string;
+  /** For the one-issuer limit; null counts each security on its own. */
+  issuer: string | null;
   isCash: boolean;
   quantity: Decimal;
   /** Current price in rubles; null when valued without a price. */
@@ -99,6 +101,7 @@ export function loadValuedCells(db: Db, userId: string, fx: FxSeries): ValuedCel
       ticker: instruments.ticker,
       name: instruments.name,
       currency: instruments.currency,
+      issuer: instruments.issuer,
       lastPrice: pricesLast.price,
       lastCurrency: pricesLast.currency,
     })
@@ -177,6 +180,7 @@ export function loadValuedCells(db: Db, userId: string, fx: FxSeries): ValuedCel
       ticker: r.ticker,
       name: r.name,
       currency: r.currency,
+      issuer: r.issuer,
     };
   }
 }

@@ -27,8 +27,14 @@ export const saveGeneralSettings = authedAction(
       refreshMinutes: z.coerce.number().pipe(z.union([z.literal(15), z.literal(60), z.literal(1440)])),
       snapshotTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
     }),
+    limits: z.object({
+      issuerPct: z.coerce.number().min(1).max(100),
+      singleStockPct: z.coerce.number().min(1).max(100),
+      cryptoPct: z.coerce.number().min(1).max(100),
+      notify: z.boolean(),
+    }),
   }),
-  async ({ returns, display, prices }, session) => {
+  async ({ returns, display, prices, limits }, session) => {
     const userId = session.user.id;
     const known = new Set([NO_BENCHMARK, ...benchmarkOptions(db()).map((b) => b.id)]);
     if (!known.has(returns.defaultBenchmarkId)) return { ok: false, code: 'BENCHMARK' };
@@ -37,6 +43,7 @@ export const saveGeneralSettings = authedAction(
       returns,
       display: { ...display, extraCurrencies: [...new Set(display.extraCurrencies)] },
       prices,
+      limits,
     });
     // Fees go into lot cost and sale proceeds: every account is replayed.
     if (before.returns.deductFees !== returns.deductFees)

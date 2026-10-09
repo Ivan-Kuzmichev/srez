@@ -21,6 +21,7 @@ export interface GeneralSettings {
   };
   display: { baseCurrency: 'RUB' | 'USD' | 'EUR'; extraCurrencies: Extra[] };
   prices: { refreshMinutes: number; snapshotTime: string };
+  limits: { issuerPct: number; singleStockPct: number; cryptoPct: number; notify: boolean };
 }
 
 const card = 'flex flex-col gap-4 rounded-card border border-border bg-surface p-4 wide:p-6';
@@ -38,6 +39,7 @@ export function GeneralSettingsForm({
   const [returns, setReturns] = useState(initial.returns);
   const [display, setDisplay] = useState(initial.display);
   const [refresh, setRefresh] = useState(String(initial.prices.refreshMinutes));
+  const [notifyLimits, setNotifyLimits] = useState(initial.limits.notify);
   const r = ru.settings;
   const toggleExtra = (c: Extra, on: boolean) =>
     setDisplay((d) => ({
@@ -54,6 +56,12 @@ export function GeneralSettingsForm({
             returns,
             display,
             prices: { refreshMinutes: refresh, snapshotTime: form.get('snapshotTime') },
+            limits: {
+              issuerPct: form.get('issuerPct'),
+              singleStockPct: form.get('singleStockPct'),
+              cryptoPct: form.get('cryptoPct'),
+              notify: notifyLimits,
+            },
           });
           notify(result.ok ? { tone: 'success', title: r.saved } : { tone: 'error', title: r.failed });
         })
@@ -168,6 +176,40 @@ export function GeneralSettingsForm({
             )}
           </Field>
         </div>
+      </section>
+      <section id="limits" className={card} data-testid="settings-limits">
+        <h2 className="m-0 text-card font-semibold">{r.limitsTitle}</h2>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))] gap-3">
+          {(
+            [
+              ['issuerPct', r.limitIssuer],
+              ['singleStockPct', r.limitStock],
+              ['cryptoPct', r.limitCrypto],
+            ] as const
+          ).map(([name, label]) => (
+            <Field key={name} label={label}>
+              {(f) => (
+                <Input
+                  id={f.id}
+                  name={name}
+                  type="number"
+                  inputMode="decimal"
+                  min={1}
+                  max={100}
+                  step="any"
+                  required
+                  mono
+                  defaultValue={initial.limits[name]}
+                />
+              )}
+            </Field>
+          ))}
+        </div>
+        <Checkbox
+          label={r.limitNotify}
+          checked={notifyLimits}
+          onChange={(e) => setNotifyLimits(e.target.checked)}
+        />
       </section>
     </form>
   );

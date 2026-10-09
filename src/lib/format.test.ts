@@ -8,6 +8,9 @@ import {
   formatDateYear,
   formatDateLong,
   formatMoney,
+  formatMonthAxis,
+  formatMonthRange,
+  formatMonthYear,
   formatPercent,
   formatPlain,
   formatSigned,
@@ -147,5 +150,15 @@ describe('helpers', () => {
     expect(orNone(null, formatPercent)).toBe('нет');
     expect(orNone(5, formatPercent)).toBe(nb('5,0 %'));
     expect(approx(nb('78 600 ₽'))).toBe(nb('≈ 78 600 ₽'));
+  });
+});
+
+describe('months', () => {
+  it('names a month, a range and an axis tick', () => {
+    expect(formatMonthYear('2026-03')).toBe('Март 2026');
+    expect(formatMonthRange('2026-02-03', '2026-04-02')).toBe('Февраль–апрель');
+    expect(formatMonthRange('2026-03-01', '2026-03-20')).toBe('Март');
+    expect(formatMonthRange('2025-11-01', '2026-02-01')).toBe('Ноябрь 2025 – февраль 2026');
+    expect(formatMonthAxis('2026-05-10')).toBe('май');
   });
 });

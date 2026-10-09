@@ -112,3 +112,18 @@ test('the overview switches the display currency, and price settings persist', a
   await page.getByRole('button', { name: 'Сохранить' }).click();
   await expect(page.getByText('Настройки сохранены').first()).toBeVisible();
 });
+
+test('risk shows the largest positions and the limits', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await signIn(page);
+  await page.goto('/analytics');
+  await expect(page).toHaveURL(/\/analytics\/risk$/);
+  await expect(page.getByTestId('risk-cards')).toContainText('Максимальная просадка');
+  await expect(page.getByTestId('risk-largest')).toContainText('LKOH');
+  await expect(page.getByTestId('risk-currencies')).toContainText('Рубль');
+  const limits = page.getByTestId('risk-limits');
+  await expect(limits).toContainText('Одна акция до 8 %');
+  await expect(limits).toContainText('Превышен');
+  await limits.getByRole('link', { name: 'Изменить' }).click();
+  await expect(page.getByTestId('settings-limits')).toBeVisible();
+});

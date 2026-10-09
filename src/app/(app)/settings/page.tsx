@@ -36,6 +36,7 @@ export default async function SettingsPage() {
             },
             display: { baseCurrency: s.display.baseCurrency, extraCurrencies: s.display.extraCurrencies },
             prices: s.prices,
+            limits: s.limits,
           }}
           benchmarks={benchmarks}
         />

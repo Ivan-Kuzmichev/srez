@@ -167,6 +167,43 @@ export function formatTime(date: Date, timeZone: string): string {
   return `${p.hour}:${p.minute}`;
 }
 
+const MONTHS_NOMINATIVE = [
+  'январь',
+  'февраль',
+  'март',
+  'апрель',
+  'май',
+  'июнь',
+  'июль',
+  'август',
+  'сентябрь',
+  'октябрь',
+  'ноябрь',
+  'декабрь',
+];
+const MONTHS_AXIS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const monthOf = (isoDate: string) => Number(isoDate.slice(5, 7)) - 1;
+
+/** «Март 2026» from «2026-03» or «2026-03-15». */
+export function formatMonthYear(isoMonth: string): string {
+  return `${capital(MONTHS_NOMINATIVE[monthOf(isoMonth)]!)}${NBSP}${isoMonth.slice(0, 4)}`;
+}
+
+/** «Февраль–апрель», «Март», or «Ноябрь 2025 – апрель 2026» across years. */
+export function formatMonthRange(from: string, to: string): string {
+  const a = MONTHS_NOMINATIVE[monthOf(from)]!;
+  const b = MONTHS_NOMINATIVE[monthOf(to)]!;
+  if (from.slice(0, 4) !== to.slice(0, 4))
+    return `${capital(a)}${NBSP}${from.slice(0, 4)} – ${b}${NBSP}${to.slice(0, 4)}`;
+  return from.slice(0, 7) === to.slice(0, 7) ? capital(a) : `${capital(a)}–${b}`;
+}
+
+/** «май» for chart axes. */
+export function formatMonthAxis(isoDate: string): string {
+  return MONTHS_AXIS[monthOf(isoDate)]!;
+}
+
 /** A missing value is a word, not a dash: «нет». */
 export function orNone<T>(value: T | null | undefined, format: (v: T) => string): string {
   return value === null || value === undefined ? ru.common.none : format(value);

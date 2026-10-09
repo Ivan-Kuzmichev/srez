@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export interface TabLink {
   href: string;
-  label: string;
+  label: ReactNode;
 }
 
 /** Section tabs that are real links, e.g. Риск · Облигации · Прибыль за год. */
@@ -26,7 +27,7 @@ export function TabLinks({
     >
       <div className="flex w-max gap-2 wide:w-auto wide:flex-wrap">
         {items.map((item) => {
-          const current = pathname === item.href;
+          const current = pathname === item.href.split('?')[0];
           return (
             <Link
               key={item.href}

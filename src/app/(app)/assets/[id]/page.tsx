@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AssetChart } from '@/components/charts/asset-chart';
 import { Button } from '@/components/ui/button';
-import { Pill } from '@/components/ui/pill';
+import { LimitPill, Pill } from '@/components/ui/pill';
 import { Table, Td, Th } from '@/components/ui/table';
 import { db } from '@/db/client';
 import { Money } from '@/domain/money';
@@ -293,13 +293,7 @@ export default async function AssetPage({ params, searchParams }: PageProps<'/as
                     {ru.asset.limitValue(formatPercent(v.limit.pct, { digits: 0 }))}
                   </span>
                 </span>
-                <Pill tone={v.limit.ok ? 'gain' : 'loss'} className="px-2.5 py-1">
-                  <span
-                    className={cn('size-[7px] rounded-full', v.limit.ok ? 'bg-gain' : 'bg-loss')}
-                    aria-hidden="true"
-                  />
-                  {v.limit.ok ? ru.asset.limitOk : ru.asset.limitOver}
-                </Pill>
+                <LimitPill ok={v.limit.ok} label={v.limit.ok ? ru.asset.limitOk : ru.asset.limitOver} />
               </div>
             ) : null}
           </div>

@@ -8,7 +8,7 @@ test('wide layout: sidebar navigates and marks the current section', async ({ pa
   await nav.getByRole('link', { name: 'Аналитика' }).click();
   await expect(page).toHaveURL(/\/analytics\/risk$/);
   await expect(nav.getByRole('link', { name: 'Аналитика' })).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Риск');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Аналитика');
 });
 
 test('phone layout: bottom bar leads to «Ещё» and on to settings', async ({ page }, info) => {
