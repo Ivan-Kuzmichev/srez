@@ -9,6 +9,7 @@ import { accrueInterestJob } from './interest';
 import { syncWalletJob } from './wallet-sync';
 import { walletAccrueJob } from './wallet-accrue';
 import { telegramTestJob } from './notify-send';
+import { notifyCheckJob } from './notify-check';
 
 export const jobDefinitions: JobDefinition<never>[] = [
   heartbeat as JobDefinition<never>,
@@ -23,6 +24,7 @@ export const jobDefinitions: JobDefinition<never>[] = [
   syncWalletJob as JobDefinition<never>,
   walletAccrueJob as JobDefinition<never>,
   telegramTestJob as JobDefinition<never>,
+  notifyCheckJob as JobDefinition<never>,
 ];
 
 export const schedules: ScheduleDef[] = [
@@ -38,6 +40,8 @@ export const schedules: ScheduleDef[] = [
   { name: accrueInterestJob.name, cron: '20 3 * * *' },
   // Yield tokens: once a day, next to the daily snapshot (docs/04, section 10).
   { name: walletAccrueJob.name, cron: '40 0 * * *' },
+  // Five minutes after each price refresh: day moves, limits and deviations see fresh prices.
+  { name: notifyCheckJob.name, cron: '5,20,35,50 * * * *' },
 ];
 
 /** Run once when the worker starts: fill gaps left while it was down. */

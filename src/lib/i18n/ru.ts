@@ -824,6 +824,26 @@ export const ru = {
     penalty: 'Баланс уменьшился без перевода: штраф или слэшинг',
   },
   notify: {
+    messages: {
+      payout: (type: string, name: string, amount: string | null) =>
+        `Поступила выплата: ${type}, ${name}${amount ? `, ${amount}` : ''}`,
+      syncError: (source: string, error: string | null) =>
+        `Ошибка синхронизации: ${source}${error ? `. ${error}` : ''}`,
+      deviation: (portfolio: string, cls: string, share: string, target: string, pp: string) =>
+        `«${portfolio}»: ${cls} ${share} при цели ${target} (${pp})`,
+      dayMove: (asset: string, pct: string) => `${asset}: ${pct} за день`,
+      limitIssuer: (name: string, share: string, limit: string) =>
+        `Превышен лимит на эмитента: ${name}, ${share} при лимите ${limit}`,
+      limitStock: (name: string, share: string, limit: string) =>
+        `Превышен лимит на одну акцию: ${name}, ${share} при лимите ${limit}`,
+      limitCrypto: (share: string, limit: string) => `Превышен лимит на крипту: ${share} при лимите ${limit}`,
+      weeklyTitle: 'Сводка за неделю',
+      everything: 'Все счета',
+      weeklyLine: (name: string, value: string | null, change: string | null) =>
+        `${name}: ${[value, change ? `${change} за неделю` : null].filter(Boolean).join(', ') || 'без изменений'}`,
+      weeklyPayouts: (amount: string | null) =>
+        amount ? `Выплаты за неделю: ${amount}` : 'Выплаты за неделю — в журнале',
+    },
     test: (app: string) =>
       `${app}: уведомления подключены. Сюда будут приходить выплаты, ошибки синхронизации и превышения порогов.`,
     title: 'Уведомления в Telegram',

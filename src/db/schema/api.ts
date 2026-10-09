@@ -1,4 +1,4 @@
-import { blob, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { blob, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { user } from './auth';
 import { createdAt, id, timestamp } from './columns';
 
@@ -37,3 +37,17 @@ export const serviceKeys = sqliteTable('service_keys', {
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+/** What was already said (docs/03-data-model.md, section 8): an event is sent again only after its condition cleared. */
+export const notificationsState = sqliteTable(
+  'notifications_state',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(),
+    active: integer('active', { mode: 'boolean' }).notNull(),
+    lastSentAt: timestamp('last_sent_at'),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.key] })],
+);
