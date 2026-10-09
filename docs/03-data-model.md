@@ -178,7 +178,7 @@
   returns: { primaryMetric: 'xirr', includeCash: true, deductFees: true, defaultBenchmarkId },
   prices:  { refreshMinutes: 15, snapshotTime: '23:50' },
   limits:  { issuerPct: 15, singleStockPct: 8, cryptoPct: 15, notify: true },
-  crypto:  { priceSource: 'coingecko', dustThresholdRub: 100, hideUnpriced: true },
+  crypto:  { priceSource: 'coingecko', dustThresholdRub: 100, hideUnpriced: true, excludeHidden: true },
   notify:  { telegram: { chatId, enabled }, events: {...}, thresholds: { deviationPp: 5, dayMovePct: 7 } },
   logging: { level: 'info', retentionDays: 14, externalRequests: true, authEvents: true, maskAmounts: false },
   debug:   { enabled: false, autoOffAt }

@@ -166,6 +166,8 @@ function upsertCoin(db: Db, coin: Pick<CoinHit, 'coingeckoId' | 'symbol' | 'name
       and(
         eq(instruments.kind, 'crypto'),
         sql`json_extract(${instruments.meta}, '$.coingeckoId') = ${coin.coingeckoId}`,
+        // Yield tokens (aEthUSDC priced as USDC) are instruments of their own.
+        sql`coalesce(json_extract(${instruments.meta}, '$.yieldKind'), 'none') = 'none'`,
       ),
     )
     .get();

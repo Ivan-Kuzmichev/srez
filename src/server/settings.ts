@@ -33,6 +33,16 @@ export const SettingsSchema = z.object({
         .default('23:50'),
     })
     .prefault({}),
+  crypto: z
+    .object({
+      priceSource: z.enum(['coingecko']).default('coingecko'),
+      /** «Скрывать остатки дешевле, ₽» (FR-CRY-4, FR-SET-5). */
+      dustThresholdRub: z.number().min(0).max(1_000_000).default(100),
+      hideUnpriced: z.boolean().default(true),
+      /** «Не считать скрытое в стоимости портфеля». */
+      excludeHidden: z.boolean().default(true),
+    })
+    .prefault({}),
   limits: z
     .object({
       issuerPct: z.number().min(0).max(100).default(15),
@@ -79,6 +89,7 @@ export function updateSettings(db: Executor, userId: string, patch: DeepPartial<
     returns: { ...current.returns, ...patch.returns },
     prices: { ...current.prices, ...patch.prices },
     limits: { ...current.limits, ...patch.limits },
+    crypto: { ...current.crypto, ...patch.crypto },
     logging: { ...current.logging, ...patch.logging },
     debug: { ...current.debug, ...patch.debug },
   });
