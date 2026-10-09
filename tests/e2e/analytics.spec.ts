@@ -61,6 +61,19 @@ test('a wallet by address: preview, add, the first sync brings the balances in',
   test.skip(info.project.name !== 'desktop');
   test.setTimeout(90_000);
   await signIn(page);
+  // «Крипта»: public nodes answer; a wrong key is refused, the right one is kept (only its tail is shown).
+  await page.goto('/settings/crypto');
+  await page.getByRole('button', { name: 'Проверить все' }).click();
+  await expect(page.getByTestId('crypto-nodes')).toContainText('Все отвечают');
+  const key = page.getByTestId('blockscout-key');
+  await key.getByLabel('Ключ Blockscout PRO API').fill('proapi_wrong_key');
+  await key.getByRole('button', { name: 'Сохранить ключ' }).click();
+  await expect(page.getByText('Blockscout не принял ключ').first()).toBeVisible();
+  await key.getByLabel('Ключ Blockscout PRO API').fill('proapi_mock_key');
+  await key.getByRole('button', { name: 'Сохранить ключ' }).click();
+  await expect(key).toContainText('Ключ задан, заканчивается на _key');
+  expect(await page.content()).not.toContain('proapi_mock_key');
+
   await page.goto('/sources/wallets/new');
   await page.getByLabel('Публичный адрес').fill('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed1');
   await expect(page.getByText('Это не адрес EVM')).toBeVisible();
@@ -74,9 +87,15 @@ test('a wallet by address: preview, add, the first sync brings the balances in',
   await page.getByRole('button', { name: 'Добавить кошелёк' }).click();
   await expect(page).toHaveURL(/\/sources$/);
   await expect(page.getByTestId('wallets')).toContainText('Ledger, основной');
-  // The worker syncs it: without a Blockscout key, balances only.
+  // The worker loads the history; stETH grew by rebasing before the wallet was connected.
   await expect(async () => {
     await page.goto('/operations?period=all');
-    await expect(page.getByTestId('journal-table').first()).toContainText('0,94958', { timeout: 2000 });
+    await expect(page.getByTestId('accrual-group').first()).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 45_000 });
+  const table = page.getByTestId('journal-table').first();
+  await expect(table).toContainText('Ввод бумаг');
+  await page.getByRole('button', { name: /Показать начисления по дням/ }).first().click();
+  await expect(table).toContainText('0,0123');
+  await page.goto('/payouts');
+  await expect(page.getByTestId('crypto-accruals')).toContainText('Lido, stETH');
 });

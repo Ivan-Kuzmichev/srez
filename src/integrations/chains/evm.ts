@@ -240,3 +240,23 @@ export async function blockNumber(netId: string, fetchFn?: Fetch): Promise<numbe
   const [h] = await rpcBatch(network(netId), [{ method: 'eth_blockNumber', params: [] }], fetchFn);
   return Number(BigInt(h!));
 }
+
+/** Whether Blockscout accepts a key: one cheap list call on Ethereum. A refused key is false; a network failure throws. */
+export async function checkBlockscoutKey(key: string, fetchFn?: Fetch): Promise<boolean> {
+  try {
+    await blockscoutList(
+      network('ethereum'),
+      'txlist',
+      '0x' + '0'.repeat(40),
+      99_999_999,
+      key,
+      NativeTx,
+      fetchFn,
+    );
+    return true;
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 401 || status === 403) return false;
+    throw err;
+  }
+}

@@ -25,6 +25,7 @@ import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope'
 import { excessPp, priceReturn, twrGrowth, xirr, type Xirr } from '@/domain/returns';
 import { valueOn } from '@/domain/timeline';
 import { benchmarkFor } from './benchmarks';
+import { getSettings } from './settings';
 import { addDays, localDate } from '@/lib/time';
 
 const ZERO = new Decimal(0);
@@ -85,6 +86,33 @@ export interface ValuedCell {
 
 /** Every open cell of the user's accounts, valued now (latest price, latest rate). */
 export function loadValuedCells(db: Db, userId: string, fx: FxSeries): ValuedCell[] {
+  return hideWalletDust(db, userId, valueCells(db, userId, fx));
+}
+
+/**
+ * FR-CRY-4: in wallets that hide spam, coins without a price and balances under the threshold are
+ * left out of the value when the settings say so («Не считать скрытое в стоимости портфеля»).
+ */
+function hideWalletDust(db: Db, userId: string, cells: ValuedCell[]): ValuedCell[] {
+  const { crypto } = getSettings(db, userId);
+  if (!crypto.excludeHidden || !cells.some((c) => c.sourceKind === 'wallet')) return cells;
+  const hiding = new Set(
+    db
+      .select({ id: finAccounts.id, meta: finAccounts.meta })
+      .from(finAccounts)
+      .where(eq(finAccounts.userId, userId))
+      .all()
+      .filter((a) => (a.meta as { wallet?: { hideSpam?: boolean } } | null)?.wallet?.hideSpam)
+      .map((a) => a.id),
+  );
+  return cells.filter((c) => {
+    if (c.sourceKind !== 'wallet' || c.isCash || !hiding.has(c.accountId)) return true;
+    if (crypto.hideUnpriced && (c.priceRub === null || c.approx)) return false;
+    return c.valueRub.gte(crypto.dustThresholdRub);
+  });
+}
+
+function valueCells(db: Db, userId: string, fx: FxSeries): ValuedCell[] {
   const rows = db
     .select({
       accountId: positions.accountId,

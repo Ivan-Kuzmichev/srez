@@ -1,7 +1,18 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { finAccounts, instruments, operations, positions, sources, syncRuns, user } from '@/db/schema';
+import {
+  finAccounts,
+  fxRates,
+  instruments,
+  operations,
+  positions,
+  sources,
+  syncRuns,
+  user,
+} from '@/db/schema';
 import { createTestDb } from '@/db/test-db';
+import { loadFx, loadValuedCells } from '@/server/portfolio-data';
+import { updateSettings } from '@/server/settings';
 import { addWallet } from '@/server/wallets';
 import {
   MOCK_BLOCKSCOUT_KEY,
@@ -116,6 +127,24 @@ describe('wallet sync', () => {
     const noKey = wallet('evm', 'history');
     await syncWallet(noKey.db, noKey.sourceId, 'manual', { fetchFn, now });
     expect(noKey.held()).toEqual({ ETH: '0.94958', stETH: '2.0123', wstETH: '1.5', USDT: '1250' });
+  });
+
+  it('hidden coins stay out of the value: under the threshold, when the settings say so', async () => {
+    const { db, sourceId } = wallet('evm', 'balances');
+    await syncWallet(db, sourceId, 'manual', { fetchFn, now });
+    db.insert(fxRates)
+      .values({ date: '2026-10-09', base: 'RUB', quote: 'USD', rate: '90', source: 'cbr' })
+      .run();
+    const tickers = () =>
+      loadValuedCells(db, 'u1', loadFx(db))
+        .map((c) => c.ticker)
+        .sort();
+    expect(tickers()).toEqual(['ETH', 'USDT', 'stETH', 'wstETH']);
+    // 2 000 $ × 90: ETH ≈ 171 000 ₽, wstETH ≈ 270 000 ₽, stETH ≈ 362 000 ₽, USDT ≈ 225 000 000 ₽ at this flat price.
+    updateSettings(db, 'u1', { crypto: { dustThresholdRub: 200_000 } });
+    expect(tickers()).toEqual(['USDT', 'stETH', 'wstETH']);
+    updateSettings(db, 'u1', { crypto: { excludeHidden: false } });
+    expect(tickers()).toHaveLength(4);
   });
 
   it('Bitcoin: receipts, a spend and its fee; balance matches the chain', async () => {

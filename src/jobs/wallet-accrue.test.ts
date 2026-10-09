@@ -67,6 +67,8 @@ describe('accruals of yield tokens', () => {
       replace: [],
     });
     if (!r.ok) throw new Error();
+    // Not synced yet: nothing is booked, or the whole balance would count as accrued.
+    expect(await accrueWallet(db, r.accountId, day1, fetchFn)).toBe(0);
     await syncWallet(db, r.sourceId, 'manual', { fetchFn, blockscoutKey: MOCK_BLOCKSCOUT_KEY, now: day1 });
     const investedNow = () =>
       invested(flowsFor(loadUserLedger(db, 'u1'), everything, loadFx(db), 'Europe/Moscow')).toFixed();
