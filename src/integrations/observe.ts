@@ -4,7 +4,7 @@
  * Integrations stay free of the logger and the database.
  */
 export interface ExternalRequest {
-  integration: 'tinvest' | 'moex' | 'cbr' | 'coingecko';
+  integration: 'tinvest' | 'moex' | 'cbr' | 'coingecko' | 'bitcoin' | 'evm' | 'blockscout';
   /** «OperationsService/GetOperationsByCursor», «GET /iss/securities.json». Never a token or a query secret. */
   method: string;
   /** HTTP status; 0 when no answer came. */

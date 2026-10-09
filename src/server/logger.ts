@@ -216,7 +216,12 @@ const RAW_LIMIT = 256 * 1024;
 
 /** One external call: a log line if asked for, and in debug mode the raw answer with secrets cut out. */
 export function observeExternalRequest(r: ExternalRequest, database: () => Db = db): void {
-  const source: LogSource = r.integration === 'tinvest' ? 'collector' : 'prices';
+  const source: LogSource =
+    r.integration === 'tinvest'
+      ? 'collector'
+      : r.integration === 'bitcoin' || r.integration === 'evm' || r.integration === 'blockscout'
+        ? 'chains'
+        : 'prices';
   if (logConfig.externalRequests) {
     const entry = {
       integration: r.integration,
