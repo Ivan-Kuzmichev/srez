@@ -6,6 +6,7 @@ import { ConnectMore } from '@/components/sources/connect-more';
 import { ReconcileStatus } from '@/components/sources/reconcile-status';
 import { SyncLog } from '@/components/sources/sync-log';
 import { TinvestCard } from '@/components/sources/tinvest-card';
+import { WalletsCard } from '@/components/sources/wallets-card';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/client';
 import { listManualAccounts, listTags } from '@/db/queries/accounts';
@@ -14,7 +15,8 @@ import { ru } from '@/lib/i18n/ru';
 import { ago } from '@/lib/relative-date';
 import { requireSession } from '@/server/session';
 import { debugActive, getSettings } from '@/server/settings';
-import { reconcileSummary, syncLog, tinvestSourceView } from '@/server/sources';
+import { reconcileSummary, syncLog, tinvestSourceView, walletSources } from '@/server/sources';
+import { NETWORKS } from '@/integrations/chains/networks';
 
 export const metadata: Metadata = { title: ru.pages.sources };
 
@@ -24,6 +26,7 @@ export default async function SourcesPage() {
   const userId = session.user.id;
   const tz = getSettings(db(), userId).display.timezone;
   const tinvest = tinvestSourceView(db(), userId);
+  const wallets = walletSources(db(), userId);
   const accounts = listManualAccounts(db(), userId).map((a) => ({
     id: a.id,
     name: a.name,
@@ -73,6 +76,20 @@ export default async function SourcesPage() {
           </section>
         )}
         <div className="flex min-w-0 flex-[2_1_320px] flex-col gap-3 wide:gap-4">
+          {wallets.length > 0 ? (
+            <WalletsCard
+              wallets={wallets.map((w) => ({
+                id: w.id,
+                name: w.name,
+                ok: w.status !== 'error',
+                error: w.status === 'error' ? w.lastError : null,
+                address: w.address,
+                networks: w.networks.map((n) => NETWORKS.find((x) => x.id === n)?.name ?? n).join(', '),
+                balancesOnly: w.mode === 'balances',
+                last: w.lastSyncAt ? ago(w.lastSyncAt, tz) : null,
+              }))}
+            />
+          ) : null}
           <ManualAccountsCard accounts={accounts} tags={listTags(db(), userId)} />
           <ConnectMore />
         </div>

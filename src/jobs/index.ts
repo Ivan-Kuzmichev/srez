@@ -6,6 +6,7 @@ import { cleanupJob, heartbeat } from './system';
 import { syncDue, syncTinvest } from './tinvest-sync';
 import { refreshPayoutsJob } from './payouts';
 import { accrueInterestJob } from './interest';
+import { syncWalletJob } from './wallet-sync';
 
 export const jobDefinitions: JobDefinition<never>[] = [
   heartbeat as JobDefinition<never>,
@@ -17,6 +18,7 @@ export const jobDefinitions: JobDefinition<never>[] = [
   syncDue as JobDefinition<never>,
   refreshPayoutsJob as JobDefinition<never>,
   accrueInterestJob as JobDefinition<never>,
+  syncWalletJob as JobDefinition<never>,
 ];
 
 export const schedules: ScheduleDef[] = [

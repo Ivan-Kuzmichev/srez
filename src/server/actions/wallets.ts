@@ -1,9 +1,13 @@
 'use server';
 
+import { and, eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
+import { sources } from '@/db/schema';
 import { isBitcoinAddress, isEvmAddress } from '@/integrations/chains/address';
 import { EVM_NETWORKS } from '@/integrations/chains/networks';
+import { enqueueWalletSync } from '@/jobs/wallet-sync';
 import { authedAction } from '../action';
 import { logger } from '../logger';
 import { addWallet, previewWallet, type WalletPreview } from '../wallets';
@@ -56,6 +60,23 @@ export const addWalletAction = authedAction(
     if (input.family === 'evm' && input.networks.length === 0) return { ok: false, code: 'INVALID_INPUT' };
     const r = addWallet(db(), session.user.id, input);
     if (!r.ok) return { ok: false, code: r.code };
+    enqueueWalletSync(db(), r.sourceId, 'manual');
     return { ok: true, data: { accountId: r.accountId } };
+  },
+);
+
+/** «Синхронизировать» on a wallet card. */
+export const syncWalletNow = authedAction(
+  z.object({ sourceId: z.string().min(1).max(64) }),
+  async ({ sourceId }, session) => {
+    const own = db()
+      .select({ id: sources.id })
+      .from(sources)
+      .where(and(eq(sources.id, sourceId), eq(sources.userId, session.user.id), eq(sources.kind, 'wallet')))
+      .get();
+    if (!own) return { ok: false, code: 'NOT_FOUND' };
+    enqueueWalletSync(db(), sourceId, 'manual');
+    revalidatePath('/sources');
+    return { ok: true, data: null };
   },
 );

@@ -14,6 +14,7 @@ import { Decimal } from '@/domain/decimal';
 import type { SyncSummary } from '@/components/shell/sync-card';
 import { ru } from '@/lib/i18n/ru';
 import { ago } from '@/lib/relative-date';
+import type { WalletMeta } from './wallets';
 
 export interface TinvestSourceView {
   id: string;
@@ -154,4 +155,36 @@ export function reconcileSummary(db: Db, sourceId: string): ReconcileSummary {
   const pairs = new Set(held.map((p) => `${p.accountId}|${p.instrumentId}`));
   const openSecurities = open.filter((d) => d.kind !== 'currency').length;
   return { matched: Math.max(0, pairs.size - openSecurities), open: open.length };
+}
+
+export interface WalletSourceView {
+  id: string;
+  name: string;
+  status: string;
+  lastError: string | null;
+  lastSyncAt: Date | null;
+  address: string;
+  networks: string[];
+  mode: 'history' | 'balances';
+}
+
+/** Wallets on «Источники»: one source each, with its account's address and networks. */
+export function walletSources(db: Db, userId: string): WalletSourceView[] {
+  return db
+    .select({
+      id: sources.id,
+      name: sources.name,
+      status: sources.status,
+      lastError: sources.lastError,
+      lastSyncAt: sources.lastSyncAt,
+      meta: finAccounts.meta,
+    })
+    .from(sources)
+    .innerJoin(finAccounts, eq(finAccounts.sourceId, sources.id))
+    .where(and(eq(sources.userId, userId), eq(sources.kind, 'wallet')))
+    .all()
+    .flatMap((r) => {
+      const w = (r.meta as Partial<WalletMeta> | null)?.wallet;
+      return w ? [{ ...r, address: w.address, networks: w.networks, mode: w.mode }] : [];
+    });
 }

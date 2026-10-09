@@ -14,6 +14,7 @@ import { enqueuePayouts } from './payouts';
 import { enqueueRecalc } from './positions';
 import { enqueue, retryDelayMs } from './queue';
 import { defineJob } from './runner';
+import { enqueueWalletSync } from './wallet-sync';
 import { tinvestToken } from './source-token';
 import { tinvestClient } from './tinvest-client';
 import { reconcileAccount } from './tinvest-reconcile';
@@ -356,12 +357,13 @@ export function enqueueDueSyncs(db: Executor, now = new Date()): number {
   const due = db
     .select({
       id: sources.id,
+      kind: sources.kind,
       lastSyncAt: sources.lastSyncAt,
       every: sources.scheduleMinutes,
       status: sources.status,
     })
     .from(sources)
-    .where(inArray(sources.kind, ['tinvest']))
+    .where(inArray(sources.kind, ['tinvest', 'wallet']))
     .all()
     .filter(
       (s) =>
@@ -369,7 +371,9 @@ export function enqueueDueSyncs(db: Executor, now = new Date()): number {
         s.every &&
         (!s.lastSyncAt || now.getTime() - s.lastSyncAt.getTime() >= s.every * 60_000),
     );
-  for (const s of due) enqueueSync(db, s.id, 'schedule');
+  for (const s of due)
+    if (s.kind === 'wallet') enqueueWalletSync(db, s.id, 'schedule');
+    else enqueueSync(db, s.id, 'schedule');
   return due.length;
 }
 

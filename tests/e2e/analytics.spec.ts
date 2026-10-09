@@ -56,3 +56,27 @@ test('the year’s profit: FIFO rows by holding, the average method, CSV', async
   expect(text).toContain('Дата продажи;Тикер;Актив');
   expect(text).toContain(';SBER;Сбербанк;Акции;');
 });
+
+test('a wallet by address: preview, add, the first sync brings the balances in', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  test.setTimeout(90_000);
+  await signIn(page);
+  await page.goto('/sources/wallets/new');
+  await page.getByLabel('Публичный адрес').fill('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed1');
+  await expect(page.getByText('Это не адрес EVM')).toBeVisible();
+  await page.getByLabel('Публичный адрес').fill('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed');
+  await expect(page.getByText('Адрес корректный, один и тот же во всех EVM-сетях')).toBeVisible();
+  const preview = page.getByTestId('wallet-preview');
+  await expect(preview).toContainText('stETH');
+  await expect(preview).toContainText('0,94958');
+  await expect(preview).toContainText('Сеть Arbitrum');
+  await page.getByLabel('Название').fill('Ledger, основной');
+  await page.getByRole('button', { name: 'Добавить кошелёк' }).click();
+  await expect(page).toHaveURL(/\/sources$/);
+  await expect(page.getByTestId('wallets')).toContainText('Ledger, основной');
+  // The worker syncs it: without a Blockscout key, balances only.
+  await expect(async () => {
+    await page.goto('/operations?period=all');
+    await expect(page.getByTestId('journal-table').first()).toContainText('0,94958', { timeout: 2000 });
+  }).toPass({ timeout: 45_000 });
+});

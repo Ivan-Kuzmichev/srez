@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { blob, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { user } from './auth';
 import { createdAt, id, timestamp } from './columns';
 
@@ -28,3 +28,12 @@ export const apiTokens = sqliteTable(
   },
   (t) => [uniqueIndex('api_tokens_hash_idx').on(t.tokenHash), index('api_tokens_user_idx').on(t.userId)],
 );
+
+/** Keys of outside services shared by the whole app (docs/03-data-model.md, section 1): Blockscout for EVM history. */
+export const serviceKeys = sqliteTable('service_keys', {
+  name: text('name').primaryKey(),
+  secretEncrypted: blob('secret_encrypted', { mode: 'buffer' }).notNull(),
+  last4: text('last4').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+});

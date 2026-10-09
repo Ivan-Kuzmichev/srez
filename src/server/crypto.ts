@@ -10,7 +10,7 @@ export const SECRET_VERSION = 1;
 export const NONCE_BYTES = 12;
 export const TAG_BYTES = 16;
 
-export type SecretPurpose = 'tinvest-token' | 'telegram-token' | 'coingecko-key';
+export type SecretPurpose = 'tinvest-token' | 'telegram-token' | 'coingecko-key' | 'blockscout-key';
 
 // Fixed key for development and tests only; production refuses to start without APP_SECRET_KEY.
 const DEV_KEY = Buffer.alloc(32, 'srez-development-key-do-not-use');
