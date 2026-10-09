@@ -146,5 +146,8 @@ Bot API: https://core.telegram.org/bots/api. Только `sendMessage`. Ток�
 - `iss.moex.com`
 - `www.cbr.ru`
 - `api.coingecko.com`
-- публичные точки доступа блокчейнов из конфига
+- публичные точки доступа блокчейнов из конфига (`integrations/chains/networks.ts`)
+- `api.blockscout.com` — история EVM по ключу (решение владельца, фаза 8)
+
+Список проверяется тестом `tests/unit/outbound-hosts.test.ts`: новый хост в коде роняет проверку.
 - `api.telegram.org`

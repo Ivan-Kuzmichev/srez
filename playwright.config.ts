@@ -12,6 +12,7 @@ import {
   E2E_TOTP_USER,
   E2E_USER,
 } from './tests/e2e/users';
+import { E2E_AUTH_SECRET, E2E_SECRET_KEY } from './tests/e2e/secrets';
 
 const port = Number(process.env.E2E_PORT ?? 3100);
 const db = './data/e2e.db';
@@ -68,9 +69,9 @@ export default defineConfig({
     env: {
       DATABASE_PATH: db,
       APP_URL: `http://localhost:${port}`,
-      AUTH_SECRET: 'e2e-secret-e2e-secret-e2e-secret-e2e-secret',
+      AUTH_SECRET: E2E_AUTH_SECRET,
       // 32 bytes in base64: production refuses to store a broker token without a key.
-      APP_SECRET_KEY: Buffer.alloc(32, 'srez-e2e-key').toString('base64'),
+      APP_SECRET_KEY: E2E_SECRET_KEY,
       // Every scenario signs in from the same address.
       AUTH_RATE_LIMIT: '1000',
       TINVEST_API_URL: `http://127.0.0.1:${MOCK_PORT}/rest`,

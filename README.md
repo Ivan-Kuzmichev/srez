@@ -33,8 +33,6 @@ pnpm cli user:reset-password --username admin --remove-passkeys
 
 Пасскеи работают на `http://localhost` и по HTTPS с доменным именем. По IP-адресу или по HTTP с другого устройства кнопки пасскея скрыты.
 
-Витрина компонентов: http://localhost:3000/dev/ui (будет удалена перед выпуском).
-
 Логи в терминале в режиме разработки печатаются через pino-pretty. Чтобы получить сырой JSON: `LOG_PRETTY=0`.
 
 ## Команды
