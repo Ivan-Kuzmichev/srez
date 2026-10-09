@@ -8,6 +8,9 @@ import {
   instruments,
   operations,
   payoutEvents,
+  portfolioRules,
+  portfolios,
+  portfolioTargets,
   pricesLast,
   sources,
   tags,
@@ -202,6 +205,16 @@ if (analyst) {
         source: 'manual',
       })
       .run();
+  // A portfolio with targets, so every screen (portfolio, rebalance, asset) has something to show.
+  const whole = db.insert(portfolios).values({ userId: analyst.id, name: 'Основной' }).returning().get();
+  db.insert(portfolioRules).values({ portfolioId: whole.id, accountId: account.id, mode: 'all' }).run();
+  db.insert(portfolioTargets)
+    .values([
+      { portfolioId: whole.id, assetClass: 'stocks', targetPct: '50' },
+      { portfolioId: whole.id, assetClass: 'bonds', targetPct: '30' },
+      { portfolioId: whole.id, assetClass: 'cash', targetPct: '20' },
+    ])
+    .run();
   db.insert(payoutEvents)
     .values({
       instrumentId: ofz.id,

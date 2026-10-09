@@ -62,7 +62,7 @@ export function LogList({ items }: { items: LogItem[] }) {
   const toggle = (id: number) => setOpen((o) => (o === id ? null : id));
   return (
     <>
-      <div className="hidden overflow-x-auto wide:block">
+      <div className="hidden overflow-x-auto wide:block" tabIndex={0}>
         <table className="w-full min-w-[780px] border-collapse text-caption">
           <thead>
             <tr className="text-left text-small text-muted">

@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { getJson, IntegrationError, type Fetch } from '../errors';
 
 /** Public CoinGecko API, no key needed for search (docs/05-integrations.md). */
-const BASE = 'https://api.coingecko.com/api/v3';
+// COINGECKO_API_URL points tests at a local stand-in.
+const base = () => process.env.COINGECKO_API_URL ?? 'https://api.coingecko.com/api/v3';
 
 const SearchBody = z.object({
   coins: z.array(
@@ -23,7 +24,7 @@ export interface CoinHit {
 }
 
 export async function searchCoins(query: string, fetchFn: Fetch = fetch): Promise<CoinHit[]> {
-  const data = await getJson('coingecko', `${BASE}/search?query=${encodeURIComponent(query)}`, fetchFn);
+  const data = await getJson('coingecko', `${base()}/search?query=${encodeURIComponent(query)}`, fetchFn);
   const parsed = SearchBody.safeParse(data);
   if (!parsed.success) throw new IntegrationError('coingecko', 'BAD_RESPONSE', z.prettifyError(parsed.error));
   return parsed.data.coins.slice(0, 10).map((c) => ({
@@ -41,7 +42,7 @@ export async function getCoinPrices(
   fetchFn: Fetch = fetch,
 ): Promise<Map<string, string>> {
   if (ids.length === 0) return new Map();
-  const url = `${BASE}/simple/price?ids=${ids.map(encodeURIComponent).join(',')}&vs_currencies=${vs}`;
+  const url = `${base()}/simple/price?ids=${ids.map(encodeURIComponent).join(',')}&vs_currencies=${vs}`;
   const parsed = z
     .record(z.string(), z.record(z.string(), z.number()))
     .safeParse(await getJson('coingecko', url, fetchFn));
@@ -62,7 +63,7 @@ export async function getCoinHistory(
   vs = 'usd',
   fetchFn: Fetch = fetch,
 ): Promise<{ date: string; close: string }[]> {
-  const url = `${BASE}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=${vs}&days=${days}&interval=daily`;
+  const url = `${base()}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=${vs}&days=${days}&interval=daily`;
   const parsed = z
     .object({ prices: z.array(z.tuple([z.number(), z.number()])) })
     .safeParse(await getJson('coingecko', url, fetchFn));

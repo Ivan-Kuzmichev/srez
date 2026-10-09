@@ -8,7 +8,9 @@ export function Table({
   ...props
 }: HTMLAttributes<HTMLTableElement> & { minWidth?: number }) {
   return (
-    <div className="overflow-x-auto">
+    // Focusable, so a keyboard can scroll a table wider than the screen (WCAG 2.1.1).
+    // `relative`: hidden headings (sr-only, absolutely placed) stay inside the scroller, not past the page.
+    <div className="relative overflow-x-auto" tabIndex={0}>
       <table style={{ minWidth }} className={cn('w-full border-collapse text-row', className)} {...props} />
     </div>
   );

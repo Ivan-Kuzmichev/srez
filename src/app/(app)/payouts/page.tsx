@@ -144,7 +144,7 @@ export default async function PayoutsPage({ searchParams }: PageProps<'/payouts'
             </span>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0}>
           <div
             className="grid h-[210px] min-w-[480px] grid-cols-12 gap-2 border-b border-border pb-2"
             role="img"

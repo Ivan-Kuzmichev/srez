@@ -11,6 +11,20 @@ const read = (name: string) => JSON.parse(readFileSync(join(DIR, name), 'utf8'))
 export const MOCK_BLOCKSCOUT_KEY = 'proapi_mock_key';
 export const MOCK_BTC_ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 export const MOCK_EVM_ADDRESS = '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed';
+const COIN_PRICES: Record<string, number> = {
+  bitcoin: 60000,
+  ethereum: 2500,
+  'staked-ether': 2500,
+  'wrapped-steth': 3000,
+  'rocket-pool-eth': 2800,
+  tether: 1,
+  'usd-coin': 1,
+  dai: 1,
+  weth: 2500,
+  'wrapped-bitcoin': 60000,
+  binancecoin: 600,
+  'polygon-ecosystem-token': 0.2,
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;
@@ -98,6 +112,27 @@ export async function startChainsMock(
         const body = JSON.parse(raw || '[]');
         const net = path.slice('/rpc/'.length);
         return json(200, Array.isArray(body) ? body.map((c) => rpc(state, net, c)) : rpc(state, net, body));
+      }
+      // CoinGecko: fixed dollar prices, a flat year of history, an empty search.
+      if (path.startsWith('/coingecko/api/v3')) {
+        const rest = path.slice('/coingecko/api/v3'.length);
+        if (rest === '/simple/price') {
+          const ids = String(url.searchParams.get('ids') ?? '').split(',');
+          return json(
+            200,
+            Object.fromEntries(ids.filter((i) => COIN_PRICES[i]).map((i) => [i, { usd: COIN_PRICES[i] }])),
+          );
+        }
+        const chart = /^\/coins\/([^/]+)\/market_chart$/.exec(rest);
+        if (chart) {
+          const price = COIN_PRICES[chart[1]!] ?? 1;
+          const now = Date.now();
+          return json(200, {
+            prices: Array.from({ length: 366 }, (_, i) => [now - (365 - i) * 86_400_000, price]),
+          });
+        }
+        if (rest === '/search') return json(200, { coins: [] });
+        if (rest === '/ping') return json(200, { gecko_says: '(V3) To the Moon!' });
       }
       const bs = /^\/blockscout\/(\d+)\/api$/.exec(path);
       if (bs) {

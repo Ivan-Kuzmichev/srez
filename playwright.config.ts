@@ -73,6 +73,7 @@ export default defineConfig({
       AUTH_RATE_LIMIT: '1000',
       TINVEST_API_URL: `http://127.0.0.1:${MOCK_PORT}/rest`,
       CHAIN_MOCK_URL: `http://127.0.0.1:${CHAINS_MOCK_PORT}`,
+      COINGECKO_API_URL: `http://127.0.0.1:${CHAINS_MOCK_PORT}/coingecko/api/v3`,
       TELEGRAM_API_URL: `http://127.0.0.1:${TELEGRAM_MOCK_PORT}`,
     },
     timeout: 300_000,
