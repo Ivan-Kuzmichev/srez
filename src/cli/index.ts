@@ -9,6 +9,8 @@ import { ru } from '@/lib/i18n/ru';
 import { auth } from '@/server/auth';
 import { flushLogs, logger } from '@/server/logger';
 import { createUser, resetPassword, UserError } from '@/server/users';
+import { backupDatabase, backupName } from '@/server/backup';
+import { dirname, join, resolve } from 'node:path';
 import { createPrompt } from './prompt';
 
 type Command = { description: string; run(args: string[]): Promise<void> };
@@ -34,6 +36,18 @@ function usernameArg(args: string[], extra: Record<string, { type: 'boolean' }> 
 }
 
 const commands: Record<string, Command> = {
+  'db:backup': {
+    description: ru.cli.backupHelp,
+    async run(args) {
+      const { values } = parseArgs({ args, options: { out: { type: 'string' } }, strict: true });
+      const out = resolve(
+        values.out ?? join(dirname(process.env.DATABASE_PATH ?? './data/srez.db'), 'backups', backupName()),
+      );
+      await backupDatabase(db(), out);
+      logger('jobs', { via: 'cli' }).info({ out }, 'Backup written');
+      console.log(ru.cli.backupDone(out));
+    },
+  },
   'user:create': {
     description: ru.cli.userCreateHelp,
     async run(args) {
