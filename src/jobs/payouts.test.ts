@@ -46,10 +46,16 @@ describe('payout schedules', () => {
     await refreshPayouts(db, client, log, now);
     const rows = db.select().from(payoutEvents).all();
     const ofz = rows.filter((r) => r.instrumentId === idOf('RU000A1038V6'));
-    // A month back, a year ahead: the coupons of 13 January and 14 July 2027.
-    expect(ofz.map((r) => [r.kind, r.payDate, r.amountPerUnit])).toEqual([
-      ['coupon', '2027-01-13', '35.65'],
-      ['coupon', '2027-07-14', '35.65'],
+    // A month back and on to maturity: the bond's whole remaining schedule and its nominal.
+    const coupons = ofz.filter((r) => r.kind === 'coupon');
+    expect(coupons).toHaveLength(30);
+    expect(coupons.slice(0, 2).map((r) => [r.payDate, r.amountPerUnit])).toEqual([
+      ['2027-01-13', '35.65'],
+      ['2027-07-14', '35.65'],
+    ]);
+    expect(coupons.at(-1)!.payDate).toBe('2041-05-15');
+    expect(ofz.filter((r) => r.kind === 'redemption').map((r) => [r.payDate, r.amountPerUnit])).toEqual([
+      ['2041-05-15', '1000'],
     ]);
     const sber = rows.filter((r) => r.instrumentId === idOf('RU0009029540'));
     expect(sber.map((r) => [r.kind, r.payDate, r.recordDate, r.amountPerUnit])).toEqual([
@@ -72,6 +78,10 @@ describe('payout schedules', () => {
       ['2027-01-13', 'ОФЗ 26238', 'coupon', '356.5', 'RUB'],
       ['2027-07-14', 'ОФЗ 26238', 'coupon', '356.5', 'RUB'],
     ]);
-    expect(upcomingPayouts(db, cells, '2027-08-01')).toEqual([]);
+    // A year ahead only: the 2028 coupons, not the rest of the schedule to 2041.
+    expect(upcomingPayouts(db, cells, '2027-08-01').map((p) => p.payDate)).toEqual([
+      '2028-01-12',
+      '2028-07-12',
+    ]);
   });
 });

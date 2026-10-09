@@ -19,10 +19,12 @@ export function tinvestForPrices(db: Executor): TinvestClient | null {
   return source ? tinvestClient(tinvestToken(db, source.id)) : null;
 }
 
-/** instruments.meta of a bond (docs/03-data-model.md, section 3). */
-export function bondMeta(b: Bond): Record<string, unknown> {
+/** instruments.meta of a bond (docs/03-data-model.md, section 3); `metaDate` is the day it was read. */
+export function bondMeta(b: Bond, today: string | null = null): Record<string, unknown> {
   return {
     nominal: quotation(b.nominal).toString(),
+    aci: quotation(b.aciValue).toString(),
+    metaDate: today,
     couponType: b.floatingCouponFlag ? 'floating' : 'fixed',
     maturityDate:
       b.maturityDate && b.maturityDate.getTime() > 0 ? b.maturityDate.toISOString().slice(0, 10) : null,
@@ -39,14 +41,20 @@ export function priceInMoney(price: Decimal, inst: Pick<InstrumentInUse, 'kind' 
   return price.times(nominal).div(100);
 }
 
-/** Fills bond data the instrument does not have yet (one call per bond, ever). */
+/**
+ * Bond data: filled when missing and, given `today`, read again once a day — the nominal falls with
+ * amortization and the accrued interest grows daily.
+ */
 export async function ensureBondMeta(
   db: Executor,
   client: TinvestClient,
   inst: Pick<InstrumentInUse, 'id' | 'kind' | 'externalUid' | 'meta'>,
+  today: string | null = null,
 ) {
-  if (inst.kind !== 'bond' || !inst.externalUid || typeof inst.meta?.nominal === 'string') return inst.meta;
-  const meta = { ...inst.meta, ...bondMeta(await client.getBond(inst.externalUid)) };
+  if (inst.kind !== 'bond' || !inst.externalUid) return inst.meta;
+  const fresh = typeof inst.meta?.nominal === 'string' && (today === null || inst.meta?.metaDate === today);
+  if (fresh) return inst.meta;
+  const meta = { ...inst.meta, ...bondMeta(await client.getBond(inst.externalUid), today) };
   db.update(instruments).set({ meta }).where(eq(instruments.id, inst.id)).run();
   return meta;
 }
@@ -64,7 +72,7 @@ export async function refreshTinvestPrices(
     used.filter((i) => i.externalUid && i.kind !== 'currency').map((i) => [i.externalUid!, i]),
   );
   if (byUid.size === 0) return priced;
-  for (const inst of byUid.values()) inst.meta = await ensureBondMeta(db, client, inst);
+  for (const inst of byUid.values()) inst.meta = await ensureBondMeta(db, client, inst, today);
   for (const last of await client.getLastPrices([...byUid.keys()])) {
     const inst = byUid.get(last.instrumentUid);
     if (!inst || !last.price) continue;

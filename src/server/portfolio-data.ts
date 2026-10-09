@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, max, ne } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lte, max, ne } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { loadPriceSeries } from '@/db/mutations/market';
 import { loadAccountLedger } from '@/db/mutations/positions';
@@ -456,7 +456,14 @@ export function upcomingPayouts(db: Db, cells: ValuedCell[], today: string, limi
   return db
     .select()
     .from(payoutEvents)
-    .where(and(inArray(payoutEvents.instrumentId, [...held.keys()]), gte(payoutEvents.payDate, today)))
+    .where(
+      and(
+        inArray(payoutEvents.instrumentId, [...held.keys()]),
+        gte(payoutEvents.payDate, today),
+        // Bond schedules run to maturity; «ближайшие» means the coming year.
+        lte(payoutEvents.payDate, addDays(today, 366)),
+      ),
+    )
     .orderBy(asc(payoutEvents.payDate))
     .limit(limit)
     .all()

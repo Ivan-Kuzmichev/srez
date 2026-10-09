@@ -3,6 +3,7 @@
 Run from the repository root: python3 tests/fixtures/tinvest/generate.py
 Cash and holdings are derived from the operations, so the broker's portfolio matches the journal.
 """
+import datetime as dt
 import json
 from decimal import Decimal as D
 
@@ -154,16 +155,16 @@ def ins(i, name, isin, lot, extra=None):
     return d
 
 
-def bond(nominal, maturity):
+def bond(nominal, maturity, aci=0):
     return {"nominal": mv(nominal), "initialNominal": mv(1000), "maturityDate": maturity, "couponQuantityPerYear": 2,
-            "floatingCouponFlag": False, "amortizationFlag": False, "perpetualFlag": False}
+            "floatingCouponFlag": False, "amortizationFlag": False, "perpetualFlag": False, "aciValue": mv(aci)}
 
 
 dump('instruments.json', {"instruments": [
     ins(SBER, "Сбер Банк", "RU0009029540", 10),
     ins(LKOH, "Лукойл", "RU0009024277", 1),
     ins(GAZP, "Газпром", "RU0007661625", 10),
-    ins(OFZ, "ОФЗ 26238", "RU000A1038V6", 1, bond(1000, "2041-05-15T00:00:00Z")),
+    ins(OFZ, "ОФЗ 26238", "RU000A1038V6", 1, bond(1000, "2041-05-15T00:00:00Z", 16.45)),
     ins(OFZ29, "ОФЗ 29014", "RU000A101N52", 1, bond(0, "2026-03-25T00:00:00Z")),
     ins(TMOS, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
     ins(TMOS_AT, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
@@ -210,8 +211,18 @@ def coupon(n, date):
             "payOneBond": mv(35.65), "couponType": "COUPON_TYPE_CONSTANT", "couponPeriod": 182}
 
 
-dump('coupons.json', {OFZ["uid"]: [coupon(n, d) for n, d in enumerate(
-    ["2024-01-17", "2024-07-17", "2025-01-15", "2025-07-16", "2026-01-14", "2026-07-15", "2027-01-13", "2027-07-14"], 1)]})
+def coupon_dates(first, maturity):
+    # Every 182 days up to maturity; the last coupon is paid with the nominal.
+    d, out = dt.date.fromisoformat(first), []
+    end = dt.date.fromisoformat(maturity)
+    while d < end:
+        out.append(d.isoformat())
+        d += dt.timedelta(days=182)
+    return out + [maturity]
+
+
+# The whole schedule to maturity: yield and duration need every future coupon (phase 7).
+dump('coupons.json', {OFZ["uid"]: [coupon(n, d) for n, d in enumerate(coupon_dates("2024-01-17", "2041-05-15"), 1)]})
 
 
 def dividend(net, pay, record):

@@ -67,6 +67,28 @@ describe('T-Invest prices', () => {
     });
   });
 
+  it('reads bond data again once a day: the accrued interest and the nominal', async () => {
+    const { db, client, id } = await synced();
+    const meta = () =>
+      db
+        .select({ meta: instruments.meta })
+        .from(instruments)
+        .where(eq(instruments.id, id('RU000A1038V6')))
+        .get()!.meta;
+    expect(meta()).toMatchObject({ aci: '16.45', metaDate: null });
+    await refreshPrices(db, log, offline, now, client);
+    expect(meta()).toMatchObject({ aci: '16.45', metaDate: '2026-10-08' });
+    // A stale nominal comes back from the broker on the next day's first refresh.
+    db.update(instruments)
+      .set({ meta: { ...meta(), nominal: '900' } })
+      .where(eq(instruments.id, id('RU000A1038V6')))
+      .run();
+    await refreshPrices(db, log, offline, now, client);
+    expect(meta()).toMatchObject({ nominal: '900' });
+    await refreshPrices(db, log, offline, new Date('2026-10-09T12:00:00Z'), client);
+    expect(meta()).toMatchObject({ nominal: '1000', metaDate: '2026-10-09' });
+  });
+
   it('takes the latest prices from the broker, bonds in money', async () => {
     const { db, client, id } = await synced();
     await refreshPrices(db, log, offline, now, client);

@@ -32,8 +32,8 @@
 | Лимиты | `UsersService/GetUserTariff` |
 | Операции с пагинацией | `OperationsService/GetOperationsByCursor` |
 | Текущие позиции для сверки | `OperationsService/GetPortfolio` (количество с дробной частью; для закрытого счёта ошибка `30081`, для счёта ЦФА — `50004`) |
-| Справочник бумаги | `InstrumentsService/GetInstrumentBy`, `BondBy`, `FindInstrument` |
-| Купоны облигации | `InstrumentsService/GetBondCoupons` |
+| Справочник бумаги | `InstrumentsService/GetInstrumentBy`, `BondBy` (номинал, погашение, тип купона, `aciValue` — НКД на сегодня; перечитывается раз в день), `FindInstrument` |
+| Купоны облигации | `InstrumentsService/GetBondCoupons` (весь график до погашения: нужен для доходности и дюрации) |
 | Дивиденды | `InstrumentsService/GetDividends` |
 | Последние цены | `MarketDataService/GetLastPrices` |
 | История дневных цен | `MarketDataService/GetCandles` (дневные свечи — до 6 лет за запрос) |

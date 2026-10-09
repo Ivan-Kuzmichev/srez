@@ -63,7 +63,10 @@ function heldWithUid(db: Executor) {
     .filter((i): i is typeof i & { externalUid: string } => i.externalUid !== null && i.kind !== 'currency');
 }
 
-/** Coupons and declared dividends a month back and a year ahead, plus bond maturities (FR-PAY-3). */
+/**
+ * Coupons and declared dividends a month back and a year ahead, plus bond maturities (FR-PAY-3).
+ * Bonds get their whole schedule to maturity: yield and duration need every future coupon (FR-ANL-6).
+ */
 export async function refreshPayouts(
   db: Db,
   client: TinvestClient,
@@ -77,7 +80,12 @@ export async function refreshPayouts(
     const events: NewEvent[] = [];
     try {
       if (inst.kind === 'bond') {
-        for (const c of await client.getBondCoupons(inst.externalUid, from, to)) {
+        const maturityAt =
+          typeof inst.meta?.maturityDate === 'string'
+            ? new Date(`${inst.meta.maturityDate}T23:59:59Z`)
+            : null;
+        const until = maturityAt && maturityAt > to ? maturityAt : to;
+        for (const c of await client.getBondCoupons(inst.externalUid, from, until)) {
           const amount = quotation(c.payOneBond);
           events.push({
             instrumentId: inst.id,
@@ -99,7 +107,6 @@ export async function refreshPayouts(
           typeof maturity === 'string' &&
           typeof nominal === 'string' &&
           maturity >= day(from)! &&
-          maturity <= day(to)! &&
           new Decimal(nominal).gt(0)
         ) {
           events.push({

@@ -144,6 +144,8 @@ export const Bond = Instrument.extend({
   floatingCouponFlag: z.boolean().default(false),
   amortizationFlag: z.boolean().default(false),
   perpetualFlag: z.boolean().default(false),
+  /** Accrued coupon interest per bond today. */
+  aciValue: MoneyValue.optional(),
 });
 export type Bond = z.infer<typeof Bond>;
 

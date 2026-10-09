@@ -73,7 +73,12 @@
    "couponQuantityPerYear": 2,
    "floatingCouponFlag": false,
    "amortizationFlag": false,
-   "perpetualFlag": false
+   "perpetualFlag": false,
+   "aciValue": {
+    "currency": "rub",
+    "units": "16",
+    "nano": 450000000
+   }
   },
   {
    "uid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
@@ -103,7 +108,12 @@
    "couponQuantityPerYear": 2,
    "floatingCouponFlag": false,
    "amortizationFlag": false,
-   "perpetualFlag": false
+   "perpetualFlag": false,
+   "aciValue": {
+    "currency": "rub",
+    "units": "0",
+    "nano": 0
+   }
   },
   {
    "uid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
