@@ -14,6 +14,7 @@ const routes: Record<string, () => Response> = {
   '/history/engines/stock/markets/shares/boards/TQBR/securities/SBER.json': () =>
     new Response(raw('moex/history-SBER.json')),
   'iss.only=marketdata': () => new Response(raw('moex/marketdata-SBER.json')),
+  '/markets/index/boards/RTSI/securities/MCFTR.json': () => new Response(raw('moex/history-MCFTR.json')),
   XML_daily: () => new Response(raw('cbr/daily-2026-10-03.xml')),
   XML_dynamic: () => new Response(raw('cbr/dynamic-usd.xml')),
 };
@@ -105,6 +106,16 @@ describe('market jobs', () => {
     expect(
       db.select().from(prices).where(eq(prices.instrumentId, 'sber')).all().length,
     ).toBeGreaterThanOrEqual(5);
+    // The default benchmark arrives with the history; its close is the index value as is.
+    const mcftr = db.select().from(instruments).where(eq(instruments.ticker, 'MCFTR')).get()!;
+    expect(mcftr).toMatchObject({ kind: 'index', meta: { board: 'RTSI' } });
+    expect(
+      db
+        .select()
+        .from(prices)
+        .where(and(eq(prices.instrumentId, mcftr.id), eq(prices.date, '2026-09-01')))
+        .get()?.close,
+    ).toBe('6243.25');
 
     expect(updateSnapshots(db, now)).toBe(1);
     expect(snap(db, '2026-09-28', 'sber')).toBeUndefined();

@@ -20,6 +20,7 @@ import { getLastPrice, getPriceHistory, getSecurity, type MoexPriceRef } from '@
 import { addDays, localDate, utcToZonedLocal } from '@/lib/time';
 import type { Logger } from '@/server/logger';
 import { ownerSettings } from '@/server/settings';
+import { BENCHMARKS, ensureBenchmarks } from '@/server/benchmarks';
 import { enqueue } from './queue';
 import type { TinvestClient } from '@/integrations/tinvest/client';
 import { refreshTinvestPrices, tinvestForPrices, tinvestHistory } from './tinvest-market';
@@ -182,6 +183,28 @@ export async function backfillHistory(
     const d = localDate(c.since, tz);
     return !m || d < m ? d : m;
   }, null);
+  // Benchmarks (MCFTR, RGBITR): history from the first operation, the board kept in meta.
+  if (earliest) {
+    const ids = ensureBenchmarks(db);
+    for (const b of BENCHMARKS) {
+      const id = ids.get(b.ticker)!;
+      for (const [from, to] of gaps(priceRange(db, id), earliest)) {
+        try {
+          const rows = await getPriceHistory(
+            { secid: b.ticker, engine: 'stock', market: 'index', board: b.board, kind: 'share' },
+            from,
+            to,
+            fetchFn,
+          );
+          upsertPrices(db, id, 'RUB', 'moex', rows);
+          added += rows.length;
+        } catch (err) {
+          log.warn({ benchmark: b.ticker, from, to, err }, 'Benchmark history failed');
+        }
+      }
+    }
+  }
+
   const codes = new Set([...DISPLAY_CURRENCIES, ...currenciesInUse(db).map((c) => c.code)]);
   for (const code of codes) {
     if (code === 'RUB' || !CBR_IDS[code] || !earliest) continue;
