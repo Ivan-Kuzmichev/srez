@@ -169,7 +169,7 @@ export default async function PortfoliosPage() {
                         tone={a.sourceKind === 'manual' ? 'neutral' : 'accent'}
                         className="px-[9px] py-[3px]"
                       >
-                        {ru.journal.origins[a.sourceKind === 'manual' ? 'manual' : 'tinvest']}
+                        {ru.journal.sourceKinds[a.sourceKind] ?? a.sourceKind}
                       </Pill>
                     </Td>
                     <Td pad="tall" align="right" mono>

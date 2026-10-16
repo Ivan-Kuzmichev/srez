@@ -126,6 +126,10 @@ test('a Tron wallet: TRX and USDT with their history, then the history rebuilt',
   };
   await expect(fees).toPass({ timeout: 45_000 });
 
+  // A wallet account is labelled as a wallet, not as the broker.
+  await page.goto('/portfolios');
+  await expect(page.getByRole('row', { name: /Tangem, Tron/ })).toContainText('Кошелёк, авто');
+
   await page.goto('/sources');
   const card = page.getByTestId('wallets');
   const row = card.locator('div', { hasText: 'Tangem, Tron' }).last();

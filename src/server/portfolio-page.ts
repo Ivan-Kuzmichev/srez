@@ -16,7 +16,7 @@ export function portfolioChoices(
     accounts: listAccounts(db, userId).map((a) => ({
       id: a.id,
       name: a.name,
-      sourceLabel: ru.journal.origins[a.sourceKind === 'manual' ? 'manual' : 'tinvest']!,
+      sourceLabel: ru.journal.sourceKinds[a.sourceKind] ?? a.sourceKind,
     })),
     tags: listTags(db, userId),
   };

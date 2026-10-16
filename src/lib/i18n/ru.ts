@@ -1220,6 +1220,11 @@ export const ru = {
       manual: 'Вручную',
       reconcile: 'Сверка',
     } as Record<string, string>,
+    /** An account's source by its kind (sources.kind): a wallet is not the broker. */
+    sourceKinds: { tinvest: 'Т-Инвестиции, авто', wallet: 'Кошелёк, авто', manual: 'Вручную' } as Record<
+      string,
+      string
+    >,
     originsShort: { tinvest: 'авто', chain: 'авто', manual: 'вручную', reconcile: 'сверка' } as Record<
       string,
       string
