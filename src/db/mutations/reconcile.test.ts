@@ -99,6 +99,65 @@ describe('fixing discrepancies', () => {
     expect(discrepancyOf(LKOH).map((d) => d.status)).toEqual(['resolved']);
   });
 
+  it('several splits, each on its date, reach the broker together and undo together', async () => {
+    const { db, a1, idOf, discrepancyOf, recheck } = await setup();
+    const id = discrepancyOf(LKOH)[0]!.id;
+    const at = (h: number) => new Date(now.getTime() + h * 3_600_000);
+    const step = (h: number, from: string, to: string) => ({
+      at: at(h),
+      from: new Decimal(from),
+      to: new Decimal(to),
+    });
+    // 1 → 2 → 10 is right; 1 → 2 → 6 falls short and says what it would give.
+    expect(() =>
+      applyFix(db, 'u1', id, {
+        fix: 'split',
+        executedAt: now,
+        price: null,
+        splits: [step(1, '1', '2'), step(2, '1', '3')],
+      }),
+    ).toThrow(expect.objectContaining({ code: 'SPLIT_TOTAL', detail: '6' }));
+    applyFix(db, 'u1', id, {
+      fix: 'split',
+      executedAt: now,
+      price: null,
+      splits: [step(2, '1', '5'), step(1, '1', '2')],
+    });
+    const splits = () =>
+      db
+        .select({ q: operations.quantity })
+        .from(operations)
+        .where(and(eq(operations.instrumentId, idOf(LKOH)), eq(operations.type, 'split')))
+        .orderBy(operations.executedAt)
+        .all()
+        .map((o) => o.q);
+    expect(splits()).toEqual(['1', '8']);
+    await recheck();
+    const held = db
+      .select({ q: positions.quantity })
+      .from(positions)
+      .where(and(eq(positions.accountId, a1), eq(positions.instrumentId, idOf(LKOH))))
+      .get();
+    expect(held?.q).toBe('10');
+    expect(discrepancyOf(LKOH).map((d) => d.status)).toEqual(['resolved']);
+    undoFix(db, 'u1', id);
+    expect(splits()).toEqual([]);
+    expect(discrepancyOf(LKOH).map((d) => d.status)).toEqual(['open']);
+  });
+
+  it('refuses a split before the security was held', async () => {
+    const { db, discrepancyOf } = await setup();
+    const early = { at: new Date('2000-01-01T12:00:00Z'), from: new Decimal(1), to: new Decimal(10) };
+    expect(() =>
+      applyFix(db, 'u1', discrepancyOf(LKOH)[0]!.id, {
+        fix: 'split',
+        executedAt: now,
+        price: null,
+        splits: [early],
+      }),
+    ).toThrow(expect.objectContaining({ code: 'SPLIT_DATE', detail: '0' }));
+  });
+
   it('needs a price for a missing trade', async () => {
     const { db, discrepancyOf } = await setup();
     expect(() =>

@@ -36,6 +36,16 @@ const diffLabel = (i: DiscrepancyItem) =>
 const title = (i: DiscrepancyItem) =>
   i.kind === 'bond' || !i.ticker ? { code: null, name: i.name } : { code: i.ticker, name: i.name };
 
+/** A whole ratio prefills the first split: 1 → 4 for more shares, 10 → 1 for fewer. */
+function splitRatio(ledger: DiscrepancyDetail['ledgerQty'], broker: DiscrepancyDetail['brokerQty']) {
+  if (ledger.lte(0) || broker.lte(0)) return { from: '', to: '' };
+  if (broker.gt(ledger) && broker.div(ledger).isInteger())
+    return { from: '1', to: broker.div(ledger).toString() };
+  if (ledger.gt(broker) && ledger.div(broker).isInteger())
+    return { from: ledger.div(broker).toString(), to: '1' };
+  return { from: '', to: '' };
+}
+
 function options(d: DiscrepancyDetail): FixOption[] {
   const q = formatQuantity(d.diff.abs());
   const more = d.diff.gt(0);
@@ -57,7 +67,13 @@ function options(d: DiscrepancyDetail): FixOption[] {
           price: { label: ru.reconcile.priceTrade(symbol), required: true },
         };
       case 'split':
-        return { fix, label: ru.reconcile.fixes.split, date: true, price: null };
+        return {
+          fix,
+          label: ru.reconcile.fixes.split,
+          date: true,
+          price: null,
+          split: { ...splitRatio(d.ledgerQty, d.brokerQty), broker: formatQuantity(d.brokerQty) },
+        };
       case 'cash': {
         const amount = `${formatPlain(d.diff.abs(), 2)} ${currencySymbol(d.ticker ?? d.currency)}`;
         return {

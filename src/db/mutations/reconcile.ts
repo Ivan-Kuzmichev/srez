@@ -1,14 +1,19 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { Executor } from '@/db/client';
 import { discrepancies, finAccounts, instruments, operations, reconcileExclusions } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
 import type { OperationType } from '@/domain/ledger-types';
+import { planSplits, type SplitStep } from '@/domain/splits';
 import { enqueueRecalc } from '@/jobs/positions';
 import { uuidv7 } from '@/lib/uuid';
 import type { FixKind } from '@/server/reconcile';
 
 export class ReconcileError extends Error {
-  constructor(readonly code: 'NOT_FOUND' | 'NOT_OPEN' | 'PRICE' | 'FIX' | 'NO_FIX') {
+  constructor(
+    readonly code: 'NOT_FOUND' | 'NOT_OPEN' | 'PRICE' | 'FIX' | 'NO_FIX' | 'SPLIT_DATE' | 'SPLIT_TOTAL',
+    /** SPLIT_DATE: which split has nothing to split; SPLIT_TOTAL: the holding the splits would give. */
+    readonly detail?: string,
+  ) {
     super(code);
   }
 }
@@ -30,6 +35,61 @@ export interface FixInput {
   executedAt: Date;
   /** Per unit, in the instrument's currency: required for a missing trade, optional for a transfer. */
   price: Decimal | null;
+  /** «Это сплит» as several splits, each on its own date (NVIDIA: 1 → 4, then 1 → 10). */
+  splits?: SplitStep[];
+}
+
+const EPSILON = new Decimal('1e-9');
+
+/** Several splits: one operation each, on the holding of its date; together they must reach the broker. */
+function insertSplits(
+  tx: Executor,
+  userId: string,
+  d: { accountId: string; brokerQty: string },
+  i: { id: string; currency: string },
+  sourceId: string,
+  splits: SplitStep[],
+  now: Date,
+): string {
+  const ops = tx
+    .select({ at: operations.executedAt, type: operations.type, quantity: operations.quantity })
+    .from(operations)
+    .where(
+      and(
+        eq(operations.accountId, d.accountId),
+        eq(operations.instrumentId, i.id),
+        isNull(operations.voidedAt),
+      ),
+    )
+    .all()
+    .map((o) => ({ ...o, quantity: new Decimal(o.quantity) }));
+  const plan = planSplits(ops, splits);
+  if (!plan.ok) throw new ReconcileError('SPLIT_DATE', String(plan.index));
+  if (plan.final.minus(d.brokerQty).abs().gt(EPSILON))
+    throw new ReconcileError('SPLIT_TOTAL', plan.final.toString());
+  let last = '';
+  splits.forEach((s, k) => {
+    last = uuidv7();
+    tx.insert(operations)
+      .values({
+        id: last,
+        userId,
+        accountId: d.accountId,
+        instrumentId: i.id,
+        type: 'split',
+        executedAt: s.at,
+        quantity: plan.deltas[k]!.toString(),
+        price: '0',
+        currency: i.currency,
+        amount: '0',
+        origin: 'reconcile',
+        sourceId,
+        // One fix, one moment: undo finds the companions of the resolution operation by it.
+        createdAt: now,
+      })
+      .run();
+  });
+  return last;
 }
 
 /**
@@ -51,6 +111,15 @@ export function applyFix(db: Executor, userId: string, id: number, input: FixInp
         .where(eq(discrepancies.id, id))
         .run();
       return null;
+    }
+    if (input.fix === 'split' && input.splits && input.splits.length > 0) {
+      const opId = insertSplits(tx, userId, d, i, sourceId, input.splits, now);
+      tx.update(discrepancies)
+        .set({ status: 'resolved', resolutionOperationId: opId, resolvedAt: now })
+        .where(eq(discrepancies.id, id))
+        .run();
+      enqueueRecalc(tx, d.accountId);
+      return opId;
     }
     const diff = new Decimal(d.brokerQty).minus(d.ledgerQty);
     const qty = diff.abs();
@@ -160,6 +229,19 @@ export function undoFix(db: Executor, userId: string, id: number): void {
     const { d } = own(tx, userId, id);
     if (d.status !== 'resolved' || !d.resolutionOperationId) throw new ReconcileError('NO_FIX');
     tx.delete(operations).where(eq(operations.id, d.resolutionOperationId)).run();
+    // Several splits went in with the resolution operation, all stamped with the fix's moment.
+    if (d.resolvedAt)
+      tx.delete(operations)
+        .where(
+          and(
+            eq(operations.accountId, d.accountId),
+            eq(operations.instrumentId, d.instrumentId),
+            eq(operations.origin, 'reconcile'),
+            eq(operations.type, 'split'),
+            eq(operations.createdAt, d.resolvedAt),
+          ),
+        )
+        .run();
     const newer = tx
       .select({ id: discrepancies.id })
       .from(discrepancies)

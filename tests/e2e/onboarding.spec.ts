@@ -80,4 +80,22 @@ test('the wizard connects T-Invest on the mock and survives a reload while loadi
   await fixed.getByRole('button', { name: 'Отменить' }).click();
   await expect(list).toContainText('Газпром');
   await expect(fixed).toHaveCount(0);
+
+  // Лукойл: 1 in the journal, 10 at the broker. Two splits, each on its own date; a wrong total says so.
+  await list.getByRole('link', { name: /Лукойл/ }).click();
+  const detail = page.getByTestId('reconcile-detail');
+  await expect(page.getByLabel('Это сплит или конвертация бумаг')).toBeChecked();
+  await expect(detail.getByLabel('Было, шт')).toHaveValue('1');
+  await expect(detail.getByLabel('Стало, шт')).toHaveValue('10');
+  await detail.getByLabel('Стало, шт').fill('2');
+  await detail.getByRole('button', { name: 'Добавить ещё сплит' }).click();
+  await detail.getByLabel('Было, шт').nth(1).fill('1');
+  await detail.getByLabel('Стало, шт').nth(1).fill('3');
+  await page.screenshot({ path: test.info().outputPath('splits.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Применить' }).click();
+  await expect(detail.getByRole('alert')).toHaveText('Со сплитами выходит 6 шт, у брокера 10 шт');
+  await detail.getByLabel('Стало, шт').nth(1).fill('5');
+  await page.getByRole('button', { name: 'Применить' }).click();
+  await expect(list).not.toContainText('Лукойл');
+  await expect(fixed).toContainText('Лукойл');
 });
