@@ -23,6 +23,8 @@ export interface KnownToken {
   accrues?: 'continuous' | 'daily' | 'rate';
   /** Wrapped tokens: where the rate to the underlying coin is read (an 18-decimal uint from eth_call). */
   rate?: { network: string; contract: string; selector: string };
+  /** Aave aTokens: the contract of the coin they wrap on the same network (Tangem's yield mode keys by it). */
+  underlying?: string;
 }
 
 export interface Network {
@@ -37,8 +39,16 @@ export interface Network {
   history: boolean;
   /** Shown but switched off until a provider exists. */
   disabled?: boolean;
+  /**
+   * Tangem's yield mode: a factory that deploys each owner a module holding their Aave deposits
+   * (docs/05-integrations.md, section 5).
+   */
+  tangemFactory?: string;
   tokens: KnownToken[];
 }
+
+/** The same factory address on every network Tangem deployed it to (checked on-chain). */
+const TANGEM_FACTORY = '0xd8972a45616bEC62cB9687e38a99D763c0879B0d';
 
 const STETH_RATE = {
   network: 'ethereum',
@@ -89,6 +99,7 @@ export const NETWORKS: Network[] = [
     native: { symbol: 'ETH', name: 'Ethereum', decimals: 18, coingeckoId: 'ethereum' },
     endpoints: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
     history: true,
+    tangemFactory: TANGEM_FACTORY,
     tokens: [
       stable('0xdAC17F958D2ee523a2206206994597C13D831ec7', 'USDT', 6),
       stable('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 'USDC', 6),
@@ -146,6 +157,7 @@ export const NETWORKS: Network[] = [
         protocol: 'Aave',
         displaySymbol: 'USDC',
         accrues: 'continuous',
+        underlying: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
       },
       {
         contract: '0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a',
@@ -158,6 +170,7 @@ export const NETWORKS: Network[] = [
         protocol: 'Aave',
         displaySymbol: 'USDT',
         accrues: 'continuous',
+        underlying: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
       },
       {
         contract: '0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8',
@@ -170,6 +183,7 @@ export const NETWORKS: Network[] = [
         protocol: 'Aave',
         displaySymbol: 'ETH',
         accrues: 'continuous',
+        underlying: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
       },
     ],
   },
@@ -201,6 +215,7 @@ export const NETWORKS: Network[] = [
         protocol: 'Aave',
         displaySymbol: 'USDC',
         accrues: 'continuous',
+        underlying: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
       },
     ],
   },
@@ -212,8 +227,22 @@ export const NETWORKS: Network[] = [
     native: { symbol: 'ETH', name: 'Ethereum', decimals: 18, coingeckoId: 'ethereum' },
     endpoints: ['https://base-rpc.publicnode.com', 'https://mainnet.base.org', 'https://base.drpc.org'],
     history: true,
+    tangemFactory: TANGEM_FACTORY,
     tokens: [
       stable('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', 'USDC', 6),
+      {
+        contract: '0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB',
+        symbol: 'aBasUSDC',
+        name: 'Aave Base USDC',
+        decimals: 6,
+        coingeckoId: 'usd-coin',
+        yieldKind: 'rebasing',
+        underlyingId: 'usd-coin',
+        protocol: 'Aave',
+        displaySymbol: 'USDC',
+        accrues: 'continuous',
+        underlying: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      },
       weth('0x4200000000000000000000000000000000000006'),
       { contract: '0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452', ...WSTETH },
     ],
@@ -253,9 +282,19 @@ export const NETWORKS: Network[] = [
       },
     ],
   },
-  ...(['solana', 'ton', 'tron'] as const).map((id): Network => ({
+  {
+    id: 'tron',
+    name: 'Tron',
+    family: 'tron',
+    native: { symbol: 'TRX', name: 'Tron', decimals: 6, coingeckoId: 'tron' },
+    // TronGrid, the network's own API: balances and history without a key.
+    endpoints: ['https://api.trongrid.io'],
+    history: true,
+    tokens: [stable('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', 'USDT', 6)],
+  },
+  ...(['solana', 'ton'] as const).map((id): Network => ({
     id,
-    name: { solana: 'Solana', ton: 'TON', tron: 'Tron' }[id],
+    name: { solana: 'Solana', ton: 'TON' }[id],
     family: 'evm',
     native: { symbol: '', name: '', decimals: 0, coingeckoId: '' },
     endpoints: [],
@@ -277,12 +316,13 @@ export const EVM_NETWORKS = NETWORKS.filter((n) => n.family === 'evm' && !n.disa
 
 /**
  * Endpoints of a network. CHAIN_MOCK_URL (tests, e2e) points every network at one mock server:
- * <mock>/bitcoin/api, <mock>/rpc/<network>, <mock>/blockscout.
+ * <mock>/bitcoin/api, <mock>/rpc/<network>, <mock>/tron, <mock>/blockscout.
  */
 export function endpointsOf(n: Network): string[] {
   const mock = process.env.CHAIN_MOCK_URL;
   if (!mock) return n.endpoints;
-  return [n.family === 'bitcoin' ? `${mock}/bitcoin/api` : `${mock}/rpc/${n.id}`];
+  if (n.family === 'bitcoin') return [`${mock}/bitcoin/api`];
+  return [n.family === 'tron' ? `${mock}/tron` : `${mock}/rpc/${n.id}`];
 }
 
 export function blockscoutUrl(): string {

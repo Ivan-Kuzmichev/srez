@@ -17,6 +17,9 @@ import type { WalletPreview } from '@/server/wallets';
 const NEW = 'new';
 const BTC_RE = /^(bc1[02-9ac-hj-np-z]{11,87}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/i;
 const EVM_RE = /^0x[0-9a-fA-F]{40}$/;
+const TRON_RE = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+type Family = 'bitcoin' | 'evm' | 'tron';
+const LOOKS: Record<Family, RegExp> = { bitcoin: BTC_RE, evm: EVM_RE, tron: TRON_RE };
 
 export interface WalletFormProps {
   networks: { id: string; name: string; history: boolean }[];
@@ -38,7 +41,7 @@ export function WalletForm(props: WalletFormProps) {
   const router = useRouter();
   const notify = useToast();
   const [pending, start] = useTransition();
-  const [family, setFamily] = useState<'bitcoin' | 'evm'>('evm');
+  const [family, setFamily] = useState<Family>('evm');
   const [address, setAddress] = useState('');
   const [networks, setNetworks] = useState(props.networks.filter((n) => n.history).map((n) => n.id));
   const [name, setName] = useState('');
@@ -49,7 +52,7 @@ export function WalletForm(props: WalletFormProps) {
   const [keep, setKeep] = useState<Record<string, boolean>>({});
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
 
-  const looksValid = family === 'bitcoin' ? BTC_RE.test(address.trim()) : EVM_RE.test(address.trim());
+  const looksValid = LOOKS[family].test(address.trim());
   const key = `${family}|${address.trim()}|${networks.join(',')}`;
   useEffect(() => {
     if (!looksValid || (family === 'evm' && networks.length === 0)) return;
@@ -85,7 +88,7 @@ export function WalletForm(props: WalletFormProps) {
         family,
         address: address.trim(),
         networks: family === 'evm' ? networks : [],
-        name: name.trim() || (family === 'bitcoin' ? 'Bitcoin' : 'EVM'),
+        name: name.trim() || { bitcoin: 'Bitcoin', evm: 'EVM', tron: 'Tron' }[family],
         accountId: accountId === NEW ? null : accountId,
         mode,
         hideSpam,
@@ -104,7 +107,7 @@ export function WalletForm(props: WalletFormProps) {
       <section className="flex min-w-0 flex-[3_1_480px] flex-col gap-[22px] rounded-card border border-border bg-surface p-4 wide:p-7">
         <ChoiceGroup legend={w.network}>
           <div className="flex flex-wrap gap-x-[22px]">
-            {(['evm', 'bitcoin'] as const).map((f) => (
+            {(['evm', 'bitcoin', 'tron'] as const).map((f) => (
               <Radio
                 key={f}
                 name="family"

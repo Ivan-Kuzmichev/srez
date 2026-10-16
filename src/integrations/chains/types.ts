@@ -1,7 +1,7 @@
 import type { Decimal } from '@/domain/decimal';
 
 /** docs/05-integrations.md, section 5. */
-export type ChainFamily = 'bitcoin' | 'evm';
+export type ChainFamily = 'bitcoin' | 'evm' | 'tron';
 
 export interface TokenMeta {
   /** null for the network's native coin. */
@@ -21,6 +21,7 @@ export interface Transfer {
   hash: string;
   /** Unique within the transaction: «native», «token:<contract>:<logIndex>», «internal:<n>». */
   part: string;
+  /** Block height; on Tron the block's time in milliseconds (TronGrid pages by time). Either way it only grows. */
   block: number;
   at: Date;
   direction: 'in' | 'out';

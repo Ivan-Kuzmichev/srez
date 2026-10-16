@@ -3,11 +3,16 @@ import {
   MOCK_BLOCKSCOUT_KEY,
   MOCK_BTC_ADDRESS,
   MOCK_EVM_ADDRESS,
+  MOCK_TANGEM_MODULE,
+  MOCK_TANGEM_OWNER,
+  MOCK_TRON_ADDRESS,
   startChainsMock,
   type ChainsMock,
 } from '../../../tests/mock/chains';
 import { bitcoinProvider } from './bitcoin';
-import { evmProvider, readRate } from './evm';
+import { evmProvider, readRate, tangemModule } from './evm';
+import { network } from './networks';
+import { tronProvider } from './tron';
 
 let mock: ChainsMock;
 beforeAll(async () => {
@@ -90,5 +95,74 @@ describe('evm', () => {
       code: 'HTTP',
     });
     expect((await evmProvider().getBalances(MOCK_EVM_ADDRESS, 'ethereum')).length).toBe(3);
+  });
+});
+
+describe('tangem yield mode', () => {
+  it("finds the module and counts its deposit, after the fee, as the wallet's aToken", async () => {
+    expect(await tangemModule(network('ethereum'), MOCK_TANGEM_OWNER)).toBe(MOCK_TANGEM_MODULE);
+    expect(await tangemModule(network('ethereum'), MOCK_EVM_ADDRESS)).toBeNull();
+    expect(await tangemModule(network('arbitrum'), MOCK_TANGEM_OWNER)).toBeNull();
+    const b = await evmProvider().getBalances(MOCK_TANGEM_OWNER, 'ethereum');
+    // USDC is enabled with nothing in it, WETH never was (the module reverts): neither shows.
+    expect(b.map((x) => [x.symbol, x.amount.toFixed()])).toEqual([
+      ['ETH', '0.1'],
+      ['aEthUSDT', '480.12'],
+    ]);
+  });
+
+  it('coins into the module arrive as aTokens, coins out of it leave as aTokens', async () => {
+    const t = await evmProvider({ blockscoutKey: MOCK_BLOCKSCOUT_KEY }).getTransfers(
+      MOCK_TANGEM_OWNER,
+      'ethereum',
+    );
+    const legs = t.filter((x) => x.part.endsWith(':tangem'));
+    expect(
+      legs.map((x) => [x.direction, x.asset.symbol, x.amount.toFixed(), x.at.toISOString().slice(0, 10)]),
+    ).toEqual([
+      ['in', 'aEthUSDT', '505', '2025-11-30'],
+      ['in', 'aEthUSDT', '170', '2026-03-01'],
+      ['out', 'aEthUSDT', '200', '2026-06-26'],
+    ]);
+    // A withdrawal straight from Aave burns the wallet's own aToken: no leg for it.
+    expect(
+      t.filter((x) => x.asset.symbol === 'aEthUSDT' && !x.part.endsWith(':tangem')).map((x) => x.direction),
+    ).toEqual(['in', 'out']);
+  });
+});
+
+describe('tron', () => {
+  it('TRX and known TRC-20 balances; a look-alike token is not USDT', async () => {
+    const b = await tronProvider().getBalances(MOCK_TRON_ADDRESS, 'tron');
+    expect(b.map((x) => [x.symbol, x.amount.toFixed(), x.contract])).toEqual([
+      ['TRX', '85.5', null],
+      ['USDT', '266.75', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'],
+    ]);
+    expect(await tronProvider().getBalances('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', 'tron')).toEqual([]);
+  });
+
+  it('transfers with the burned TRX fee, oldest first; the cursor is a time', async () => {
+    const t = await tronProvider().getTransfers(MOCK_TRON_ADDRESS, 'tron');
+    expect(t.map((x) => [x.direction, x.asset.symbol, x.amount.toFixed(), x.fee.toFixed()])).toEqual([
+      ['in', 'TRX', '120', '0'],
+      ['out', 'TRX', '20', '1.1'],
+      ['in', 'USDT', '300', '0'],
+      ['out', 'TRX', '0', '13.4'],
+      ['out', 'USDT', '33.25', '0'],
+      ['in', 'USDT', '1000', '0'],
+    ]);
+    const later = await tronProvider().getTransfers(MOCK_TRON_ADDRESS, 'tron', t[2]!.block + 1);
+    expect(later.length).toBe(3);
+    expect((await tronProvider().health('tron')).ok).toBe(true);
+  });
+
+  it('waits and retries when TronGrid says «too many requests»', async () => {
+    const pauses: number[] = [];
+    const p = tronProvider(undefined, { sleep: async (ms) => pauses.push(ms) });
+    mock.failNext('/tron/v1/accounts', 429, 2);
+    expect((await p.getBalances(MOCK_TRON_ADDRESS, 'tron')).length).toBe(2);
+    expect(pauses).toEqual([1000, 3000]);
+    mock.failNext('/tron/v1/accounts', 429, 4);
+    await expect(p.getBalances(MOCK_TRON_ADDRESS, 'tron')).rejects.toMatchObject({ status: 429 });
   });
 });

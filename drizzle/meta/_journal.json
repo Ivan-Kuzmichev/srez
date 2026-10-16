@@ -141,6 +141,13 @@
       "when": 1791541330366,
       "tag": "0019_snapshot_totals",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792164836876,
+      "tag": "0020_yield_instruments_unique",
+      "breakpoints": true
     }
   ]
 }

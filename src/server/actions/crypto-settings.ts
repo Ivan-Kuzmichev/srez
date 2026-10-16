@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { bitcoinProvider } from '@/integrations/chains/bitcoin';
-import { checkBlockscoutKey, evmProvider } from '@/integrations/chains/evm';
+import { checkBlockscoutKey } from '@/integrations/chains/evm';
+import { chainProvider } from '@/integrations/chains/provider';
 import { NETWORKS } from '@/integrations/chains/networks';
 import { authedAction } from '../action';
 import { logger } from '../logger';
@@ -34,12 +34,10 @@ export interface NodeHealth {
 
 /** «Проверить все» (FR-CRY-7): each network's public endpoints, with the first that answers. */
 export const checkNodes = authedAction(z.null(), async () => {
-  const btc = bitcoinProvider();
-  const evm = evmProvider();
   const data: NodeHealth[] = await Promise.all(
     NETWORKS.map(async (n): Promise<NodeHealth> => {
       if (n.disabled) return { id: n.id, name: n.name, state: 'off', latencyMs: null };
-      const h = await (n.family === 'bitcoin' ? btc : evm).health(n.id);
+      const h = await chainProvider(n.family).health(n.id);
       return { id: n.id, name: n.name, state: h.ok ? 'ok' : 'down', latencyMs: h.ok ? h.latencyMs : null };
     }),
   );

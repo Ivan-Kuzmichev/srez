@@ -5,9 +5,8 @@ import { loadPriceSeries, upsertPrices } from '@/db/mutations/market';
 import { recalcAccount } from '@/db/mutations/positions';
 import { finAccounts, operations, positions, sources, syncRuns, SYNC_TRIGGERS } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
-import { bitcoinProvider } from '@/integrations/chains/bitcoin';
-import { evmProvider } from '@/integrations/chains/evm';
 import { network } from '@/integrations/chains/networks';
+import { chainProvider } from '@/integrations/chains/provider';
 import type { ChainProvider, TokenBalance, Transfer } from '@/integrations/chains/types';
 import { getCoinHistory } from '@/integrations/coingecko/client';
 import type { Fetch } from '@/integrations/errors';
@@ -77,10 +76,10 @@ export async function syncWallet(db: Db, sourceId: string, trigger: Trigger, dep
     .get();
 
   try {
-    const provider: ChainProvider =
-      wallet.family === 'bitcoin'
-        ? bitcoinProvider(deps.fetchFn)
-        : evmProvider({ blockscoutKey: deps.blockscoutKey ?? null, fetchFn: deps.fetchFn });
+    const provider: ChainProvider = chainProvider(wallet.family, {
+      blockscoutKey: deps.blockscoutKey ?? null,
+      fetchFn: deps.fetchFn,
+    });
     const nextBlock = { ...wallet.nextBlock };
     const balances: TokenBalance[] = [];
     let added = 0;
@@ -88,7 +87,7 @@ export async function syncWallet(db: Db, sourceId: string, trigger: Trigger, dep
       const net = network(netId);
       balances.push(...(await provider.getBalances(wallet.address, netId)));
       const withHistory =
-        wallet.mode === 'history' && net.history && (wallet.family === 'bitcoin' || !!deps.blockscoutKey);
+        wallet.mode === 'history' && net.history && (wallet.family !== 'evm' || !!deps.blockscoutKey);
       if (!withHistory) continue;
       const transfers = await provider.getTransfers(wallet.address, netId, nextBlock[netId] ?? 0);
       added += await importTransfers(db, account, transfers, deps.fetchFn);

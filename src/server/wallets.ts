@@ -1,13 +1,12 @@
 import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Db } from '@/db/client';
-import { finAccounts, instruments, operations, positions, sources } from '@/db/schema';
+import { finAccounts, instruments, operations, positions, sources, walletBalances } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
 import { getCoinPrices } from '@/integrations/coingecko/client';
 import type { Fetch } from '@/integrations/errors';
 import { toChecksumAddress } from '@/integrations/chains/address';
-import { bitcoinProvider } from '@/integrations/chains/bitcoin';
-import { evmProvider } from '@/integrations/chains/evm';
 import { network } from '@/integrations/chains/networks';
+import { chainProvider } from '@/integrations/chains/provider';
 import type { ChainFamily, TokenBalance } from '@/integrations/chains/types';
 import { enqueueRecalc } from '@/jobs/positions';
 import { knownAsset } from './chain-instruments';
@@ -17,7 +16,7 @@ import { getSettings } from './settings';
 export interface WalletTarget {
   family: ChainFamily;
   address: string;
-  /** EVM networks to look in; ['bitcoin'] for Bitcoin. */
+  /** EVM networks to look in; ['bitcoin'] for Bitcoin, ['tron'] for Tron. */
   networks: string[];
 }
 
@@ -94,14 +93,15 @@ export async function previewWallet(
   const balances: TokenBalance[] = [];
   let txCount: number | null = null;
   let firstAt: string | null = null;
-  if (target.family === 'bitcoin') {
-    const p = bitcoinProvider(fetchFn);
-    balances.push(...(await p.getBalances(target.address, 'bitcoin')));
-    const transfers = await p.getTransfers(target.address, 'bitcoin');
-    txCount = transfers.length;
+  if (target.family !== 'evm') {
+    // One network with its history open to everyone: the count and first date are known right away.
+    const p = chainProvider(target.family, { fetchFn });
+    balances.push(...(await p.getBalances(target.address, target.family)));
+    const transfers = await p.getTransfers(target.address, target.family);
+    txCount = new Set(transfers.map((t) => t.hash)).size;
     firstAt = transfers[0]?.at.toISOString() ?? null;
   } else {
-    const p = evmProvider({ fetchFn });
+    const p = chainProvider('evm', { fetchFn });
     const found = await Promise.all(target.networks.map((n) => p.getBalances(target.address, n)));
     balances.push(...found.flat());
   }
@@ -226,7 +226,7 @@ export function addWallet(db: Db, userId: string, input: AddWalletInput, now = n
     wallet: {
       family: input.family,
       address,
-      networks: input.family === 'bitcoin' ? ['bitcoin'] : input.networks,
+      networks: input.family === 'evm' ? input.networks : [input.family],
       mode: input.mode,
       hideSpam: input.hideSpam,
     },
@@ -295,5 +295,34 @@ export function addWallet(db: Db, userId: string, input: AddWalletInput, now = n
     }
     for (const id of touched) enqueueRecalc(tx, id);
     return { ok: true as const, accountId, sourceId };
+  });
+}
+
+/**
+ * «Пересобрать историю»: everything the chain gave this wallet goes (transfers, squared balances,
+ * accruals and the daily balances they came from) and the next sync reads the chain from the start.
+ * Manual entries in the account stay. The caller queues that sync.
+ */
+export function rebuildWalletHistory(db: Db, userId: string, sourceId: string): boolean {
+  return db.transaction((tx) => {
+    const account = tx
+      .select({ id: finAccounts.id, meta: finAccounts.meta })
+      .from(finAccounts)
+      .innerJoin(sources, eq(sources.id, finAccounts.sourceId))
+      .where(and(eq(sources.id, sourceId), eq(sources.userId, userId), eq(sources.kind, 'wallet')))
+      .get();
+    const wallet = (account?.meta as WalletMeta | null)?.wallet;
+    if (!account || !wallet) return false;
+    tx.delete(operations)
+      .where(and(eq(operations.sourceId, sourceId), eq(operations.origin, 'chain')))
+      .run();
+    tx.delete(walletBalances).where(eq(walletBalances.accountId, account.id)).run();
+    tx.update(finAccounts)
+      .set({ meta: { ...account.meta, wallet: { ...wallet, nextBlock: {} } } })
+      .where(eq(finAccounts.id, account.id))
+      .run();
+    tx.update(sources).set({ lastSyncAt: null }).where(eq(sources.id, sourceId)).run();
+    enqueueRecalc(tx, account.id);
+    return true;
   });
 }

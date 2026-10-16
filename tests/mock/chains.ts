@@ -1,5 +1,5 @@
 // A local stand-in for public blockchain APIs, serving tests/fixtures/chains:
-// Esplora at /bitcoin/api, JSON-RPC at /rpc/<network>, Blockscout (Etherscan-compatible) at /blockscout.
+// Esplora at /bitcoin/api, JSON-RPC at /rpc/<network>, TronGrid at /tron, Blockscout (Etherscan-compatible) at /blockscout.
 // Used by unit tests (startChainsMock) and by e2e (`tsx tests/mock/chains.ts <port>`).
 import { readFileSync } from 'node:fs';
 import http from 'node:http';
@@ -11,6 +11,10 @@ const read = (name: string) => JSON.parse(readFileSync(join(DIR, name), 'utf8'))
 export const MOCK_BLOCKSCOUT_KEY = 'proapi_mock_key';
 export const MOCK_BTC_ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 export const MOCK_EVM_ADDRESS = '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed';
+/** An EVM wallet in Tangem's yield mode: its module holds the Aave deposit. */
+export const MOCK_TANGEM_OWNER = '0x' + '33'.repeat(20);
+export const MOCK_TANGEM_MODULE = '0x' + '44'.repeat(20);
+export const MOCK_TRON_ADDRESS = 'THkQfRopincF6emzbk6VMC7jTHqJ8MP8g7';
 const COIN_PRICES: Record<string, number> = {
   bitcoin: 60000,
   ethereum: 2500,
@@ -24,6 +28,7 @@ const COIN_PRICES: Record<string, number> = {
   'wrapped-bitcoin': 60000,
   binancecoin: 600,
   'polygon-ecosystem-token': 0.2,
+  tron: 0.3,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,11 +36,17 @@ type Json = any;
 export interface ChainsState {
   bitcoin: Record<string, Json>;
   evm: Record<string, Json>;
+  tron: Record<string, Json>;
   blockscout: Record<string, Record<string, Record<string, Json[]>>>;
 }
 
 export function chainsFixtures(): ChainsState {
-  return { bitcoin: read('bitcoin.json'), evm: read('evm.json'), blockscout: read('blockscout.json') };
+  return {
+    bitcoin: read('bitcoin.json'),
+    evm: read('evm.json'),
+    tron: read('tron.json'),
+    blockscout: read('blockscout.json'),
+  };
 }
 
 export interface ChainsMock {
@@ -63,6 +74,9 @@ function rpc(state: ChainsState, net: string, call: Json): Json {
     case 'eth_call': {
       const to = String(call.params[0].to).toLowerCase();
       const data = String(call.params[0].data);
+      const exact = n.calls?.[`${to}|${data.toLowerCase()}`];
+      if (exact) return { ...base, result: exact };
+      if (n.reverts?.includes(to)) return { ...base, error: { code: 3, message: 'execution reverted' } };
       if (data.startsWith('0x70a08231')) {
         const owner = '0x' + data.slice(-40);
         return { ...base, result: n.balances[owner]?.tokens?.[to] ?? ZERO };
@@ -112,6 +126,19 @@ export async function startChainsMock(
         const body = JSON.parse(raw || '[]');
         const net = path.slice('/rpc/'.length);
         return json(200, Array.isArray(body) ? body.map((c) => rpc(state, net, c)) : rpc(state, net, body));
+      }
+      // TronGrid: the account, its transactions and TRC-20 transfers, paged by time like the real one.
+      if (path.startsWith('/tron/')) {
+        const rest = path.slice('/tron'.length);
+        if (rest === '/wallet/getblock') return json(200, { blockID: '00'.repeat(32) });
+        const m = /^\/v1\/accounts\/([^/]+)(\/transactions(\/trc20)?)?$/.exec(rest);
+        if (!m) return json(404, { error: 'unknown route' });
+        const a = state.tron[m[1]!];
+        if (!m[2]) return json(200, { data: a ? [{ address: m[1], ...a.account }] : [], success: true });
+        const since = Number(url.searchParams.get('min_timestamp') ?? 0);
+        const at = (r: Json) => r.block_timestamp as number;
+        const rows = ((m[3] ? a?.trc20 : a?.transactions) ?? []).filter((r: Json) => at(r) >= since);
+        return json(200, { data: rows, success: true, meta: { page_size: rows.length } });
       }
       // CoinGecko: fixed dollar prices, a flat year of history, an empty search.
       if (path.startsWith('/coingecko/api/v3')) {

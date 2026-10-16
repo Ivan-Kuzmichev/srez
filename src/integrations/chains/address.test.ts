@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBitcoinAddress, isEvmAddress, toChecksumAddress } from './address';
+import { isBitcoinAddress, isEvmAddress, isTronAddress, toChecksumAddress, tronHex } from './address';
 import { keccak256 } from './keccak';
 
 const hex = (b: Uint8Array) => Buffer.from(b).toString('hex');
@@ -39,5 +39,14 @@ describe('addresses', () => {
     expect(toChecksumAddress('0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed')).toBe(
       '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed',
     );
+  });
+
+  it('tron: T and Base58Check over 0x41', () => {
+    expect(isTronAddress('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')).toBe(true);
+    expect(isTronAddress('THkQfRopincF6emzbk6VMC7jTHqJ8MP8g7')).toBe(true);
+    // One character off breaks the checksum; a Bitcoin address has the wrong version byte.
+    expect(isTronAddress('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6u')).toBe(false);
+    expect(isTronAddress('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')).toBe(false);
+    expect(tronHex('THkQfRopincF6emzbk6VMC7jTHqJ8MP8g7')).toBe('41' + '55'.repeat(20));
   });
 });

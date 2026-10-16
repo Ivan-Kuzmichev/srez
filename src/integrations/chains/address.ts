@@ -64,6 +64,19 @@ export function isBitcoinAddress(address: string): boolean {
   return raw !== null && (raw[0] === 0x00 || raw[0] === 0x05);
 }
 
+/** Tron: Base58Check of 0x41 and 20 bytes, «T…» (34 characters). */
+export function isTronAddress(address: string): boolean {
+  if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address)) return false;
+  const raw = base58check(address);
+  return raw !== null && raw[0] === 0x41;
+}
+
+/** A Tron address in the hex form TronGrid uses inside transactions: «41…», 42 characters. */
+export function tronHex(address: string): string | null {
+  const raw = isTronAddress(address) ? base58check(address) : null;
+  return raw ? Buffer.from(raw.subarray(0, 21)).toString('hex') : null;
+}
+
 /** EIP-55: mixed case must match the checksum; all lower or all upper case carries none. */
 export function isEvmAddress(address: string): boolean {
   if (!/^0x[0-9a-fA-F]{40}$/.test(address)) return false;

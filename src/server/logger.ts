@@ -219,7 +219,10 @@ export function observeExternalRequest(r: ExternalRequest, database: () => Db = 
   const source: LogSource =
     r.integration === 'tinvest'
       ? 'collector'
-      : r.integration === 'bitcoin' || r.integration === 'evm' || r.integration === 'blockscout'
+      : r.integration === 'bitcoin' ||
+          r.integration === 'evm' ||
+          r.integration === 'tron' ||
+          r.integration === 'blockscout'
         ? 'chains'
         : r.integration === 'telegram'
           ? 'notify'

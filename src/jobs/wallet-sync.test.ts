@@ -13,11 +13,14 @@ import {
 import { createTestDb } from '@/db/test-db';
 import { loadFx, loadValuedCells } from '@/server/portfolio-data';
 import { updateSettings } from '@/server/settings';
-import { addWallet } from '@/server/wallets';
+import { addWallet, rebuildWalletHistory } from '@/server/wallets';
+import { accrueWallet } from './wallet-accrue';
 import {
   MOCK_BLOCKSCOUT_KEY,
   MOCK_BTC_ADDRESS,
   MOCK_EVM_ADDRESS,
+  MOCK_TANGEM_OWNER,
+  MOCK_TRON_ADDRESS,
   startChainsMock,
   type ChainsMock,
 } from '../../tests/mock/chains';
@@ -42,14 +45,14 @@ const fetchFn = async (url: string, init?: RequestInit) => {
   return new Response(JSON.stringify({ prices }));
 };
 
-function wallet(family: 'evm' | 'bitcoin', mode: 'history' | 'balances') {
+function wallet(family: 'evm' | 'bitcoin' | 'tron', mode: 'history' | 'balances', address?: string) {
   const db = createTestDb();
   db.insert(user)
     .values({ id: 'u1', name: 'o', email: 'o@local.invalid', createdAt: now, updatedAt: now })
     .run();
   const r = addWallet(db, 'u1', {
     family,
-    address: family === 'evm' ? MOCK_EVM_ADDRESS : MOCK_BTC_ADDRESS,
+    address: address ?? { evm: MOCK_EVM_ADDRESS, bitcoin: MOCK_BTC_ADDRESS, tron: MOCK_TRON_ADDRESS }[family],
     networks: family === 'evm' ? ['ethereum', 'arbitrum', 'bnb'] : [],
     name: 'Кошелёк',
     accountId: null,
@@ -168,5 +171,58 @@ describe('wallet sync', () => {
       status: 'error',
       lastError: 'Blockscout не принял ключ. Проверьте его в «Настройки → Крипта».',
     });
+  });
+
+  it('Tangem yield mode: deposits into the module move USDT into aUSDT, the yield after the fee is an accrual', async () => {
+    const { db, sourceId, accountId, held } = wallet('evm', 'history', MOCK_TANGEM_OWNER);
+    const deps = { fetchFn, blockscoutKey: MOCK_BLOCKSCOUT_KEY, now };
+    await syncWallet(db, sourceId, 'manual', deps);
+    // 500 straight to Aave and back, 505 and 170 into the module, 200 out of it: 475 deposited.
+    expect(held()).toEqual({ ETH: '0.1', aEthUSDT: '475' });
+    await accrueWallet(db, accountId, now, fetchFn);
+    // The module shows 480,12 after Tangem's fee: 5,12 earned before the wallet was connected.
+    expect(held()).toEqual({ ETH: '0.1', aEthUSDT: '480.12' });
+    const accrual = db
+      .select({ q: operations.quantity })
+      .from(operations)
+      .where(and(eq(operations.accountId, accountId), eq(operations.type, 'accrual')))
+      .all();
+    expect(accrual.map((a) => a.q)).toEqual(['5.12']);
+    expect(await syncWallet(db, sourceId, 'schedule', deps)).toEqual({ newOperations: 0 });
+  });
+
+  it('Tron: TRX with the burned fees, USDT, the look-alike token left out; balances match', async () => {
+    const { db, sourceId, accountId, held } = wallet('tron', 'history');
+    // No Blockscout key: Tron history does not need one.
+    const first = await syncWallet(db, sourceId, 'manual', { fetchFn, now });
+    expect(held()).toEqual({ TRX: '85.5', USDT: '266.75' });
+    const fees = db
+      .select({ q: operations.quantity })
+      .from(operations)
+      .where(and(eq(operations.accountId, accountId), eq(operations.note, 'Комиссия сети')))
+      .all();
+    expect(fees.map((f) => f.q).sort()).toEqual(['1.1', '13.4']);
+    expect(first.newOperations).toBe(6);
+    expect(await syncWallet(db, sourceId, 'schedule', { fetchFn, now })).toEqual({ newOperations: 0 });
+  });
+
+  it('rebuilding a wallet drops what the chain gave, keeps manual entries, and the next sync brings it back', async () => {
+    const { db, sourceId, accountId, held } = wallet('tron', 'history');
+    await syncWallet(db, sourceId, 'manual', { fetchFn, now });
+    const trx = db.select().from(operations).where(eq(operations.accountId, accountId)).get()!;
+    db.insert(operations)
+      .values({ ...trx, id: undefined, origin: 'manual', externalId: null, note: 'вручную' })
+      .run();
+    expect(rebuildWalletHistory(db, 'someone-else', sourceId)).toBe(false);
+    expect(rebuildWalletHistory(db, 'u1', sourceId)).toBe(true);
+    const left = db.select().from(operations).where(eq(operations.accountId, accountId)).all();
+    expect(left.map((o) => o.note)).toEqual(['вручную']);
+    expect(db.select().from(finAccounts).where(eq(finAccounts.id, accountId)).get()!.meta).toMatchObject({
+      wallet: { nextBlock: {} },
+    });
+    expect(db.select().from(sources).where(eq(sources.id, sourceId)).get()!.lastSyncAt).toBeNull();
+    const again = await syncWallet(db, sourceId, 'manual', { fetchFn, now });
+    expect(again.newOperations).toBe(7);
+    expect(held().USDT).toBe('266.75');
   });
 });

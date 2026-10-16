@@ -7,16 +7,21 @@ import { blockscoutUrl, endpointsOf, network, type Network } from './networks';
 import type { ChainProvider, TokenBalance, TokenMeta, Transfer } from './types';
 
 const RpcResult = z.object({ id: z.number(), result: z.string().optional(), error: z.unknown().optional() });
+const reverted = (error: unknown) => /revert/i.test(JSON.stringify(error ?? ''));
 const pow10 = (n: number) => new Decimal(10).pow(n);
 const hexToDecimal = (h: string) =>
   h === '0x' || h === '' ? new Decimal(0) : new Decimal(BigInt(h).toString());
 const pad = (address: string) => address.toLowerCase().replace(/^0x/, '').padStart(64, '0');
 
-/** A JSON-RPC batch; a call that errors fails the whole batch, so the next endpoint is tried. */
+/**
+ * A JSON-RPC batch; a call that errors fails the whole batch, so the next endpoint is tried. With
+ * `revertIsEmpty` a contract that refuses the call (a revert) answers «0x» instead: an endpoint's own failure still fails.
+ */
 export async function rpcBatch(
   net: Network,
   calls: { method: string; params: unknown[] }[],
   fetchFn?: Fetch,
+  options: { revertIsEmpty?: boolean } = {},
 ): Promise<string[]> {
   if (calls.length === 0) return [];
   const methods = [...new Set(calls.map((c) => c.method))].join(',');
@@ -29,6 +34,7 @@ export async function rpcBatch(
       const byId = new Map(rows.map((r) => [r.id, r]));
       return calls.map((_, i) => {
         const r = byId.get(i);
+        if (r && r.error !== undefined && options.revertIsEmpty && reverted(r.error)) return '0x';
         if (!r || r.error !== undefined || r.result === undefined)
           throw new IntegrationError('evm', 'BAD_RESPONSE', `RPC error in ${net.id}`);
         return r.result;
@@ -111,6 +117,93 @@ async function blockscoutList<T>(
   return out;
 }
 
+const YIELD_MODULES = '0x36571e2c'; // yieldModules(address owner) → address
+const EFFECTIVE_BALANCE = '0x16a398f7'; // effectiveBalance(address token) → uint256, after Tangem's fee
+
+/**
+ * The owner's Tangem yield module on this network, or null: a contract the factory deployed for them
+ * that keeps their Aave deposits (docs/05-integrations.md, section 5).
+ */
+export async function tangemModule(net: Network, owner: string, fetchFn?: Fetch): Promise<string | null> {
+  if (!net.tangemFactory) return null;
+  const [raw] = await rpcBatch(
+    net,
+    [
+      {
+        method: 'eth_call',
+        params: [{ to: net.tangemFactory, data: `${YIELD_MODULES}${pad(owner)}` }, 'latest'],
+      },
+    ],
+    fetchFn,
+    { revertIsEmpty: true },
+  );
+  const address = `0x${(raw ?? '').replace(/^0x/, '').slice(-40)}`;
+  return address.length === 42 && /[1-9a-f]/.test(address.slice(2)) ? address : null;
+}
+
+/**
+ * What a Tangem module holds, as balances of the Aave aTokens it keeps: `effectiveBalance` of each
+ * underlying coin, the deposit with interest less the service fee Tangem has yet to collect, the same
+ * figure the Tangem app shows. A coin the module never enabled reverts and counts as nothing.
+ */
+async function tangemBalances(net: Network, module: string, fetchFn?: Fetch): Promise<TokenBalance[]> {
+  const aTokens = net.tokens.filter((t) => t.underlying);
+  const raw = await rpcBatch(
+    net,
+    aTokens.map((t) => ({
+      method: 'eth_call',
+      params: [{ to: module, data: `${EFFECTIVE_BALANCE}${pad(t.underlying!)}` }, 'latest'],
+    })),
+    fetchFn,
+    { revertIsEmpty: true },
+  );
+  return aTokens.map((t, i) => ({
+    contract: t.contract,
+    symbol: t.symbol,
+    name: t.name,
+    decimals: t.decimals,
+    network: net.id,
+    amount: hexToDecimal(raw[i]!).div(pow10(t.decimals)),
+  }));
+}
+
+/**
+ * Tangem moves coins between the wallet and its module, and the module's aTokens never show in the
+ * wallet's history. So a coin sent to the module is also an aToken arriving, and a coin the aToken pays
+ * out with no aToken leaving the wallet in that transaction came out of the module: an aToken leaving.
+ */
+function tangemLegs(net: Network, module: string, transfers: Transfer[]): Transfer[] {
+  const aTokenOf = new Map(
+    net.tokens.filter((t) => t.underlying).map((t) => [t.underlying!.toLowerCase(), t] as const),
+  );
+  const out: Transfer[] = [];
+  for (const t of transfers) {
+    const a = t.asset.contract ? aTokenOf.get(t.asset.contract.toLowerCase()) : undefined;
+    if (!a) continue;
+    const peer = t.counterparty?.toLowerCase();
+    const intoModule = t.direction === 'out' && peer === module;
+    const fromModule =
+      t.direction === 'in' &&
+      peer === a.contract.toLowerCase() &&
+      !transfers.some(
+        (o) =>
+          o.hash === t.hash &&
+          o.direction === 'out' &&
+          o.asset.contract?.toLowerCase() === a.contract.toLowerCase(),
+      );
+    if (!intoModule && !fromModule) continue;
+    out.push({
+      ...t,
+      part: `${t.part}:tangem`,
+      direction: intoModule ? 'in' : 'out',
+      asset: { contract: a.contract, symbol: a.symbol, name: a.name, decimals: a.decimals },
+      fee: new Decimal(0),
+      counterparty: module,
+    });
+  }
+  return out;
+}
+
 export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: Fetch } = {}): ChainProvider {
   const { fetchFn } = options;
   return {
@@ -141,9 +234,20 @@ export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: 
         name: net.native.name,
         decimals: net.native.decimals,
       };
-      return [native, ...tokens]
-        .map((t, i) => ({ ...t, network: net.id, amount: hexToDecimal(results[i]!).div(pow10(t.decimals)) }))
-        .filter((b) => b.amount.gt(0));
+      const own = [native, ...tokens].map((t, i) => ({
+        ...t,
+        network: net.id,
+        amount: hexToDecimal(results[i]!).div(pow10(t.decimals)),
+      }));
+      // Coins in Tangem's yield mode belong to the wallet: added to its own aTokens.
+      const tangem = await tangemModule(net, address, fetchFn);
+      if (tangem)
+        for (const m of await tangemBalances(net, tangem, fetchFn)) {
+          const same = own.find((b) => b.contract?.toLowerCase() === m.contract!.toLowerCase());
+          if (same) same.amount = same.amount.plus(m.amount);
+          else own.push(m);
+        }
+      return own.filter((b) => b.amount.gt(0));
     },
 
     /** Native, internal and token transfers from `sinceBlock`, oldest first. Needs the Blockscout key. */
@@ -219,6 +323,8 @@ export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: 
           counterparty: outgoing ? (t.to ?? null) : t.from,
         });
       });
+      const tangem = await tangemModule(net, address, fetchFn);
+      if (tangem) out.push(...tangemLegs(net, tangem, out));
       return out.sort(
         (a, b) => a.block - b.block || a.hash.localeCompare(b.hash) || a.part.localeCompare(b.part),
       );

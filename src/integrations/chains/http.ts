@@ -1,7 +1,7 @@
 import { IntegrationError, type Fetch } from '../errors';
 import { reportExternalRequest, type ExternalRequest } from '../observe';
 
-type Integration = Extract<ExternalRequest['integration'], 'bitcoin' | 'evm' | 'blockscout'>;
+type Integration = Extract<ExternalRequest['integration'], 'bitcoin' | 'evm' | 'tron' | 'blockscout'>;
 
 /**
  * One JSON request to the first endpoint that answers; the next is tried on a network error, a

@@ -100,5 +100,38 @@ test('a wallet by address: preview, add, the first sync brings the balances in',
     .click();
   await expect(table).toContainText('0,0123');
   await page.goto('/payouts');
-  await expect(page.getByTestId('crypto-accruals')).toContainText('Lido, stETH');
+  await expect(page.getByTestId('crypto-accruals').first()).toContainText('Lido, stETH');
+});
+
+test('a Tron wallet: TRX and USDT with their history, then the history rebuilt', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  test.setTimeout(90_000);
+  await signIn(page);
+  await page.goto('/sources/wallets/new');
+  await page.getByLabel('Tron').check();
+  await page.getByLabel('Публичный адрес').fill('THkQfRopincF6emzbk6VMC7jTHqJ8MP8g8');
+  await expect(page.getByText('Это не адрес Tron')).toBeVisible();
+  await page.getByLabel('Публичный адрес').fill('THkQfRopincF6emzbk6VMC7jTHqJ8MP8g7');
+  const preview = page.getByTestId('wallet-preview');
+  await expect(preview).toContainText('85,5');
+  await expect(preview).toContainText('266,75');
+  await expect(preview).toContainText('Сеть Tron');
+  await page.getByLabel('Название').fill('Tangem, Tron');
+  await page.getByRole('button', { name: 'Добавить кошелёк' }).click();
+  await expect(page).toHaveURL(/\/sources$/);
+  const fees = async () => {
+    await page.goto('/operations?period=all&q=TRX');
+    // 13,4 TRX burned on the USDT send: the fee of a token transfer is booked in TRX.
+    await expect(page.getByTestId('journal-table').first()).toContainText('TRX Tron13,4', { timeout: 2000 });
+  };
+  await expect(fees).toPass({ timeout: 45_000 });
+
+  await page.goto('/sources');
+  const card = page.getByTestId('wallets');
+  const row = card.locator('div', { hasText: 'Tangem, Tron' }).last();
+  await row.getByRole('button', { name: 'Пересобрать историю' }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('Ручные операции останутся');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Пересобрать' }).click();
+  await expect(page.getByText('История удалена, загружаем заново').first()).toBeVisible();
+  await expect(fees).toPass({ timeout: 45_000 });
 });
