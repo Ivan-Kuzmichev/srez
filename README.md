@@ -56,7 +56,7 @@ pnpm cli user:reset-password --username admin --remove-passkeys
 
 Нужно: Docker с Compose v2, место на **локальном** диске NAS (не сетевая папка: на SMB и NFS блокировки SQLite ненадёжны) и, для входа по пасскею, доменное имя с HTTPS. Всё остальное — в образе.
 
-Готовый образ собирается в GitHub Actions под `linux/amd64` (Intel/AMD NAS) и `linux/arm64` (ARM NAS): `ghcr.io/ivan-kuzmichev/srez`. Теги: `latest` — последняя сборка `main`, `1.2.3` и `1.2` — релизы.
+Готовый образ собирается в GitHub Actions под `linux/amd64` (Intel/AMD NAS) и `linux/arm64` (ARM NAS): `ghcr.io/ivan-kuzmichev/srez`. Теги: `latest` — последняя сборка `main`; `0.1.0` и `0.1` — версия из `package.json` (её же дают git-теги `v0.1.0`); `sha-…` — конкретный коммит. Чтобы обновления приходили только по вашей команде, укажите в compose версию вместо `latest`: `image: ghcr.io/ivan-kuzmichev/srez:0.1.0`.
 
 ### 1. Каталог и файлы
 

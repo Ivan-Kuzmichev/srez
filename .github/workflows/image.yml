@@ -1,8 +1,8 @@
 name: Image
 
 # Checks, then a multi-arch image (linux/amd64 for x86 NAS, linux/arm64 for ARM NAS).
-# Pushed to GHCR from main (`latest`, `sha-…`) and from version tags v1.2.3 (`1.2.3`, `1.2`);
-# pull requests only build it.
+# Pushed to GHCR from main: `latest`, the version from package.json (`0.1.0` and `0.1`) and `sha-…`;
+# from version tags v1.2.3: `1.2.3` and `1.2`. Pull requests only build it.
 on:
   push:
     branches: [main]
@@ -39,6 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       # Only the final, tiny stage runs emulated; the build itself runs natively.
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -54,12 +56,15 @@ jobs:
           images: ${{ env.IMAGE }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}},value=v${{ steps.version.outputs.version }},enable={{is_default_branch}}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ steps.version.outputs.version }},enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
           labels: |
             org.opencontainers.image.title=Srez
             org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
       - uses: docker/build-push-action@v6
         with:
           context: .
