@@ -14,9 +14,10 @@ export type Executor = BaseSQLiteDatabase<'sync', Database.RunResult, typeof sch
 export function openDb(path: string): Db {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const sqlite = new Database(path);
-  // WAL lets web and worker read while one of them writes; busy_timeout waits out short write locks.
+  // WAL lets web and worker read while one of them writes; busy_timeout waits out write locks, with room
+  // for a slow NAS: the worker keeps its transactions short (snapshots go in windows of days).
   sqlite.pragma('journal_mode = WAL');
-  sqlite.pragma('busy_timeout = 5000');
+  sqlite.pragma('busy_timeout = 15000');
   sqlite.pragma('synchronous = NORMAL');
   sqlite.pragma('foreign_keys = ON');
   // SQLite's lower() is ASCII-only; search over Cyrillic names needs a Unicode one.

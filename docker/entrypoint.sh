@@ -8,6 +8,13 @@ can_write() {
   setpriv --reuid="$1" --regid="$2" --clear-groups sh -c "touch '$DATA_DIR/.write-test' && rm -f '$DATA_DIR/.write-test'" 2>/dev/null
 }
 
+run_as() {
+  uid=$1
+  gid=$2
+  shift 2
+  exec setpriv --reuid="$uid" --regid="$gid" --clear-groups "$0" "$@"
+}
+
 # Started as root (the default). NAS folders come owned by root (created by Docker), by a NAS user,
 # or behind ACLs and NFS root_squash where chown does nothing. Pick the first user that can really
 # write there: PUID/PGID if given, the app user 1001 (after a chown), the folder's owner; root last.
@@ -15,17 +22,17 @@ if [ "$(id -u)" = "0" ] && [ -z "$SREZ_DROPPED" ]; then
   export SREZ_DROPPED=1
   mkdir -p "$DATA_DIR"
   if [ -n "$PUID" ]; then
-    if can_write "$PUID" "${PGID:-$PUID}"; then exec setpriv --reuid="$PUID" --regid="${PGID:-$PUID}" --clear-groups "$0" "$@"; fi
+    if can_write "$PUID" "${PGID:-$PUID}"; then run_as "$PUID" "${PGID:-$PUID}" "$@"; fi
     echo "Srez: PUID=$PUID cannot write to $DATA_DIR, trying other users" >&2
   fi
   # May do nothing (ACLs, NFS root_squash, no CHOWN capability): never fatal, the write test decides.
   if [ "$(stat -c %u "$DATA_DIR")" != "1001" ]; then chown -R 1001:1001 "$DATA_DIR" 2>/dev/null || true; fi
-  if can_write 1001 1001; then exec setpriv --reuid=1001 --regid=1001 --clear-groups "$0" "$@"; fi
+  if can_write 1001 1001; then run_as 1001 1001 "$@"; fi
   OWNER_UID=$(stat -c %u "$DATA_DIR")
   OWNER_GID=$(stat -c %g "$DATA_DIR")
   if [ "$OWNER_UID" != "0" ] && can_write "$OWNER_UID" "$OWNER_GID"; then
     echo "Srez: $DATA_DIR belongs to $OWNER_UID:$OWNER_GID and cannot be given to 1001; running as its owner" >&2
-    exec setpriv --reuid="$OWNER_UID" --regid="$OWNER_GID" --clear-groups "$0" "$@"
+    run_as "$OWNER_UID" "$OWNER_GID" "$@"
   fi
   echo "Srez: no regular user can write to $DATA_DIR (owner $OWNER_UID:$OWNER_GID); running as root." >&2
   echo "Srez: set PUID and PGID in .env to a user that owns the folder to avoid this." >&2

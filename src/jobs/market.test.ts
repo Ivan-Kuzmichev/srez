@@ -2,7 +2,16 @@ import { readFileSync } from 'node:fs';
 import { Writable } from 'node:stream';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { fxRates, instruments, positionSnapshots, prices, pricesLast } from '@/db/schema';
+import {
+  fxRates,
+  instruments,
+  operations,
+  positionSnapshots,
+  prices,
+  pricesLast,
+  snapshotTotals,
+} from '@/db/schema';
+import { rebuildAccountSnapshots } from '@/db/mutations/snapshots';
 import { insertOperation, seedAccount } from '@/db/test-fixtures';
 import { createTestDb } from '@/db/test-db';
 import type { Fetch } from '@/integrations/errors';
@@ -151,6 +160,37 @@ describe('market jobs', () => {
     updateSnapshots(db, now);
     expect(updateSnapshots(db, now)).toBe(0);
     expect(updateSnapshots(db, now, true)).toBe(1);
+  });
+
+  it('a rebuild swaps days in windows: the same rows as from scratch, days outside the journal gone', async () => {
+    const db = setup();
+    await backfillHistory(db, log, fakeFetch, now);
+    updateSnapshots(db, now);
+    const rows = () =>
+      db
+        .select()
+        .from(positionSnapshots)
+        .all()
+        .map((r) => JSON.stringify(r))
+        .sort();
+    const totals = () => db.select().from(snapshotTotals).all().length;
+    const before = rows();
+    const accountId = db.select().from(positionSnapshots).get()!.accountId;
+    const stale = db.select().from(positionSnapshots).get()!;
+    db.insert(positionSnapshots)
+      .values({ ...stale, date: '2020-01-01' })
+      .run();
+    db.insert(positionSnapshots)
+      .values({ ...stale, date: '2027-01-01' })
+      .run();
+    rebuildAccountSnapshots(db, accountId, '2026-10-02', 'Europe/Moscow');
+    expect(rows()).toEqual(before);
+    // The journal now starts a day later: the first day's snapshots and totals go too.
+    const days = totals();
+    db.update(operations).set({ voidedAt: now }).where(eq(operations.instrumentId, 'sber')).run();
+    rebuildAccountSnapshots(db, accountId, '2026-10-02', 'Europe/Moscow');
+    expect(snap(db, '2026-09-29', 'sber')).toBeUndefined();
+    expect(totals()).toBe(days - 1);
   });
 });
 

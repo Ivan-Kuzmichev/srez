@@ -30,6 +30,9 @@ COPY --from=build --chown=srez:srez /app/.next/standalone ./
 # sharp is traced into standalone for the build platform only; images are unoptimized, so drop it.
 RUN rm -rf node_modules/@img node_modules/sharp
 COPY --from=build --chown=srez:srez /app/.next/static ./.next/static
+# Next.js writes its caches next to the server code. The container may run as any user (PUID), so
+# these two are open to all like /tmp; the server code itself stays read-only.
+RUN mkdir -p .next/cache .next/server/route-cache && chmod 1777 .next/cache .next/server/route-cache
 COPY --from=build --chown=srez:srez /app/public ./public
 COPY --from=build --chown=srez:srez /app/dist ./dist
 COPY --from=build --chown=srez:srez /app/drizzle ./drizzle
