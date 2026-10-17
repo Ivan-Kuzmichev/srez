@@ -611,6 +611,15 @@ export const ru = {
     notFound: 'Такой бумаги нет',
     back: 'Назад к портфелю',
   },
+  snapshot: {
+    label: 'Срез на',
+    field: 'Дата среза',
+    banner: (date: string) => `Срез на конец дня ${date}: стоимость по ценам закрытия, курсы ЦБ того дня`,
+    back: 'Вернуться к сегодня',
+    dayChange: (v: string) => `${v} за день`,
+    invested: (v: string) => `Вложено к этому дню ${v}`,
+    empty: 'В этот день в портфеле ещё ничего не было.',
+  },
   payoutsPage: {
     offerAmount: '—',
     allPortfolios: 'Все портфели',

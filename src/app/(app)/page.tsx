@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ValueChart } from '@/components/charts/value-chart';
 import { IconOperations, IconSources, IconWallet } from '@/components/icons';
 import { OverviewControls, PhonePortfolioFilter } from '@/components/overview/controls';
+import { SnapshotBanner, SnapshotDate } from '@/components/portfolio/snapshot-date';
 import { assetLabel } from '@/lib/asset-label';
 import { PageHeader } from '@/components/shell/page-header';
 import { ASSET_CLASS_COLOR, AllocationBar } from '@/components/ui/allocation-bar';
@@ -24,6 +25,7 @@ import {
   formatChange,
   formatCrypto,
   formatDate,
+  formatDateLong,
   formatMoney,
   formatPercent,
   formatQuantity,
@@ -36,7 +38,11 @@ import {
   areaMetrics,
   primaryReturn,
   convertSeries,
+  endOfLocalDay,
+  firstSnapshotDate,
   flowsFor,
+  ledgerUntil,
+  loadValuedCellsAt,
   listPortfolios,
   loadFx,
   loadUserLedger,
@@ -54,6 +60,11 @@ export const metadata: Metadata = { title: ru.pages.overview };
 const Params = z.object({
   portfolio: z.string().max(64).optional().catch(undefined),
   cur: z.enum(['RUB', 'USD', 'EUR', 'BTC']).optional().catch(undefined),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .catch(undefined),
 });
 
 export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
@@ -101,19 +112,26 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   }
 
   const fx = loadFx(db());
-  const cells = loadValuedCells(db(), userId, fx);
+  const liveCells = loadValuedCells(db(), userId, fx);
   const ledger = loadUserLedger(db(), userId);
   const portfolios = listPortfolios(db(), userId);
   const selected = portfolios.find((p) => p.id === params.portfolio) ?? null;
   const scope = selected ? portfolioScope(selected) : everything;
-  const s = summarizeArea(db(), userId, scope, cells, ledger, fx, tz, null);
+  // «Срез на дату» (FR-PRT-7): the figures of a past day; the chart keeps the whole history.
+  const today = localDate(new Date(), tz);
+  const date = params.date && params.date < today ? params.date : null;
+  const end = date ? endOfLocalDay(date, tz) : new Date();
+  const ledgerAt = date ? ledgerUntil(ledger, end) : ledger;
+  const cells = date ? loadValuedCellsAt(db(), userId, date, ledgerAt, fx) : liveCells;
+  const s = summarizeArea(db(), userId, scope, cells, ledgerAt, fx, tz, null, end);
+  const live = date ? summarizeArea(db(), userId, scope, liveCells, ledger, fx, tz, null) : s;
   const flows = flowsFor(ledger, scope, fx, tz);
-  const series = areaSeries(db(), userId, scope, flows, s.value, tz);
+  const series = areaSeries(db(), userId, scope, flows, live.value, tz);
   const metrics = areaMetrics(
     db(),
     userId,
     scope,
-    cells,
+    liveCells,
     ledger,
     fx,
     settings,
@@ -128,13 +146,13 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
   const base = priced(settings.display.baseCurrency) ? settings.display.baseCurrency : 'RUB';
   const cur = params.cur && priced(params.cur) ? params.cur : base;
   const shown = [base, ...settings.display.extraCurrencies.filter((c) => c !== base && priced(c))];
-  const nowRate = rubPer(fx, cur) ?? new Decimal(1);
+  const nowRate = rubPer(fx, cur, date ?? undefined) ?? new Decimal(1);
   const conv = (v: Decimal) => v.div(nowRate);
   const money = (v: Decimal) => formatMoney(Money.of(conv(v), cur));
   const signed = (v: Decimal) => formatChange(Money.of(conv(v), cur));
   const chartPoints = convertSeries(series, fx, cur);
 
-  const payouts = upcomingPayouts(db(), s.cells, localDate(new Date(), tz));
+  const payouts = upcomingPayouts(db(), live.cells, today);
   const hasBroker =
     db()
       .select({ id: sources.id })
@@ -173,6 +191,11 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
         portfolioId={selected?.id ?? null}
       />
 
+      <div className="flex flex-wrap items-center gap-3">
+        <SnapshotDate date={date} today={today} min={firstSnapshotDate(db(), userId)} />
+      </div>
+      {date ? <SnapshotBanner dateText={formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC')} /> : null}
+
       <section
         className="flex flex-wrap gap-8 rounded-card border border-border bg-surface p-4 wide:p-7"
         aria-label={ru.overview.totalAll}
@@ -196,12 +219,14 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
                   s.dayChange.gte(0) ? 'text-gain' : 'text-loss',
                 )}
               >
-                {s.dayChangePct
-                  ? ru.overview.today(
-                      signed(s.dayChange),
-                      formatPercent(s.dayChangePct, { signed: true, digits: 2 }),
-                    )
-                  : ru.overview.todayNoPct(signed(s.dayChange))}
+                {date
+                  ? ru.snapshot.dayChange(signed(s.dayChange))
+                  : s.dayChangePct
+                    ? ru.overview.today(
+                        signed(s.dayChange),
+                        formatPercent(s.dayChangePct, { signed: true, digits: 2 }),
+                      )
+                    : ru.overview.todayNoPct(signed(s.dayChange))}
               </div>
             ) : null}
           </div>
@@ -218,20 +243,22 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
                 {signed(s.profit)}
               </div>
             </div>
-            <div className="flex flex-col gap-1" data-testid="overview-xirr">
-              <div className="text-small text-muted">
-                {metrics.primary === 'twr' ? ru.portfolio.twr : ru.portfolio.xirr}
+            {date ? null : (
+              <div className="flex flex-col gap-1" data-testid="overview-xirr">
+                <div className="text-small text-muted">
+                  {metrics.primary === 'twr' ? ru.portfolio.twr : ru.portfolio.xirr}
+                </div>
+                <div
+                  className={cn(
+                    'num text-body whitespace-nowrap',
+                    xirrAll && (xirrAll.rate.gte(0) ? 'text-gain' : 'text-loss'),
+                  )}
+                  title={xirrAll?.shortPeriod ? ru.portfolio.xirrShort : undefined}
+                >
+                  {xirrAll ? formatPercent(xirrAll.rate.times(100), { signed: true }) : ru.common.none}
+                </div>
               </div>
-              <div
-                className={cn(
-                  'num text-body whitespace-nowrap',
-                  xirrAll && (xirrAll.rate.gte(0) ? 'text-gain' : 'text-loss'),
-                )}
-                title={xirrAll?.shortPeriod ? ru.portfolio.xirrShort : undefined}
-              >
-                {xirrAll ? formatPercent(xirrAll.rate.times(100), { signed: true }) : ru.common.none}
-              </div>
-            </div>
+            )}
           </div>
         </div>
         <div className="min-w-0 flex-[3_1_480px]">
@@ -267,14 +294,25 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
           ) : (
             <div className="flex flex-col">
               {portfolios.map((p) => {
-                const ps = summarizeArea(db(), userId, portfolioScope(p), cells, ledger, fx, tz, null);
-                const px = primaryReturn(
-                  areaMetrics(db(), userId, portfolioScope(p), cells, ledger, fx, settings, p.benchmarkId),
-                );
+                const ps = summarizeArea(db(), userId, portfolioScope(p), cells, ledgerAt, fx, tz, null, end);
+                const px = date
+                  ? null
+                  : primaryReturn(
+                      areaMetrics(
+                        db(),
+                        userId,
+                        portfolioScope(p),
+                        cells,
+                        ledger,
+                        fx,
+                        settings,
+                        p.benchmarkId,
+                      ),
+                    );
                 return (
                   <Link
                     key={p.id}
-                    href={`/portfolios/${p.id}`}
+                    href={date ? `/portfolios/${p.id}?date=${date}` : `/portfolios/${p.id}`}
                     className="flex min-h-[60px] items-center justify-between gap-3 border-b border-border-subtle py-1.5 text-text no-underline last:border-b-0 hover:text-text"
                   >
                     <span className="flex min-w-0 flex-col gap-0.5">
@@ -298,48 +336,50 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
           )}
         </section>
 
-        <section
-          className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6"
-          id="payouts"
-          data-testid="upcoming-payouts"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="m-0 text-card font-semibold">{ru.overview.payouts}</h2>
-            <Link
-              href="/payouts"
-              className="flex min-h-11 items-center text-caption no-underline wide:hidden"
-            >
-              {ru.overview.payoutsAll}
-            </Link>
-          </div>
-          {payouts.length === 0 ? (
-            <div className="text-caption text-muted">
-              {hasBroker ? ru.overview.payoutsNone : ru.overview.payoutsLater}
+        {date ? null : (
+          <section
+            className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6"
+            id="payouts"
+            data-testid="upcoming-payouts"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="m-0 text-card font-semibold">{ru.overview.payouts}</h2>
+              <Link
+                href="/payouts"
+                className="flex min-h-11 items-center text-caption no-underline wide:hidden"
+              >
+                {ru.overview.payoutsAll}
+              </Link>
             </div>
-          ) : (
-            <ul className="m-0 flex flex-1 list-none flex-col p-0">
-              {payouts.map((p) => (
-                <li
-                  key={`${p.instrumentId}|${p.kind}|${p.payDate}`}
-                  className="flex min-h-14 items-center gap-3 border-b border-border-subtle last:border-b-0 wide:min-h-[60px] wide:gap-3.5 wide:py-1.5"
-                >
-                  <span className="num w-[50px] shrink-0 text-small whitespace-nowrap text-muted wide:w-[58px] wide:text-caption">
-                    {formatDate(new Date(`${p.payDate}T12:00:00Z`), 'UTC')}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate font-medium">{p.name}</span>
-                    <span className="text-small text-muted">{ru.overview.payoutKinds[p.kind]}</span>
-                  </span>
-                  <span className="num text-row whitespace-nowrap">
-                    {p.estimate
-                      ? approx(formatMoney(Money.of(p.amount, p.currency)))
-                      : formatMoney(Money.of(p.amount, p.currency))}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            {payouts.length === 0 ? (
+              <div className="text-caption text-muted">
+                {hasBroker ? ru.overview.payoutsNone : ru.overview.payoutsLater}
+              </div>
+            ) : (
+              <ul className="m-0 flex flex-1 list-none flex-col p-0">
+                {payouts.map((p) => (
+                  <li
+                    key={`${p.instrumentId}|${p.kind}|${p.payDate}`}
+                    className="flex min-h-14 items-center gap-3 border-b border-border-subtle last:border-b-0 wide:min-h-[60px] wide:gap-3.5 wide:py-1.5"
+                  >
+                    <span className="num w-[50px] shrink-0 text-small whitespace-nowrap text-muted wide:w-[58px] wide:text-caption">
+                      {formatDate(new Date(`${p.payDate}T12:00:00Z`), 'UTC')}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="truncate font-medium">{p.name}</span>
+                      <span className="text-small text-muted">{ru.overview.payoutKinds[p.kind]}</span>
+                    </span>
+                    <span className="num text-row whitespace-nowrap">
+                      {p.estimate
+                        ? approx(formatMoney(Money.of(p.amount, p.currency)))
+                        : formatMoney(Money.of(p.amount, p.currency))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
       </div>
 
       <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6">

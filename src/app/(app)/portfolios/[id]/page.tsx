@@ -5,6 +5,7 @@ import { ReturnsChart } from '@/components/charts/returns-chart';
 import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
+import { SnapshotBanner, SnapshotDate } from '@/components/portfolio/snapshot-date';
 import { Button } from '@/components/ui/button';
 import { TargetBar } from '@/components/ui/target-bar';
 import { db } from '@/db/client';
@@ -15,6 +16,7 @@ import { cn } from '@/lib/cn';
 import {
   approx,
   formatChange,
+  formatDateLong,
   formatCrypto,
   formatMoney,
   formatPercent,
@@ -26,9 +28,14 @@ import {
   formatTradeAmount,
 } from '@/lib/format';
 import { assetLabel } from '@/lib/asset-label';
+import { localDate } from '@/lib/time';
 import { ru } from '@/lib/i18n/ru';
 import {
   areaMetrics,
+  endOfLocalDay,
+  firstSnapshotDate,
+  ledgerUntil,
+  loadValuedCellsAt,
   listPortfolios,
   loadFx,
   loadUserLedger,
@@ -47,7 +54,7 @@ const rub = (v: Decimal) => formatMoney(Money.of(v, 'RUB'));
 const change = (v: Decimal) => formatChange(Money.of(v, 'RUB'));
 const plainRub = (v: Decimal) => formatPlain(v, 0);
 
-export default async function PortfolioPage({ params }: PageProps<'/portfolios/[id]'>) {
+export default async function PortfolioPage({ params, searchParams }: PageProps<'/portfolios/[id]'>) {
   const session = await requireSession();
   const userId = session.user.id;
   const { id } = await params;
@@ -56,13 +63,24 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
 
   const tz = getSettings(db(), userId).display.timezone;
   const fx = loadFx(db());
-  const cells = loadValuedCells(db(), userId, fx);
   const ledger = loadUserLedger(db(), userId);
   const scope = portfolioScope(portfolio);
-  const s = summarizeArea(db(), userId, scope, cells, ledger, fx, tz, {
+  const targets = {
     values: portfolio.targetsEnabled ? portfolio.targets : new Map(),
     threshold: portfolio.deviationThreshold,
-  });
+  };
+  // «Срез на дату» (FR-PRT-7): a past day from its snapshot, the journal up to its end.
+  const today = localDate(new Date(), tz);
+  const asked = (await searchParams).date;
+  const date = typeof asked === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(asked) && asked < today ? asked : null;
+  const end = date ? endOfLocalDay(date, tz) : new Date();
+  const ledgerAt = date ? ledgerUntil(ledger, end) : ledger;
+  const cells = date
+    ? loadValuedCellsAt(db(), userId, date, ledgerAt, fx)
+    : loadValuedCells(db(), userId, fx);
+  const s = summarizeArea(db(), userId, scope, cells, ledgerAt, fx, tz, targets, end);
+  const firstDay = firstSnapshotDate(db(), userId);
+  const dateText = date ? formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC') : '';
   const split = profitSplit(db(), userId, scope, cells, fx);
   const settings = getSettings(db(), userId);
   const metrics = areaMetrics(db(), userId, scope, cells, ledger, fx, settings, portfolio.benchmarkId);
@@ -118,7 +136,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
         : ru.common.none,
       tone: result ? (result.gt(0) ? 'gain' : result.lt(0) ? 'loss' : 'default') : 'default',
       approx: c.approx,
-      canSetPrice: !c.isCash && (c.kind === 'custom' || c.approx),
+      canSetPrice: !date && !c.isCash && (c.kind === 'custom' || c.approx),
       currency: c.currency,
     };
   });
@@ -157,6 +175,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-caption">
+          <SnapshotDate date={date} today={today} min={firstDay} />
           <span className="text-muted">{ru.portfolio.madeOf}</span>
           {[...rulesChips.map((c) => c.text), ...tagChips.map((t) => ru.portfolio.tagChip(t))].map((text) => (
             <span key={text} className="rounded-pill border border-border bg-surface px-2.5 py-1">
@@ -165,6 +184,8 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
           ))}
         </div>
       </header>
+
+      {date ? <SnapshotBanner dateText={dateText} /> : null}
 
       <div
         className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3 wide:gap-4"
@@ -182,7 +203,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
                 s.dayChange.gte(0) ? 'text-gain' : 'text-loss',
               )}
             >
-              {ru.portfolio.today(change(s.dayChange))}
+              {date ? ru.snapshot.dayChange(change(s.dayChange)) : ru.portfolio.today(change(s.dayChange))}
             </div>
           ) : null}
         </section>
@@ -197,25 +218,29 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
             {change(s.profit)}
           </div>
           <div className="text-small text-muted">
-            {ru.portfolio.profitSplit(formatSigned(split.course), formatSigned(split.payouts))}
+            {date
+              ? ru.snapshot.invested(rub(s.invested))
+              : ru.portfolio.profitSplit(formatSigned(split.course), formatSigned(split.payouts))}
           </div>
         </section>
-        <section
-          className="flex flex-col gap-1.5 rounded-card border border-border bg-surface px-6 py-5"
-          data-testid="portfolio-xirr"
-        >
-          <div className="text-caption text-muted">{primary.label}</div>
-          <div
-            className={cn(
-              'num text-metric-phone font-medium tracking-[-0.01em] whitespace-nowrap wide:text-metric',
-              primary.value && (primary.value.gte(0) ? 'text-gain' : 'text-loss'),
-            )}
+        {date ? null : (
+          <section
+            className="flex flex-col gap-1.5 rounded-card border border-border bg-surface px-6 py-5"
+            data-testid="portfolio-xirr"
           >
-            {primary.value ? formatPercent(primary.value.times(100), { signed: true }) : ru.common.none}
-          </div>
-          <div className="text-small text-muted">{primary.note}</div>
-        </section>
-        {benchName ? (
+            <div className="text-caption text-muted">{primary.label}</div>
+            <div
+              className={cn(
+                'num text-metric-phone font-medium tracking-[-0.01em] whitespace-nowrap wide:text-metric',
+                primary.value && (primary.value.gte(0) ? 'text-gain' : 'text-loss'),
+              )}
+            >
+              {primary.value ? formatPercent(primary.value.times(100), { signed: true }) : ru.common.none}
+            </div>
+            <div className="text-small text-muted">{primary.note}</div>
+          </section>
+        )}
+        {benchName && !date ? (
           <section
             className="flex flex-col gap-1.5 rounded-card border border-border bg-surface px-6 py-5"
             data-testid="portfolio-benchmark"
@@ -257,6 +282,7 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
             name={portfolio.name}
             benchName={benchName}
             label={ru.portfolio.returnsLabel(portfolio.name, benchName ?? '')}
+            selectDate
           />
         </section>
         <section
@@ -284,9 +310,11 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
                   />
                 ))}
               </div>
-              <Button asChild variant="secondary-raised" className="self-start">
-                <Link href={`/portfolios/${id}/rebalance`}>{ru.portfolio.rebalance}</Link>
-              </Button>
+              {date ? null : (
+                <Button asChild variant="secondary-raised" className="self-start">
+                  <Link href={`/portfolios/${id}/rebalance`}>{ru.portfolio.rebalance}</Link>
+                </Button>
+              )}
             </>
           ) : (
             <div className="text-caption text-muted">{ru.portfolio.noTargets}</div>
@@ -294,7 +322,13 @@ export default async function PortfolioPage({ params }: PageProps<'/portfolios/[
         </section>
       </div>
 
-      <PositionsTable items={items} count={items.length} />
+      {date && items.length === 0 ? (
+        <div className="rounded-card border border-border bg-surface px-6 py-5 text-caption text-muted">
+          {ru.snapshot.empty}
+        </div>
+      ) : (
+        <PositionsTable items={items} count={items.length} />
+      )}
     </>
   );
 }

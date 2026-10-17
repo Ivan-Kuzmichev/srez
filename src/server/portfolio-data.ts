@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte, max, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lte, max, min, ne, sql } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { loadPriceSeries } from '@/db/mutations/market';
 import { loadAccountLedger } from '@/db/mutations/positions';
@@ -10,6 +10,7 @@ import {
   portfolioRules,
   portfolios,
   portfolioTargets,
+  positionSnapshots,
   positions,
   snapshotTotals,
   prices,
@@ -21,13 +22,14 @@ import { allocation, type AssetClass, type ClassShare } from '@/domain/allocatio
 import { Decimal } from '@/domain/decimal';
 import { dayChange, externalFlows, type ExternalFlow, type FlowOperation } from '@/domain/flows';
 import type { LedgerContext } from '@/domain/ledger-types';
+import { buildLedger } from '@/domain/positions';
 import { everything, scopeOf, type Scope, type ScopeRule } from '@/domain/scope';
 import { excessPp, priceReturn, twrGrowth, xirr, type Xirr } from '@/domain/returns';
 import { valueOn } from '@/domain/timeline';
 import { benchmarkFor } from './benchmarks';
 import { memoByLedger } from './ledger-cache';
 import { getSettings } from './settings';
-import { addDays, localDate } from '@/lib/time';
+import { addDays, localDate, zonedLocalToUtc } from '@/lib/time';
 
 const ZERO = new Decimal(0);
 const ONE = new Decimal(1);
@@ -133,6 +135,111 @@ function hideWalletDust(db: Db, userId: string, cells: ValuedCell[]): ValuedCell
     if (crypto.hideUnpriced && (c.priceRub === null || c.approx)) return false;
     return c.valueRub.gte(crypto.dustThresholdRub);
   });
+}
+
+/** The end of a local day as an instant: «2026-01-01» in Moscow → 2026-01-01 23:59:59.999 there. */
+export function endOfLocalDay(date: string, timeZone: string): Date {
+  const next = zonedLocalToUtc(`${addDays(date, 1)}T00:00`, timeZone)!;
+  return new Date(next.getTime() - 1);
+}
+
+/** The first day with a snapshot: «Срез на дату» starts there. */
+export function firstSnapshotDate(db: Db, userId: string): string | null {
+  return (
+    db
+      .select({ d: min(snapshotTotals.date) })
+      .from(snapshotTotals)
+      .where(eq(snapshotTotals.userId, userId))
+      .get()?.d ?? null
+  );
+}
+
+/** The ledger as it stood at `end`: later operations left out. */
+export function ledgerUntil(ledger: UserLedger, end: Date): UserLedger {
+  return { flowOps: ledger.flowOps.filter((o) => o.executedAt <= end), ctxByAccount: ledger.ctxByAccount };
+}
+
+/**
+ * «Срез на дату»: every cell at the end of `date`. Quantity, price and value come from that day's
+ * snapshot (the market close, the CBR rate of the day); the average price and the cost from the
+ * journal up to then, converted at the rate of that day.
+ */
+export function loadValuedCellsAt(
+  db: Db,
+  userId: string,
+  date: string,
+  ledgerAt: UserLedger,
+  fx: FxSeries,
+): ValuedCell[] {
+  const rows = db
+    .select({
+      accountId: positionSnapshots.accountId,
+      accountName: finAccounts.name,
+      sourceKind: sources.kind,
+      instrumentId: positionSnapshots.instrumentId,
+      tagId: positionSnapshots.tagId,
+      quantity: positionSnapshots.quantity,
+      valueRub: positionSnapshots.valueRub,
+      snapApprox: positionSnapshots.approx,
+      kind: instruments.kind,
+      assetClass: instruments.assetClass,
+      ticker: instruments.ticker,
+      name: instruments.name,
+      currency: instruments.currency,
+      issuer: instruments.issuer,
+    })
+    .from(positionSnapshots)
+    .innerJoin(finAccounts, eq(finAccounts.id, positionSnapshots.accountId))
+    .innerJoin(sources, eq(sources.id, finAccounts.sourceId))
+    .innerJoin(instruments, eq(instruments.id, positionSnapshots.instrumentId))
+    .where(
+      and(
+        eq(positionSnapshots.userId, userId),
+        eq(positionSnapshots.date, date),
+        ne(positionSnapshots.quantity, '0'),
+      ),
+    )
+    .all();
+  const costs = new Map<string, { costBasis: Decimal; avgPrice: Decimal; currency: string | null }>();
+  for (const accountId of new Set(rows.map((r) => r.accountId))) {
+    const ctx = ledgerAt.ctxByAccount.get(accountId);
+    if (!ctx) continue;
+    const ops = ledgerAt.flowOps.filter((o) => o.accountId === accountId && !o.voided);
+    for (const p of buildLedger(ops, ctx).positions)
+      costs.set(`${accountId}|${p.instrumentId}|${p.tagId ?? ''}`, {
+        costBasis: p.costBasis,
+        avgPrice: p.avgPrice,
+        currency: p.costCurrency,
+      });
+  }
+  const cells = rows.map((r): ValuedCell => {
+    const quantity = new Decimal(r.quantity);
+    const valueRub = new Decimal(r.valueRub);
+    const isCash = r.kind === 'currency';
+    const cost = isCash ? undefined : costs.get(`${r.accountId}|${r.instrumentId}|${r.tagId ?? ''}`);
+    const costRate = cost ? (rubPer(fx, cost.currency ?? r.currency, date) ?? ONE) : ONE;
+    return {
+      accountId: r.accountId,
+      accountName: r.accountName,
+      sourceKind: r.sourceKind,
+      instrumentId: r.instrumentId,
+      tagId: r.tagId,
+      kind: r.kind,
+      assetClass: r.assetClass as AssetClass,
+      ticker: r.ticker,
+      name: r.name,
+      currency: r.currency,
+      issuer: r.issuer,
+      isCash,
+      quantity,
+      priceRub: quantity.isZero() ? null : valueRub.div(quantity),
+      valueRub,
+      avgPriceRub: cost ? cost.avgPrice.times(costRate) : null,
+      costRub: cost ? cost.costBasis.times(costRate) : null,
+      approx: r.snapApprox,
+    };
+  });
+  return hideWalletDust(db, userId, cells);
 }
 
 function valueCells(db: Db, userId: string, fx: FxSeries): ValuedCell[] {

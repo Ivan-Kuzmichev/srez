@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useDateHref } from '@/components/portfolio/snapshot-date';
 import { useMemo, useRef, useState } from 'react';
 import { Segmented } from '@/components/ui/segmented';
 import { formatDate as formatDay, formatPercent } from '@/lib/format';
@@ -38,12 +40,17 @@ export function ReturnsChart({
   name,
   benchName,
   label,
+  selectDate = false,
 }: {
   points: ReturnsPoint[];
   name: string;
   benchName: string | null;
   label: string;
+  /** A click (or Enter on the point chosen with the arrows) opens «Срез на дату» for that day. */
+  selectDate?: boolean;
 }) {
+  const router = useRouter();
+  const dateHref = useDateHref();
   const [period, setPeriod] = useState<Period>('1y');
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -144,7 +151,12 @@ export function ReturnsChart({
             className="block h-[230px] w-full cursor-crosshair touch-none"
             onPointerMove={(e) => pick(e.clientX)}
             onPointerLeave={() => setHover(null)}
+            onClick={() => {
+              if (selectDate && point) router.push(dateHref(point.date), { scroll: false });
+            }}
             onKeyDown={(e) => {
+              if (e.key === 'Enter' && selectDate && point)
+                router.push(dateHref(point.date), { scroll: false });
               if (e.key === 'ArrowLeft') setHover((h) => Math.max(0, (h ?? lines.rows.length) - 1));
               if (e.key === 'ArrowRight') setHover((h) => Math.min(lines.rows.length - 1, (h ?? -1) + 1));
               if (e.key === 'Escape') setHover(null);

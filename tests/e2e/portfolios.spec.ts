@@ -51,6 +51,15 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(all).toContainText('LKOH');
   await expect(all).toContainText('RUB');
 
+  // «Срез на дату»: a day before anything happened, then back to today.
+  await page.getByLabel('Дата среза').fill('2001-01-01');
+  await expect(page.getByTestId('snapshot-banner')).toContainText('Срез на конец дня 1 января 2001');
+  await expect(page).toHaveURL(/date=2001-01-01/);
+  await expect(page.getByText('В этот день в портфеле ещё ничего не было.')).toBeVisible();
+  await page.getByRole('link', { name: 'Вернуться к сегодня' }).click();
+  await expect(page.getByTestId('snapshot-banner')).toHaveCount(0);
+  await expect(page.getByTestId('positions')).toContainText('LKOH');
+
   // Rebalance: a hint without targets; with them, classes, orders from held stocks and a saved plan.
   const whole = page.url();
   await page.goto(`${whole}/rebalance`);
