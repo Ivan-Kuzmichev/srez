@@ -61,6 +61,12 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(page.getByTestId('snapshot-banner')).toHaveCount(0);
   await expect(page.getByTestId('positions')).toContainText('LKOH');
 
+  // «Карта портфеля»: a tile per position, the period switch recolors.
+  const map = page.getByTestId('portfolio-map');
+  await expect(map.getByRole('listitem', { name: /^LKOH/ })).toBeVisible();
+  await map.getByRole('radio', { name: 'Всё' }).click();
+  await expect(map).toContainText('с первой покупки');
+
   // «А если бы»: the same money on a deposit at its own rate.
   const whatIf = page.getByTestId('whatif');
   await whatIf.getByLabel('С чем сравнить').click();

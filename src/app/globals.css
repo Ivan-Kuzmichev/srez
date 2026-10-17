@@ -44,6 +44,15 @@
   --color-class-crypto: #6c82dd;
   --color-class-cash: #4e60b0;
 
+  /* «Карта портфеля»: a price change from a fall (0) through none (3, the track) to a rise (6). */
+  --color-heat-0: #965845;
+  --color-heat-1: #654035;
+  --color-heat-2: #402e2a;
+  --color-heat-3: #22282d;
+  --color-heat-4: #213b35;
+  --color-heat-5: #29584a;
+  --color-heat-6: #357f66;
+
   --font-sans: var(--font-onest), 'Segoe UI', system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace;
 

@@ -641,6 +641,30 @@ export const ru = {
     electrocars: 'Электромобили',
     other: 'Другое',
   } as Record<string, string>,
+  portfolioMap: {
+    title: 'Карта портфеля',
+    period: 'Период для цвета',
+    periods: { '1d': '1Д', '1w': '1Н', '1m': '1М', '6m': '6М', '1y': '1Г', all: 'Всё' } as Record<
+      string,
+      string
+    >,
+    periodsLong: {
+      '1d': 'за день',
+      '1w': 'за неделю',
+      '1m': 'за месяц',
+      '6m': 'за полгода',
+      '1y': 'за год',
+      all: 'с первой покупки',
+    } as Record<string, string>,
+    label: (period: string) =>
+      `Карта портфеля: площадь плитки — доля позиции, цвет — изменение цены ${period}`,
+    legend: (period: string) => `Размер — доля в портфеле, цвет — изменение цены ${period}`,
+    rangeMinus: (pct: number) => `−${pct} %`,
+    rangePlus: (pct: number) => `+${pct} %`,
+    tileTitle: (title: string, subtitle: string | null, change: string, period: string, value: string) =>
+      `${subtitle ? `${title} · ${subtitle}` : title} · ${change} ${period} · ${value}`,
+    noHistory: '—',
+  },
   composition: {
     title: 'Состав',
     view: 'Что показать',

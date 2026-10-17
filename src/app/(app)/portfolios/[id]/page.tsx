@@ -8,7 +8,9 @@ import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
 import { SnapshotBanner, SnapshotPicker } from '@/components/portfolio/snapshot-date';
+import { PortfolioMap, type MapTileView } from '@/components/portfolio/portfolio-map';
 import { TargetsCard, type TargetRow } from '@/components/portfolio/targets-card';
+import { MAP_PERIODS, mapTiles } from '@/server/map-data';
 import { sectorAllocation } from '@/domain/sectors';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/client';
@@ -199,6 +201,33 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
     };
   });
 
+  // «Карта портфеля» (FR-PRT-11): today's positions only, the change is to now.
+  const mapView: MapTileView[] = date
+    ? []
+    : mapTiles(db(), userId, s.cells, fx, tz).map((m) => {
+        const label = assetLabel(m);
+        return {
+          key: m.instrumentId,
+          href: m.isCash ? null : `/assets/${m.instrumentId}?portfolio=${id}`,
+          title: m.isCash ? (m.ticker ?? m.name) : (label.code ?? m.name),
+          subtitle: m.isCash || !label.code ? null : m.name,
+          valueText: rub(m.value),
+          share: m.share.toNumber(),
+          changes: Object.fromEntries(MAP_PERIODS.map((p) => [p, m.changes[p]?.toNumber() ?? null])),
+          changeTexts: Object.fromEntries(
+            MAP_PERIODS.map((p) => {
+              const c = m.changes[p];
+              return [
+                p,
+                c
+                  ? formatPercent(c.toFixed(1), { signed: !c.toDecimalPlaces(1).isZero() })
+                  : ru.portfolioMap.noHistory,
+              ];
+            }),
+          ),
+        };
+      });
+
   const rulesChips = portfolio.rules.map((r) => {
     const a = accounts.get(r.accountId);
     return { key: r.accountId, text: a ? ru.portfolio.accountChip(a.name, a.sourceKind === 'manual') : '' };
@@ -357,6 +386,8 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
           editHref={`/portfolios/${id}/edit`}
         />
       </div>
+
+      {mapView.length > 0 ? <PortfolioMap tiles={mapView} /> : null}
 
       {whatIf ? (
         <section
