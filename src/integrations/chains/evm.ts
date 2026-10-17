@@ -71,27 +71,19 @@ const NativeTx = z.object({
   gasPrice: z.string().optional(),
   isError: z.string().optional(),
 });
-// Internal transactions: Blockscout names the hash `transactionHash` and numbers the calls of one
-// transaction `index`; Etherscan keeps `hash` and calls the number `traceId`.
+// Internal transactions: Blockscout names the hash `transactionHash`, Etherscan keeps `hash`.
 const InternalTx = NativeTx.omit({ hash: true })
   .extend({
     hash: z.string().optional(),
     transactionHash: z.string().optional(),
-    index: z.string().optional(),
-    traceId: z.string().optional(),
   })
   .refine((t) => !!(t.hash ?? t.transactionHash), { message: 'No transaction hash' })
-  .transform(({ transactionHash, traceId, index, hash, ...t }) => ({
-    ...t,
-    hash: (hash ?? transactionHash)!,
-    index: index ?? traceId,
-  }));
+  .transform(({ transactionHash, hash, ...t }) => ({ ...t, hash: (hash ?? transactionHash)! }));
 const TokenTx = NativeTx.extend({
   contractAddress: z.string(),
   tokenSymbol: z.string(),
   tokenName: z.string(),
   tokenDecimal: z.string(),
-  logIndex: z.string().optional(),
 });
 const PAGE = 1000;
 const INTERNAL_PENDING = /internal transactions .* not yet been processed/i;
@@ -371,17 +363,23 @@ export function evmProvider(
           counterparty: outgoing ? (t.to ?? null) : t.from,
         });
       }
-      // The part is the call's number inside its transaction, not its place in this answer: a later
-      // sync starts from another block, and the same call must get the same external id.
-      const calls = new Map<string, number>();
+      // A part is numbered inside its transaction, not by its place in this answer: a later sync
+      // starts from another block, and the same transfer must keep its external id. Both explorers
+      // list a transaction's transfers together and in the same order, but only Blockscout gives
+      // a log index, so the count is the one numbering that holds for either.
+      const nth = new Map<string, number>();
+      const counted = (key: string) => {
+        const n = nth.get(key) ?? 0;
+        nth.set(key, n + 1);
+        return n;
+      };
       for (const t of internal) {
-        const n = calls.get(t.hash) ?? 0;
-        calls.set(t.hash, n + 1);
+        const n = counted(`internal:${t.hash}`);
         if (t.isError === '1' || new Decimal(t.value).isZero()) continue;
         const outgoing = t.from.toLowerCase() === me;
         out.push({
           ...base(t),
-          part: `internal:${t.index ?? n}`,
+          part: `internal:${n}`,
           direction: outgoing ? 'out' : 'in',
           asset: coin,
           amount: new Decimal(t.value).div(pow10(18)),
@@ -389,21 +387,23 @@ export function evmProvider(
           counterparty: outgoing ? (t.to ?? null) : t.from,
         });
       }
-      tokens.forEach((t, i) => {
+      for (const t of tokens) {
+        const contract = t.contractAddress.toLowerCase();
+        const n = counted(`token:${t.hash}:${contract}`);
         const decimals = Number(t.tokenDecimal) || 0;
         const amount = new Decimal(t.value).div(pow10(decimals));
-        if (amount.isZero()) return;
+        if (amount.isZero()) continue;
         const outgoing = t.from.toLowerCase() === me;
         out.push({
           ...base(t),
-          part: `token:${t.contractAddress.toLowerCase()}:${t.logIndex ?? i}`,
+          part: `token:${contract}:${n}`,
           direction: outgoing ? 'out' : 'in',
           asset: { contract: t.contractAddress, symbol: t.tokenSymbol, name: t.tokenName, decimals },
           amount,
           fee: new Decimal(0),
           counterparty: outgoing ? (t.to ?? null) : t.from,
         });
-      });
+      }
       const tangem = await tangemModule(net, address, fetchFn);
       if (tangem) out.push(...tangemLegs(net, tangem, out));
       return out.sort(

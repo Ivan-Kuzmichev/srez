@@ -89,8 +89,8 @@ describe('evm', () => {
   });
 
   it('internal transactions: the shape Blockscout gives, a stable id, and a list it has not finished indexing', async () => {
-    // As Blockscout answers: `transactionHash`, the call's `index` inside its transaction.
-    const call = (index: string, value: string) => ({
+    // As Blockscout answers: the hash in `transactionHash`.
+    const call = (tx: string, index: string, value: string) => ({
       blockNumber: '19750000',
       callType: 'call',
       contractAddress: '',
@@ -103,7 +103,7 @@ describe('evm', () => {
       isError: '0',
       timeStamp: String(Date.parse('2024-04-25T09:00:00Z') / 1000),
       to: MOCK_EVM_ADDRESS.toLowerCase(),
-      transactionHash: '0x' + 'cd'.repeat(32),
+      transactionHash: '0x' + tx.repeat(32),
       type: 'call',
       value,
     });
@@ -120,18 +120,18 @@ describe('evm', () => {
         )
       ).filter((t) => t.part.startsWith('internal'));
 
-    const both = await internal(answer('1', 'OK', [call('0', '0'), call('1', '300000000000000000')]));
-    expect(both.map((t) => [t.hash.slice(0, 6), t.part, t.direction, t.amount.toFixed()])).toEqual([
+    const tx = [call('cd', '0', '0'), call('cd', '1', '300000000000000000')];
+    const all = await internal(answer('1', 'OK', [call('ab', '0', '100000000000000000'), ...tx]));
+    expect(all.map((t) => [t.hash.slice(0, 6), t.part, t.direction, t.amount.toFixed()])).toEqual([
+      ['0xabab', 'internal:0', 'in', '0.1'],
       ['0xcdcd', 'internal:1', 'in', '0.3'],
     ]);
     // Later, from another block: the same call keeps its id.
-    expect((await internal(answer('1', 'OK', [call('1', '300000000000000000')])))[0]!.part).toBe(
-      'internal:1',
-    );
+    expect((await internal(answer('1', 'OK', tx)))[0]!.part).toBe('internal:1');
     // «Not yet processed»: what Blockscout has is taken, or nothing, and the sync goes on.
     const pending = 'Some internal transactions within this block range have not yet been processed';
     expect(await internal(answer('0', pending, null))).toEqual([]);
-    expect(await internal(answer('0', pending, [call('1', '300000000000000000')]))).toHaveLength(1);
+    expect(await internal(answer('0', pending, tx))).toHaveLength(1);
   });
 
   it('Etherscan: the same history with its key, before Blockscout where its free plan reaches', async () => {
@@ -150,7 +150,15 @@ describe('evm', () => {
       ['in', 'wstETH', '1.5'],
       ['in', 'Visit claim-rewards.example', '1000'],
     ]);
-    const used = mock.calls.slice(before).filter((c) => !c.includes('/rpc/'));
+    // Etherscan gives no log index: a token transfer is numbered inside its transaction, so a later
+    // sync from another block finds the same ids.
+    const later = await evmProvider(both).getTransfers(MOCK_EVM_ADDRESS, 'ethereum', 19_850_000);
+    const ids = (list: typeof t) => list.map((x) => `${x.hash}:${x.part}`);
+    expect(ids(t)).toEqual(expect.arrayContaining(ids(later)));
+    expect(later.length).toBeGreaterThan(0);
+    const used = mock.calls
+      .slice(before)
+      .filter((c) => !c.includes('/rpc/') && !c.includes('startblock=19850000'));
     expect(used).toHaveLength(3);
     expect(used.every((c) => c.includes('/etherscan/v2/api?chainid=1&'))).toBe(true);
     // A refused key reads as HTTP 401, like Blockscout's, though Etherscan says it with status 0.
