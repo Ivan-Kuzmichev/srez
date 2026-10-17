@@ -79,6 +79,7 @@ const TokenTx = NativeTx.extend({
   logIndex: z.string().optional(),
 });
 const PAGE = 1000;
+const INTERNAL_PENDING = /internal transactions .* not yet been processed/i;
 const MAX_PAGES = 10;
 
 async function blockscoutList<T>(
@@ -104,6 +105,11 @@ async function blockscoutList<T>(
         timeoutMs: 20_000,
         parse: (body) => {
           const env = Envelope.parse(body);
+          // Blockscout indexes internal transactions behind the chain and says so with status 0;
+          // what it has is still good. An internal receipt it has not reached yet cannot hide value:
+          // the balance check books the difference.
+          if (action === 'txlistinternal' && INTERNAL_PENDING.test(env.message))
+            return z.array(schema).parse(Array.isArray(env.result) ? env.result : []);
           // «No transactions found» comes as status 0 with an empty list.
           if (env.status !== '1' && !(Array.isArray(env.result) && env.result.length === 0))
             throw new IntegrationError('blockscout', 'BAD_RESPONSE', env.message);

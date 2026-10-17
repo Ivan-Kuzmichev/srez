@@ -87,6 +87,24 @@ describe('evm', () => {
     expect(await p.getTransfers(MOCK_EVM_ADDRESS, 'bnb')).toEqual([]);
   });
 
+  it('internal transactions Blockscout has not indexed yet: what it has is taken, the sync goes on', async () => {
+    const fetchFn = async (url: string, init?: RequestInit) =>
+      url.includes('action=txlistinternal')
+        ? new Response(
+            JSON.stringify({
+              status: '0',
+              message: 'Some internal transactions within this block range have not yet been processed',
+              result: null,
+            }),
+          )
+        : fetch(url, init);
+    const t = await evmProvider({ blockscoutKey: MOCK_BLOCKSCOUT_KEY, fetchFn }).getTransfers(
+      MOCK_EVM_ADDRESS,
+      'ethereum',
+    );
+    expect(t.map((x) => x.asset.symbol)).toContain('stETH');
+  });
+
   it('falls back to the next endpoint when one fails', async () => {
     mock.failNext('/rpc/ethereum', 503);
     vi.stubEnv('CHAIN_MOCK_URL', mock.url);
