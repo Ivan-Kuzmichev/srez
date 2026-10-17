@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { Db, Executor } from '@/db/client';
 import { loadPriceSeries, upsertPrices } from '@/db/mutations/market';
 import { recalcAccount } from '@/db/mutations/positions';
-import { finAccounts, operations, positions, sources, syncRuns, SYNC_TRIGGERS } from '@/db/schema';
+import { finAccounts, instruments, operations, positions, sources, syncRuns, SYNC_TRIGGERS } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
 import { network } from '@/integrations/chains/networks';
 import { chainProvider } from '@/integrations/chains/provider';
@@ -213,11 +213,20 @@ async function squareBalances(
       .all()
       .map((p) => [p.instrumentId, new Decimal(p.quantity)] as const),
   );
-  // Coins the journal holds but the chain no longer shows count as balance zero.
+  // Coins the journal holds but the chain no longer shows count as balance zero. They leave at the
+  // day's close: a zero price would book the coin's whole value as a loss instead of a withdrawal.
   const chainIds = await chainInstrumentIds(db, account.id);
-  for (const id of chainIds)
-    if (!wanted.has(id) && held.get(id)?.gt(0))
-      wanted.set(id, { amount: new Decimal(0), coingeckoId: '', rebasing: false, network: '' });
+  const gone = chainIds.filter((id) => !wanted.has(id) && held.get(id)?.gt(0));
+  const coinIds = new Map(
+    db
+      .select({ id: instruments.id, meta: instruments.meta })
+      .from(instruments)
+      .where(inArray(instruments.id, gone.length ? gone : ['']))
+      .all()
+      .map((i) => [i.id, (i.meta as { coingeckoId?: string } | null)?.coingeckoId ?? ''] as const),
+  );
+  for (const id of gone)
+    wanted.set(id, { amount: new Decimal(0), coingeckoId: coinIds.get(id) ?? '', rebasing: false, network: '' });
 
   let added = 0;
   const day = now.toISOString().slice(0, 10);

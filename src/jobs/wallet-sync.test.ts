@@ -206,6 +206,26 @@ describe('wallet sync', () => {
     expect(await syncWallet(db, sourceId, 'schedule', { fetchFn, now })).toEqual({ newOperations: 0 });
   });
 
+  it('a coin gone from the chain leaves at the day\'s close, not at zero', async () => {
+    const { db, sourceId, accountId, held } = wallet('tron', 'balances');
+    await syncWallet(db, sourceId, 'manual', { fetchFn, now });
+    const account = mock.state.tron[MOCK_TRON_ADDRESS].account;
+    const trc20 = account.trc20;
+    account.trc20 = [];
+    try {
+      await syncWallet(db, sourceId, 'schedule', { fetchFn, now: new Date(now.getTime() + 60_000) });
+    } finally {
+      account.trc20 = trc20;
+    }
+    expect(held()).toEqual({ TRX: '85.5' });
+    const out = db
+      .select({ quantity: operations.quantity, price: operations.price })
+      .from(operations)
+      .where(and(eq(operations.accountId, accountId), eq(operations.type, 'transfer_out')))
+      .all();
+    expect(out).toEqual([{ quantity: '266.75', price: '2000' }]);
+  });
+
   it('rebuilding a wallet drops what the chain gave, keeps manual entries, and the next sync brings it back', async () => {
     const { db, sourceId, accountId, held } = wallet('tron', 'history');
     await syncWallet(db, sourceId, 'manual', { fetchFn, now });
