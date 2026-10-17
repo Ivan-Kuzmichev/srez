@@ -33,7 +33,7 @@ afterAll(() => mock.close());
 beforeEach(() => mock.clearFailures());
 
 async function setup(
-  scopes: ('read:data' | 'read:logs' | 'run:sync')[] = ['read:data', 'read:logs', 'run:sync'],
+  scopes: ('read:data' | 'read:logs' | 'run:sync' | 'write:data')[] = ['read:data', 'read:logs', 'run:sync'],
   localOnly = true,
 ) {
   const db = createTestDb();
@@ -181,6 +181,32 @@ describe('/api/v1 data', () => {
       const res = await s.call('GET', `${path}${path === '/positions' ? `?accountId=${a1}` : ''}`);
       for (const secret of secrets) expect(res.text, `${e.path} leaks ${secret}`).not.toContain(secret);
     }
+  });
+
+  it('write:data fixes a discrepancy as the screen does: several splits, checked like the form', async () => {
+    const readOnly = await setup(['read:data']);
+    const id = (await readOnly.call('GET', '/reconciliation')).json.discrepancies.find(
+      (d: { ticker: string }) => d.ticker === 'LKOH',
+    ).id;
+    const split = { fix: 'split', date: '2026-10-08' };
+    expect((await readOnly.call('POST', `/reconciliation/${id}/fix`, { body: split })).status).toBe(403);
+
+    const s = await setup(['read:data', 'write:data']);
+    const fix = (body: unknown) => s.call('POST', `/reconciliation/${id}/fix`, { body });
+    const step = (from: string, to: string) => ({ date: '2026-10-08', from, to });
+    // 1 in the journal, 10 at the broker: 1 → 2 alone falls short, a zero is no ratio.
+    expect((await fix({ ...split, splits: [step('1', '2')] })).json).toEqual({
+      error: { code: 'SPLIT_TOTAL', message: "The splits give 2, not the broker's figure" },
+    });
+    expect((await fix({ ...split, splits: [step('0', '2')] })).json.error.code).toBe('SPLIT_RATIO');
+    const ok = await fix({ ...split, splits: [step('1', '2'), step('1', '5')] });
+    expect(ok.status).toBe(200);
+    expect(ok.json.operationId).toEqual(expect.any(String));
+    expect(
+      (await s.call('GET', '/reconciliation')).json.discrepancies.map((d: { ticker: string }) => d.ticker),
+    ).not.toContain('LKOH');
+    expect((await fix({ ...split, splits: [step('1', '10')] })).status).toBe(409);
+    expect((await s.call('POST', '/reconciliation/999999/fix', { body: split })).status).toBe(404);
   });
 
   it('describes every method in OpenAPI without a token', async () => {

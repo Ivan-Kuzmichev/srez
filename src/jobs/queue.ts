@@ -1,5 +1,5 @@
 import { Cron } from 'croner';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { Executor } from '@/db/client';
 import { jobSchedules, jobs } from '@/db/schema';
 
@@ -89,7 +89,11 @@ export function retryDelayMs(attempt: number): number {
   return Math.min(attempt * attempt * 10_000, 3_600_000);
 }
 
-/** Returns true when the job will be retried. `retryable: false` ends it at once (a revoked token). */
+/**
+ * Returns true when the job will be retried. `retryable: false` ends it at once (a revoked token).
+ * A job whose twin was queued while it ran (same singleton key) is not retried: the twin does the work,
+ * and putting both in the queue would break the one-waiting-job rule.
+ */
 export function failJob(
   database: Executor,
   job: Job,
@@ -97,7 +101,14 @@ export function failJob(
   now = new Date(),
   retryable = true,
 ): boolean {
-  const retry = retryable && job.attempt < job.maxAttempts;
+  const twin =
+    job.singletonKey !== null &&
+    database
+      .select({ id: jobs.id })
+      .from(jobs)
+      .where(and(eq(jobs.singletonKey, job.singletonKey), eq(jobs.status, 'queued'), ne(jobs.id, job.id)))
+      .get() !== undefined;
+  const retry = retryable && !twin && job.attempt < job.maxAttempts;
   database
     .update(jobs)
     .set(

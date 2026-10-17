@@ -14,8 +14,8 @@ import {
 } from '../api-tokens';
 import { logger } from '../logger';
 
-// write:data is reserved (docs/06-api.md, section 2): the screen shows it, but it cannot be granted yet.
-const Scopes = z.array(z.enum(['read:data', 'read:logs', 'run:sync'])).max(3);
+// write:data opens the API's changes: fixing reconciliation discrepancies (docs/06-api.md, section 4).
+const Scopes = z.array(z.enum(['read:data', 'read:logs', 'run:sync', 'write:data'])).max(4);
 const Ttl = z.enum(Object.keys(TOKEN_TTLS) as [TokenTtl, ...TokenTtl[]]);
 const Name = z.string().trim().min(1).max(60);
 

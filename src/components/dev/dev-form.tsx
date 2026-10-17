@@ -16,8 +16,8 @@ import { issueApiToken, reissueApiToken, revokeApiToken } from '@/server/actions
 import { saveDevSettings } from '@/server/actions/dev-settings';
 
 export const DEV_FORM_ID = 'dev-settings';
-type Scope = 'read:data' | 'read:logs' | 'run:sync';
-const SCOPES: Scope[] = ['read:data', 'read:logs', 'run:sync'];
+type Scope = 'read:data' | 'read:logs' | 'run:sync' | 'write:data';
+const SCOPES: Scope[] = ['read:data', 'read:logs', 'run:sync', 'write:data'];
 
 export interface DevFormView {
   apiUrl: string;
@@ -227,7 +227,6 @@ export function DevForm({ view }: { view: DevFormView }) {
               label={ru.dev.scopes[s]!}
             />
           ))}
-          <Check checked={false} disabled label={ru.dev.scopes['write:data']!} hint={ru.dev.writeReserved} />
         </fieldset>
         <div className="flex flex-col border-t border-border pt-2 text-row">
           <Row label={ru.dev.apiUrl} value={view.apiUrl} />

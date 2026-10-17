@@ -69,6 +69,16 @@ describe('failure', () => {
     expect(row.status).toBe('failed');
     expect(row.lastError).toBe('boom again');
   });
+
+  it('a failed job whose twin was queued while it ran leaves the work to the twin', () => {
+    enqueue(database, 'a', null, { singletonKey: 'k' }, t0);
+    const running = claimNext(database, 'w', ['a'], 60_000, t0)!;
+    const twin = enqueue(database, 'a', null, { singletonKey: 'k' }, t0)!;
+    // Retrying would put two waiting jobs under one key: the unique index refused it and broke the loop.
+    expect(failJob(database, running, 'database is locked', t0)).toBe(false);
+    expect(database.select().from(jobs).where(eq(jobs.id, running.id)).get()!.status).toBe('failed');
+    expect(database.select().from(jobs).where(eq(jobs.id, twin)).get()!.status).toBe('queued');
+  });
 });
 
 describe('schedules', () => {

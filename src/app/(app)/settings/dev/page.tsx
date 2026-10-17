@@ -48,9 +48,7 @@ export default async function DevSettingsPage() {
                 ? `${activity(token.lastUsedAt, tz, now)}, ${token.lastUsedPath?.replace('/api/v1', '') ?? ''}`
                 : ru.dev.never,
               name: token.name,
-              scopes: token.scopes.filter(
-                (s): s is 'read:data' | 'read:logs' | 'run:sync' => s !== 'write:data',
-              ),
+              scopes: token.scopes,
               localOnly: token.localOnly,
             },
             debug: {

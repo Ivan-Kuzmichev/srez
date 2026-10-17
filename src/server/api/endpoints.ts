@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, lt, lte, or, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { listLogs } from '@/db/queries/logs';
+import { applyFix, ReconcileError } from '@/db/mutations/reconcile';
 import {
   discrepancies,
   finAccounts,
@@ -21,6 +22,7 @@ import { enqueue } from '@/jobs/queue';
 import { RECALC_JOB } from '@/jobs/positions';
 import { enqueueSync, SYNC_JOB } from '@/jobs/tinvest-sync';
 import { serviceHealth } from '../health';
+import { FixRequest, fixInput } from '../reconcile-fix';
 import { buildReport } from '../report';
 import { getSettings } from '../settings';
 import {
@@ -390,6 +392,48 @@ export const endpoints: Endpoint<any, any>[] = [
           .orderBy(asc(discrepancies.detectedAt))
           .all(),
       };
+    },
+  }),
+
+  // Changes, write:data.
+  endpoint({
+    method: 'POST',
+    path: '/reconciliation/{id}/fix',
+    scope: 'write:data',
+    summary:
+      'Fix a discrepancy as the screen does: a split (several, each with its date and from → to), a transfer, a trade, cash, a redemption, or exclude the security',
+    body: FixRequest,
+    handler(ctx) {
+      const id = Number(ctx.params.id);
+      if (!Number.isInteger(id) || id <= 0) throw notFound('Discrepancy');
+      const input = fixInput(ctx.body, getSettings(ctx.db, ctx.userId).display.timezone);
+      if ('code' in input)
+        throw new ApiError(
+          400,
+          input.code,
+          input.code === 'SPLIT_RATIO'
+            ? `Split ${input.index + 1}: «from» and «to» must be positive and differ`
+            : input.code === 'PRICE'
+              ? 'The price must be a positive number'
+              : 'Bad date',
+        );
+      try {
+        const operationId = applyFix(ctx.db, ctx.userId, id, input);
+        return { ok: true, operationId };
+      } catch (err) {
+        if (!(err instanceof ReconcileError)) throw err;
+        const message: Record<ReconcileError['code'], string> = {
+          NOT_FOUND: 'Discrepancy not found',
+          NOT_OPEN: 'The discrepancy is not open',
+          PRICE: 'This fix needs a price',
+          FIX: 'This fix does not fit the discrepancy',
+          NO_FIX: 'Nothing to undo',
+          SPLIT_DATE: `Split ${Number(err.detail ?? 0) + 1}: nothing is held on its date`,
+          SPLIT_TOTAL: `The splits give ${err.detail}, not the broker's figure`,
+        };
+        const status = err.code === 'NOT_FOUND' ? 404 : err.code === 'NOT_OPEN' ? 409 : 400;
+        throw new ApiError(status, err.code, message[err.code]);
+      }
     },
   }),
 
