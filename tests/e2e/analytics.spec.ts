@@ -126,6 +126,18 @@ test('a Tron wallet: TRX and USDT with their history, then the history rebuilt',
   };
   await expect(fees).toPass({ timeout: 45_000 });
 
+  // A coin from the chain was valued at that day's close; the owner sets what it really cost.
+  await page.goto('/operations?period=all&q=USDT');
+  const arrival = page.getByTestId('journal-table').first().getByRole('row').filter({ hasText: '300' });
+  await arrival.getByRole('button', { name: 'Действия с операцией' }).click();
+  await page.getByRole('menuitem', { name: 'Изменить' }).click();
+  await expect(page.getByText('Перевод пришёл из сети').first()).toBeVisible();
+  await expect(page.getByLabel('Количество')).toBeDisabled();
+  await page.getByLabel('Цена покупки за штуку').fill('0,95');
+  await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(page.getByText('Операция сохранена').first()).toBeVisible();
+  await expect(page).toHaveURL(/\/operations$/);
+
   // A wallet account is labelled as a wallet, not as the broker.
   await page.goto('/portfolios');
   await expect(page.getByRole('row', { name: /Tangem, Tron/ })).toContainText('Кошелёк, авто');
@@ -152,5 +164,6 @@ test('a Tron wallet: TRX and USDT with their history, then the history rebuilt',
   await expect(page.getByRole('alertdialog')).toContainText('Удалить кошелёк «Tron, Tangem»?');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Удалить' }).click();
   await expect(page.getByText('Кошелёк удалён').first()).toBeVisible();
-  await expect(page.getByTestId('wallets')).not.toContainText('Tron, Tangem');
+  // With no other wallet left the card goes too.
+  await expect(page.getByText('Tron, Tangem')).toHaveCount(0);
 });

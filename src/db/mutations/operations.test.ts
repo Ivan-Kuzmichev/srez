@@ -111,6 +111,32 @@ describe('operations', () => {
     });
   });
 
+  it('a coin that arrived from the chain can take its real price; other imported rows cannot', () => {
+    const db = setup();
+    const arrival = insertOperation(db, {
+      type: 'transfer_in',
+      instrumentId: 'sber',
+      quantity: '0.13',
+      price: '2433.69',
+      origin: 'chain',
+      externalId: 'balance:1',
+    });
+    updateOperation(db, 'u1', arrival, { tagId: null, note: null, price: '1560' });
+    expect(db.select().from(operations).where(eq(operations.id, arrival)).get()).toMatchObject({
+      price: '1560',
+      quantity: '0.13',
+    });
+    const trade = insertOperation(db, {
+      type: 'buy',
+      instrumentId: 'sber',
+      quantity: '1',
+      price: '1',
+      origin: 'tinvest',
+      externalId: 'y',
+    });
+    expect(() => updateOperation(db, 'u1', trade, { tagId: null, note: null, price: '2' })).toThrow(/IMPORTED/);
+  });
+
   it('delete removes a manual operation and queues a recalc', () => {
     const db = setup();
     const id = createOperation(db, 'u1', parsed());

@@ -99,7 +99,7 @@ export function updateOperation(
   db: Db,
   userId: string,
   id: string,
-  input: ParsedOperation | { tagId: string | null; note: string | null },
+  input: ParsedOperation | { tagId: string | null; note: string | null; price?: string },
 ): void {
   db.transaction(() => {
     const existing = getOwnOperation(db, userId, id);
@@ -112,11 +112,22 @@ export function updateOperation(
       enqueueRecalc(db, existing.accountId);
       if (input.accountId !== existing.accountId) enqueueRecalc(db, input.accountId);
     } else {
+      // A coin that arrived from the chain was valued at that day's close; the owner may know what it
+      // really cost (bought on an exchange, then sent to the wallet). Sync never rewrites the row.
+      if (input.price !== undefined && !arrivalPriceEditable(existing)) throw new OperationError('IMPORTED');
       checkRefs(db, userId, { instrumentId: null, tagId: input.tagId });
-      db.update(operations).set({ tagId: input.tagId, note: input.note }).where(eq(operations.id, id)).run();
+      db.update(operations)
+        .set({ tagId: input.tagId, note: input.note, ...(input.price !== undefined ? { price: input.price } : {}) })
+        .where(eq(operations.id, id))
+        .run();
       enqueueRecalc(db, existing.accountId);
     }
   });
+}
+
+/** An incoming chain transfer: the one imported operation whose price the owner may set. */
+export function arrivalPriceEditable(op: { origin: string; type: string }): boolean {
+  return op.origin === 'chain' && op.type === 'transfer_in';
 }
 
 /** Only manual operations can be deleted; imported ones would come back with the next sync anyway. */

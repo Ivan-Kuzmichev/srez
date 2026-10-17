@@ -108,6 +108,7 @@ export function OperationForm({
   accounts,
   tags,
   imported,
+  arrival,
 }: {
   operationId?: string;
   initial: OperationFormValues;
@@ -116,6 +117,8 @@ export function OperationForm({
   tags: TagOption[];
   /** Loaded from a source: only the tag and the note can change. */
   imported?: boolean;
+  /** A coin that arrived from the chain: its price can change too. */
+  arrival?: boolean;
 }) {
   const router = useRouter();
   const notify = useToast();
@@ -161,7 +164,12 @@ export function OperationForm({
     setBusy(true);
     setRefusal(null);
     const result = imported
-      ? await saveTagAndNote(null, { id: operationId!, tagId: tagValue(), note: values.note })
+      ? await saveTagAndNote(null, {
+          id: operationId!,
+          tagId: tagValue(),
+          note: values.note,
+          ...(arrival ? { price: values.price } : {}),
+        })
       : await saveOperation(null, payload());
     setBusy(false);
     if (!result.ok) {
@@ -200,15 +208,19 @@ export function OperationForm({
   const currencyOptions = CURRENCIES.map((c) => ({ value: c, label: ru.currencies[c]! }));
   const subtypes = ru.operation.subtypes[values.kind];
 
-  const textField = (name: 'quantity' | 'price' | 'fee' | 'total' | 'tax', label: string, mono = true) => (
+  const textField = (
+    name: 'quantity' | 'price' | 'fee' | 'total' | 'tax',
+    label: string,
+    locked = imported,
+  ) => (
     <Field label={label} error={fieldError(name)}>
       {(f) => (
         <Input
           id={f.id}
           name={name}
           inputMode="decimal"
-          mono={mono}
-          disabled={imported}
+          mono
+          disabled={locked}
           value={values[name]}
           onChange={(e) => set(name, e.target.value)}
           invalid={f.invalid}
@@ -224,9 +236,11 @@ export function OperationForm({
     <div className="flex flex-wrap items-start gap-4 pb-28 wide:pb-0">
       <section className="flex min-w-0 flex-[3_1_480px] flex-col gap-4 wide:gap-5 wide:rounded-card wide:border wide:border-border wide:bg-surface wide:p-7">
         {refusal ? <Alert>{refusal}</Alert> : null}
-        {imported ? <Alert tone="warn">{ru.operation.importedNote}</Alert> : null}
+        {imported ? (
+          <Alert tone="warn">{arrival ? ru.operation.arrivalNote : ru.operation.importedNote}</Alert>
+        ) : null}
 
-        <div className="hidden wide:block">
+        <div className={cn('hidden', !arrival && 'wide:block')}>
           <ChoiceGroup legend={ru.operation.kindLabel}>
             <div className="flex flex-wrap gap-x-[22px] gap-y-1">
               {KINDS.map((k) => (
@@ -244,7 +258,7 @@ export function OperationForm({
             </div>
           </ChoiceGroup>
         </div>
-        <div className="wide:hidden">
+        <div className={cn('wide:hidden', arrival && 'hidden')}>
           <Field label={ru.operation.kindLabel}>
             {(f) => (
               <Select
@@ -353,7 +367,9 @@ export function OperationForm({
           {isTrade ? (
             <>
               {textField('quantity', ru.operation.quantity)}
-              {textField('price', ru.operation.price)}
+              {arrival
+                ? textField('price', ru.operation.arrivalPrice, false)
+                : textField('price', ru.operation.price)}
             </>
           ) : (
             <>

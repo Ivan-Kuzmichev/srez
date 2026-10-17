@@ -11,7 +11,8 @@ import {
   updateOperation,
   setPositionTag as retagPosition,
 } from '@/db/mutations/operations';
-import { toDbDecimal } from '@/domain/decimal';
+import { Decimal, toDbDecimal } from '@/domain/decimal';
+import { parseDecimalInput } from '@/lib/parse';
 import { authedAction, type ActionResult } from '../action';
 import { OperationFormSchema, parseOperationForm } from '../operation-form';
 import { getSettings } from '../settings';
@@ -44,7 +45,7 @@ export const saveOperation = authedAction(SaveInput, async (input, session) => {
   }
 });
 
-/** Imported operations: only the tag and the note can change. */
+/** Imported operations: the tag and the note; a coin that arrived from the chain, also its price. */
 export const saveTagAndNote = authedAction(
   z.object({
     id: z.string().max(64),
@@ -53,10 +54,23 @@ export const saveTagAndNote = authedAction(
       (v) => (typeof v === 'string' && v.trim() ? v.trim() : null),
       z.string().max(500).nullable(),
     ),
+    /** Only for a coin that arrived from the chain: what it really cost, per unit. */
+    price: z.string().max(40).optional(),
   }),
-  async ({ id, tagId, note }, session) => {
+  async ({ id, tagId, note, price }, session) => {
+    let arrival: string | undefined;
+    if (price !== undefined) {
+      const parsed = parseDecimalInput(price);
+      if (parsed === null || !new Decimal(parsed).gt(0))
+        return {
+          ok: false,
+          code: 'INVALID_INPUT',
+          fieldErrors: { price: [parsed === null ? 'NOT_A_NUMBER' : 'MUST_BE_POSITIVE'] },
+        };
+      arrival = toDbDecimal(new Decimal(parsed));
+    }
     try {
-      updateOperation(db(), session.user.id, id, { tagId, note });
+      updateOperation(db(), session.user.id, id, { tagId, note, price: arrival });
       revalidatePath('/operations');
       return { ok: true, data: null };
     } catch (err) {

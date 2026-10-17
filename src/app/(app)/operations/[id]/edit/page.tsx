@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { OperationForm, type FormKind, type OperationFormValues } from '@/components/ledger/operation-form';
 import { FormHeader } from '@/components/shell/form-header';
 import { db } from '@/db/client';
-import { getOwnOperation } from '@/db/mutations/operations';
+import { arrivalPriceEditable, getOwnOperation } from '@/db/mutations/operations';
 import { Decimal } from '@/domain/decimal';
 import { ru } from '@/lib/i18n/ru';
 import { utcToZonedLocal } from '@/lib/time';
@@ -20,9 +20,12 @@ type Row = NonNullable<ReturnType<typeof getOwnOperation>>;
 function toFormValues(op: Row, timeZone: string): OperationFormValues {
   const decimalText = (v: string) =>
     new Decimal(v).isZero() ? '' : new Decimal(v).toFixed().replace('.', ',');
+  // A coin from the chain is shown like a purchase: quantity and the price it cost.
   const kind: FormKind =
     op.type === 'buy' || op.type === 'sell'
       ? op.type
+      : arrivalPriceEditable(op)
+        ? 'buy'
       : ['dividend', 'coupon', 'interest'].includes(op.type)
         ? 'payout'
         : op.type === 'deposit' || op.type === 'withdrawal'
@@ -73,6 +76,7 @@ export default async function EditOperationPage({ params }: PageProps<'/operatio
         instrument={op.instrumentId ? getInstrument(db(), session.user.id, op.instrumentId) : null}
         initial={toFormValues(op, getSettings(db(), session.user.id).display.timezone)}
         imported={op.origin !== 'manual'}
+        arrival={arrivalPriceEditable(op)}
       />
     </>
   );
