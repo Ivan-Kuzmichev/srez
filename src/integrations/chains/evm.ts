@@ -71,6 +71,10 @@ const NativeTx = z.object({
   gasPrice: z.string().optional(),
   isError: z.string().optional(),
 });
+// Internal transactions name the hash `transactionHash` and number the calls of one transaction.
+const InternalTx = NativeTx.omit({ hash: true })
+  .extend({ transactionHash: z.string(), index: z.string().optional() })
+  .transform(({ transactionHash, ...t }) => ({ ...t, hash: transactionHash }));
 const TokenTx = NativeTx.extend({
   contractAddress: z.string(),
   tokenSymbol: z.string(),
@@ -265,7 +269,7 @@ export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: 
       const me = address.toLowerCase();
       const [native, internal, tokens] = await Promise.all([
         blockscoutList(net, 'txlist', address, sinceBlock, key, NativeTx, fetchFn),
-        blockscoutList(net, 'txlistinternal', address, sinceBlock, key, NativeTx, fetchFn),
+        blockscoutList(net, 'txlistinternal', address, sinceBlock, key, InternalTx, fetchFn),
         blockscoutList(net, 'tokentx', address, sinceBlock, key, TokenTx, fetchFn),
       ]);
       const coin = {
@@ -301,19 +305,24 @@ export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: 
           counterparty: outgoing ? (t.to ?? null) : t.from,
         });
       }
-      internal.forEach((t, i) => {
-        if (t.isError === '1' || new Decimal(t.value).isZero()) return;
+      // The part is the call's number inside its transaction, not its place in this answer: a later
+      // sync starts from another block, and the same call must get the same external id.
+      const calls = new Map<string, number>();
+      for (const t of internal) {
+        const n = calls.get(t.hash) ?? 0;
+        calls.set(t.hash, n + 1);
+        if (t.isError === '1' || new Decimal(t.value).isZero()) continue;
         const outgoing = t.from.toLowerCase() === me;
         out.push({
           ...base(t),
-          part: `internal:${i}`,
+          part: `internal:${t.index ?? n}`,
           direction: outgoing ? 'out' : 'in',
           asset: coin,
           amount: new Decimal(t.value).div(pow10(18)),
           fee: new Decimal(0),
           counterparty: outgoing ? (t.to ?? null) : t.from,
         });
-      });
+      }
       tokens.forEach((t, i) => {
         const decimals = Number(t.tokenDecimal) || 0;
         const amount = new Decimal(t.value).div(pow10(decimals));

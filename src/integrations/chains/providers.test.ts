@@ -87,22 +87,50 @@ describe('evm', () => {
     expect(await p.getTransfers(MOCK_EVM_ADDRESS, 'bnb')).toEqual([]);
   });
 
-  it('internal transactions Blockscout has not indexed yet: what it has is taken, the sync goes on', async () => {
-    const fetchFn = async (url: string, init?: RequestInit) =>
-      url.includes('action=txlistinternal')
-        ? new Response(
-            JSON.stringify({
-              status: '0',
-              message: 'Some internal transactions within this block range have not yet been processed',
-              result: null,
-            }),
-          )
-        : fetch(url, init);
-    const t = await evmProvider({ blockscoutKey: MOCK_BLOCKSCOUT_KEY, fetchFn }).getTransfers(
-      MOCK_EVM_ADDRESS,
-      'ethereum',
+  it('internal transactions: the shape Blockscout gives, a stable id, and a list it has not finished indexing', async () => {
+    // As Blockscout answers: `transactionHash`, the call's `index` inside its transaction.
+    const call = (index: string, value: string) => ({
+      blockNumber: '19750000',
+      callType: 'call',
+      contractAddress: '',
+      errCode: '',
+      from: '0x28c6c06298d514db089934071355e5743bf21d60',
+      gas: '0',
+      gasUsed: '0',
+      index,
+      input: '',
+      isError: '0',
+      timeStamp: String(Date.parse('2024-04-25T09:00:00Z') / 1000),
+      to: MOCK_EVM_ADDRESS.toLowerCase(),
+      transactionHash: '0x' + 'cd'.repeat(32),
+      type: 'call',
+      value,
+    });
+    const answer =
+      (status: string, message: string, result: unknown) => async (url: string, init?: RequestInit) =>
+        url.includes('action=txlistinternal')
+          ? new Response(JSON.stringify({ status, message, result }))
+          : fetch(url, init);
+    const internal = async (fetchFn: ReturnType<typeof answer>) =>
+      (
+        await evmProvider({ blockscoutKey: MOCK_BLOCKSCOUT_KEY, fetchFn }).getTransfers(
+          MOCK_EVM_ADDRESS,
+          'ethereum',
+        )
+      ).filter((t) => t.part.startsWith('internal'));
+
+    const both = await internal(answer('1', 'OK', [call('0', '0'), call('1', '300000000000000000')]));
+    expect(both.map((t) => [t.hash.slice(0, 6), t.part, t.direction, t.amount.toFixed()])).toEqual([
+      ['0xcdcd', 'internal:1', 'in', '0.3'],
+    ]);
+    // Later, from another block: the same call keeps its id.
+    expect((await internal(answer('1', 'OK', [call('1', '300000000000000000')])))[0]!.part).toBe(
+      'internal:1',
     );
-    expect(t.map((x) => x.asset.symbol)).toContain('stETH');
+    // «Not yet processed»: what Blockscout has is taken, or nothing, and the sync goes on.
+    const pending = 'Some internal transactions within this block range have not yet been processed';
+    expect(await internal(answer('0', pending, null))).toEqual([]);
+    expect(await internal(answer('0', pending, [call('1', '300000000000000000')]))).toHaveLength(1);
   });
 
   it('falls back to the next endpoint when one fails', async () => {
