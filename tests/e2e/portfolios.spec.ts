@@ -155,11 +155,12 @@ test('risk shows the largest positions and the limits', async ({ page }, info) =
   await expect(page.getByTestId('risk-largest')).toContainText('LKOH');
   await expect(page.getByTestId('risk-currencies')).toContainText('Рубль');
   // «Состав»: the ring by assets, by classes, by sectors.
+  // «Состав» under the largest positions: classes with their largest, then sectors.
   const composition = page.getByTestId('composition');
-  await expect(composition).toContainText('LKOH');
-  await composition.getByRole('radio', { name: 'Классы' }).click();
   await expect(composition).toContainText('Акции');
+  await expect(composition).toContainText('крупнейшая LKOH');
   await composition.getByRole('radio', { name: 'Отрасли' }).click();
+  await expect(composition).toContainText('акций и фондов на');
   const limits = page.getByTestId('risk-limits');
   await expect(limits).toContainText('Одна отрасль до 40 % акций и фондов');
   await expect(limits).toContainText('Одна акция до 8 %');

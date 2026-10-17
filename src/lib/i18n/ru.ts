@@ -644,12 +644,14 @@ export const ru = {
   composition: {
     title: 'Состав',
     view: 'Что показать',
-    views: { assets: 'Активы', classes: 'Классы', sectors: 'Отрасли' } as Record<string, string>,
-    total: 'Всего',
-    cash: 'Кэш',
-    other: (n: number) => `Остальное, ${n}`,
+    views: { classes: 'Классы', sectors: 'Отрасли' } as Record<string, string>,
+    subtitle: (n: number, total: string) => `${n} ${plural(n, 'позиция', 'позиции', 'позиций')} на ${total}`,
+    subtitleSectors: (n: number, total: string) =>
+      `${n} ${plural(n, 'позиция', 'позиции', 'позиций')} акций и фондов на ${total}`,
+    detail: (n: number, top: string, share: string) =>
+      `${n} ${plural(n, 'позиция', 'позиции', 'позиций')}, крупнейшая ${top} ${share}`,
+    detailOne: (top: string, share: string) => `1 позиция, ${top} ${share}`,
     otherSectors: 'Остальные отрасли',
-    label: (list: string) => `Состав: ${list}`,
     empty: 'Позиций нет.',
     noSectors: 'Акций и фондов нет.',
   },
@@ -801,6 +803,7 @@ export const ru = {
     sector: (pct: string) => `Одна отрасль до ${pct} акций и фондов`,
     sectorNow: (name: string, pct: string) => `${name} ${pct}`,
     noSectors: 'Акций и фондов нет',
+    sectorsUnknown: 'Отрасли бумаг пока не известны',
     issuerNow: (pct: string, name: string) => `Максимум сейчас ${pct}, ${name}`,
     now: (pct: string) => `Сейчас ${pct}`,
     stockNow: (name: string, pct: string) => `${name} ${pct}`,

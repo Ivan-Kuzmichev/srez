@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Decimal } from './decimal';
 import { twrGrowth } from './returns';
 import {
+  compositionGroups,
   REST_SLICE,
-  topSlices,
   beta,
   dailyReturns,
   drawdownSeries,
@@ -148,35 +148,33 @@ describe('risk measures', () => {
     expect([c.sector.name, c.sector.share.toFixed(), c.sector.exceeded]).toEqual(['it', '50', true]);
   });
 
-  it('«Состав»: the five largest and the rest summed, with shares', () => {
-    const s = topSlices(
-      [6, 5, 4, 3, 2, 1, 1].map((v, i) => ({ key: `a${i}`, value: D(v * 10) })),
-      5,
-    );
-    expect(s.map((x) => [x.key, x.share.toFixed(1)])).toEqual([
-      ['a0', '27.3'],
-      ['a1', '22.7'],
-      ['a2', '18.2'],
-      ['a3', '13.6'],
-      ['a4', '9.1'],
-      [REST_SLICE, '9.1'],
+  it('«Состав»: groups with their count and largest position, the rest summed past five', () => {
+    const c = compositionGroups(holdings, (x) => x.assetClass, 10);
+    expect(c.base.toFixed()).toBe('1000');
+    expect(c.count).toBe(7);
+    expect(
+      c.groups.map((g) => [g.key, g.share.toFixed(1), g.count, g.top!.instrumentId, g.top!.share.toFixed(1)]),
+    ).toEqual([
+      ['bonds', '50.0', 2, 'OFZ1', '30.0'],
+      ['cash', '28.0', 2, 'RUB', '25.0'],
+      ['crypto', '13.0', 2, 'BTC', '8.0'],
+      ['stocks', '9.0', 1, 'LKOH', '9.0'],
     ]);
-    expect(topSlices([{ key: 'x', value: D(0) }])).toEqual([]);
     // The broker's own sector «other» stays apart from the rest summed.
-    const sectors = topSlices(
-      ['it', 'telecom', 'consumer', 'materials', 'energy', 'other', 'health_care'].map((k, i) => ({
-        key: k,
-        value: D(70 - i * 10),
-      })),
+    const bySector = compositionGroups(
+      ['it', 'telecom', 'consumer', 'materials', 'energy', 'other', 'health_care'].map((k, i) =>
+        h(`S${i}`, 70 - i * 10, { sector: k }),
+      ),
+      (x) => x.sector ?? '',
     );
-    expect(sectors.map((x) => x.key)).toEqual([
-      'it',
-      'telecom',
-      'consumer',
-      'materials',
-      'energy',
-      REST_SLICE,
+    expect(bySector.groups.map((g) => [g.key, g.count])).toEqual([
+      ['it', 1],
+      ['telecom', 1],
+      ['consumer', 1],
+      ['materials', 1],
+      ['energy', 1],
+      [REST_SLICE, 2],
     ]);
-    expect(new Set(sectors.map((x) => x.key)).size).toBe(sectors.length);
+    expect(bySector.groups.at(-1)!.top!.instrumentId).toBe('S5');
   });
 });

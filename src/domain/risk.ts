@@ -210,31 +210,51 @@ function daysBetween(from: string, to: string): number {
 }
 
 /**
- * The key of «Остальное»: no instrument id, class or sector code looks like it (the broker has a sector
- * «other», and the class «other» exists too).
+ * The key of «Остальное»: no class or sector code looks like it (the broker has a sector «other», and
+ * the class «other» exists too).
  */
 export const REST_SLICE = '~rest';
 
-export interface Slice {
-  /** An instrument id, an asset class, a sector code; REST_SLICE for the rest, 'cash' for money. */
+export interface CompositionGroup {
+  /** An asset class or a sector code; REST_SLICE for the rest summed. */
   key: string;
   value: Decimal;
-  /** Percent of the total. */
+  /** Percent of the base. */
   share: Decimal;
+  /** How many positions the group holds. */
+  count: number;
+  /** Its largest position: the instrument and its share of the base. */
+  top: { instrumentId: string; share: Decimal } | null;
 }
 
 /**
- * «Состав» (FR-ANL-10): the `n` largest by value and the rest summed into REST_SLICE, each with its share.
- * Zero and negative values are left out.
+ * «Состав» (FR-ANL-10): positions grouped by `keyOf`, the largest first, each with its count and its
+ * largest position. Beyond `n` groups the rest is summed into REST_SLICE. Shares are of the groups' total.
  */
-export function topSlices(items: readonly { key: string; value: Decimal }[], n = 5): Slice[] {
-  const sums = new Map<string, Decimal>();
-  for (const i of items) if (i.value.gt(0)) sums.set(i.key, (sums.get(i.key) ?? ZERO).plus(i.value));
-  const sorted = [...sums].sort((a, b) => b[1].comparedTo(a[1]));
-  const total = sorted.reduce((s, [, v]) => s.plus(v), ZERO);
-  const head = sorted.slice(0, n);
-  const rest = sorted.slice(n).reduce((s, [, v]) => s.plus(v), ZERO);
-  const out = head.map(([key, value]) => ({ key, value, share: shareOf(value, total) }));
-  if (rest.gt(0)) out.push({ key: REST_SLICE, value: rest, share: shareOf(rest, total) });
-  return out;
+export function compositionGroups(
+  holdings: readonly Holding[],
+  keyOf: (h: Holding) => string,
+  n = 5,
+): { base: Decimal; count: number; groups: CompositionGroup[] } {
+  const held = holdings.filter((h) => h.value.gt(0));
+  const base = held.reduce((s, h) => s.plus(h.value), ZERO);
+  const build = (key: string, items: Holding[]): CompositionGroup => {
+    const value = items.reduce((s, h) => s.plus(h.value), ZERO);
+    const top = items.reduce<Holding | null>((m, h) => (!m || h.value.gt(m.value) ? h : m), null);
+    return {
+      key,
+      value,
+      share: shareOf(value, base),
+      count: items.length,
+      top: top ? { instrumentId: top.instrumentId, share: shareOf(top.value, base) } : null,
+    };
+  };
+  const byKey = new Map<string, Holding[]>();
+  for (const h of held) byKey.set(keyOf(h), [...(byKey.get(keyOf(h)) ?? []), h]);
+  const groups = [...byKey].map(([k, items]) => build(k, items)).sort((a, b) => b.value.comparedTo(a.value));
+  const head = groups.slice(0, n);
+  const rest = groups.slice(n);
+  if (rest.length > 0)
+    head.push(build(REST_SLICE, held.filter((h) => rest.some((g) => g.key === keyOf(h)))));
+  return { base, count: held.length, groups: head };
 }

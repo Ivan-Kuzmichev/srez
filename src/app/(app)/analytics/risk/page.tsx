@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
 import { AnalyticsHeader } from '@/components/analytics/header';
-import { CompositionChart, type CompositionSlice } from '@/components/charts/composition-chart';
+import { CompositionCard, type CompositionRow } from '@/components/analytics/composition-card';
 import { DrawdownChart } from '@/components/charts/drawdown-chart';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LimitPill } from '@/components/ui/pill';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn';
 import { formatMoney, formatMonthRange, formatMonthYear, formatPercent, formatPlain } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { listPortfolios } from '@/server/portfolio-data';
+import { ASSET_CLASS_ORDER, type AssetClass } from '@/domain/allocation';
 import { REST_SLICE } from '@/domain/risk';
 import { riskData } from '@/server/risk-data';
 import { requireSession } from '@/server/session';
@@ -76,18 +77,23 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
   const limitsHref = '/settings#limits';
   const rub = (v: Decimal) => formatMoney(Money.of(v.round(), 'RUB'));
   const c = r.composition;
-  // Neutral for «Остальное» and an unknown sector; the others take the class scale in order.
-  const slices = (
-    list: typeof c.assets,
+  // Neutral for «Остальные» and an unknown sector; a class keeps its color, sectors take the scale in order.
+  const rowsOf = (
+    g: typeof c.classes,
     label: (key: string) => string,
-    tone: (key: string, i: number) => CompositionSlice['tone'] = (k, i) => i,
-  ): CompositionSlice[] => {
+    tone: (key: string, i: number) => CompositionRow['tone'],
+  ): CompositionRow[] => {
     let next = 0;
-    return list.map((x) => {
+    return g.groups.map((x) => {
       const neutral = x.key === REST_SLICE || x.key === '';
+      const top = x.top ? (c.names[x.top.instrumentId] ?? '') : '';
       return {
         key: x.key,
         label: label(x.key),
+        detail:
+          x.count === 1
+            ? ru.composition.detailOne(top, share(x.top!.share))
+            : ru.composition.detail(x.count, top, share(x.top!.share)),
         amount: rub(x.value),
         shareText: share(x.share),
         share: x.share.toNumber(),
@@ -96,22 +102,26 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
     });
   };
   const compositionViews = {
-    assets: slices(c.assets, (k) =>
-      k === 'cash'
-        ? ru.composition.cash
-        : k === REST_SLICE
-          ? ru.composition.other(c.restCount)
-          : (c.names[k] ?? k),
-    ),
-    // A class keeps its color everywhere; «Прочее» has none of the scale.
-    classes: slices(
-      c.classes,
-      (k) => ru.classes[k] ?? k,
-      (k) => (k === 'other' ? 'neutral' : (k as CompositionSlice['tone'])),
-    ),
-    sectors: slices(c.sectors, (k) =>
-      k === REST_SLICE ? ru.composition.otherSectors : (ru.sectors[k] ?? k),
-    ),
+    classes: {
+      subtitle: ru.composition.subtitle(c.classes.count, rub(c.classes.base)),
+      // Classes in their fixed order, as everywhere else.
+      rows: rowsOf(
+        c.classes,
+        (k) => ru.classes[k] ?? k,
+        (k) => (k === 'other' ? 'neutral' : (k as CompositionRow['tone'])),
+      ).sort(
+        (a, b) =>
+          ASSET_CLASS_ORDER.indexOf(a.key as AssetClass) - ASSET_CLASS_ORDER.indexOf(b.key as AssetClass),
+      ),
+    },
+    sectors: {
+      subtitle: ru.composition.subtitleSectors(c.sectors.count, rub(c.sectors.base)),
+      rows: rowsOf(
+        c.sectors,
+        (k) => (k === REST_SLICE ? ru.composition.otherSectors : (ru.sectors[k] ?? k)),
+        (_k, i) => i,
+      ),
+    },
   };
 
   return (
@@ -167,70 +177,72 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
 
       <DrawdownChart points={r.index.map((p) => ({ date: p.date, index: p.index.toString() }))} />
 
-      <CompositionChart views={compositionViews} total={rub(r.value)} />
-
       <div className="flex flex-wrap items-start gap-3 wide:gap-4">
-        <section
-          className="flex min-w-0 flex-[3_1_440px] flex-col gap-[18px] rounded-card border border-border bg-surface p-4 wide:p-6"
-          data-testid="risk-largest"
-        >
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="m-0 text-card font-semibold">{ru.risk.largestTitle}</h2>
-            <span className="text-small text-muted">
-              <span className="wide:hidden">{ru.risk.largestHintShort}</span>
-              <span className="max-wide:hidden">{ru.risk.largestHint}</span>
-            </span>
-          </div>
-          {top.length === 0 ? (
-            <div className="text-caption text-muted">{ru.risk.noPositions}</div>
-          ) : (
-            <div className="flex flex-col gap-3.5 text-row">
-              {top.map((h) => (
-                <div key={h.instrumentId} className="flex flex-col gap-[7px]">
-                  <div className="flex justify-between gap-3">
-                    <span className="min-w-0 truncate">
-                      <Link
-                        href={`/assets/${h.instrumentId}${selected ? `?portfolio=${selected.id}` : ''}`}
-                        className="num text-caption text-text no-underline hover:text-text"
-                      >
-                        {h.ticker && h.kind !== 'bond' ? h.ticker : h.name}
-                      </Link>
-                      {h.ticker && h.kind !== 'bond' && h.ticker !== h.name ? (
-                        <span className="text-muted"> {h.name}</span>
-                      ) : null}
-                    </span>
-                    <span className="num text-caption whitespace-nowrap">
-                      <span className="max-wide:hidden">
-                        {formatMoney(Money.of(h.value.round(), 'RUB'))} ·{' '}
+        <div className="flex min-w-0 flex-[3_1_440px] flex-col gap-3 wide:gap-4">
+          <section
+            className="flex min-w-0 flex-col gap-[18px] rounded-card border border-border bg-surface p-4 wide:p-6"
+            data-testid="risk-largest"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="m-0 text-card font-semibold">{ru.risk.largestTitle}</h2>
+              <span className="text-small text-muted">
+                <span className="wide:hidden">{ru.risk.largestHintShort}</span>
+                <span className="max-wide:hidden">{ru.risk.largestHint}</span>
+              </span>
+            </div>
+            {top.length === 0 ? (
+              <div className="text-caption text-muted">{ru.risk.noPositions}</div>
+            ) : (
+              <div className="flex flex-col gap-3.5 text-row">
+                {top.map((h) => (
+                  <div key={h.instrumentId} className="flex flex-col gap-[7px]">
+                    <div className="flex justify-between gap-3">
+                      <span className="min-w-0 truncate">
+                        <Link
+                          href={`/assets/${h.instrumentId}${selected ? `?portfolio=${selected.id}` : ''}`}
+                          className="num text-caption text-text no-underline hover:text-text"
+                        >
+                          {h.ticker && h.kind !== 'bond' ? h.ticker : h.name}
+                        </Link>
+                        {h.ticker && h.kind !== 'bond' && h.ticker !== h.name ? (
+                          <span className="text-muted"> {h.name}</span>
+                        ) : null}
                       </span>
-                      {share(h.share)}
-                    </span>
+                      <span className="num text-caption whitespace-nowrap">
+                        <span className="max-wide:hidden">
+                          {formatMoney(Money.of(h.value.round(), 'RUB'))} ·{' '}
+                        </span>
+                        {share(h.share)}
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-[4px] bg-track">
+                      <div
+                        className="h-full rounded-[4px] bg-accent"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            h.share
+                              .div(lim.issuer.limit.isZero() ? 100 : lim.issuer.limit)
+                              .times(100)
+                              .toNumber(),
+                          )}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 rounded-[4px] bg-track">
-                    <div
-                      className="h-full rounded-[4px] bg-accent"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          h.share
-                            .div(lim.issuer.limit.isZero() ? 100 : lim.issuer.limit)
-                            .times(100)
-                            .toNumber(),
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {top.length > 0 ? (
-            <div className="flex items-center justify-between gap-3 border-t border-border pt-3.5 text-caption">
-              <span className="text-muted">{ru.risk.largestTotal(top.length)}</span>
-              <span className="num">{share(r.largest.share)}</span>
-            </div>
-          ) : null}
-        </section>
+                ))}
+              </div>
+            )}
+            {top.length > 0 ? (
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-3.5 text-caption">
+                <span className="text-muted">{ru.risk.largestTotal(top.length)}</span>
+                <span className="num">{share(r.largest.share)}</span>
+              </div>
+            ) : null}
+          </section>
+
+          <CompositionCard views={compositionViews} />
+        </div>
 
         <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-3 wide:gap-4">
           <section
@@ -299,7 +311,9 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
                         ru.sectors[lim.sector.name] ?? lim.sector.name,
                         share(lim.sector.share),
                       )
-                    : ru.risk.noSectors,
+                    : c.sectors.count > 0
+                      ? ru.risk.sectorsUnknown
+                      : ru.risk.noSectors,
                   over: lim.sector.exceeded,
                 },
               ].map((l) => (
