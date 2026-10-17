@@ -7,7 +7,7 @@ import { WhatIfControls } from '@/components/portfolio/whatif-controls';
 import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
-import { SnapshotBanner, SnapshotDate } from '@/components/portfolio/snapshot-date';
+import { SnapshotBanner, SnapshotPicker } from '@/components/portfolio/snapshot-date';
 import { Button } from '@/components/ui/button';
 import { TargetBar } from '@/components/ui/target-bar';
 import { db } from '@/db/client';
@@ -19,6 +19,7 @@ import {
   approx,
   formatChange,
   formatDateLong,
+  formatDateYear,
   formatCrypto,
   formatMoney,
   formatPercent,
@@ -179,6 +180,12 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
             {portfolio.name}
           </h1>
           <div className="flex flex-wrap items-center gap-2 wide:gap-3">
+            <SnapshotPicker
+              date={date}
+              today={today}
+              min={firstDay}
+              dateShort={date ? formatDateYear(new Date(`${date}T12:00:00Z`), 'UTC') : null}
+            />
             <Button asChild variant="secondary">
               <Link href={`/portfolios/${id}/edit`}>{ru.portfolio.edit}</Link>
             </Button>
@@ -188,7 +195,6 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-caption">
-          <SnapshotDate date={date} today={today} min={firstDay} />
           <span className="text-muted">{ru.portfolio.madeOf}</span>
           {[...rulesChips.map((c) => c.text), ...tagChips.map((t) => ru.portfolio.tagChip(t))].map((text) => (
             <span key={text} className="rounded-pill border border-border bg-surface px-2.5 py-1">

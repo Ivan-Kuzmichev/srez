@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ValueChart } from '@/components/charts/value-chart';
 import { IconOperations, IconSources, IconWallet } from '@/components/icons';
 import { OverviewControls, PhonePortfolioFilter } from '@/components/overview/controls';
-import { SnapshotBanner, SnapshotDate } from '@/components/portfolio/snapshot-date';
+import { SnapshotBanner, SnapshotPicker } from '@/components/portfolio/snapshot-date';
 import { assetLabel } from '@/lib/asset-label';
 import { PageHeader } from '@/components/shell/page-header';
 import { ASSET_CLASS_COLOR, AllocationBar } from '@/components/ui/allocation-bar';
@@ -26,6 +26,7 @@ import {
   formatCrypto,
   formatDate,
   formatDateLong,
+  formatDateYear,
   formatMoney,
   formatPercent,
   formatQuantity,
@@ -174,6 +175,12 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
               currencies={shown.includes(cur) ? shown : [...shown, cur]}
               portfolioId={selected?.id ?? null}
             />
+            <SnapshotPicker
+              date={date}
+              today={today}
+              min={firstSnapshotDate(db(), userId)}
+              dateShort={date ? formatDateYear(new Date(`${date}T12:00:00Z`), 'UTC') : null}
+            />
             <Button asChild variant="primary" className="max-wide:size-11 max-wide:px-0">
               <Link href="/operations/new" aria-label={ru.overview.add}>
                 <span className="hidden wide:inline">{ru.overview.add}</span>
@@ -191,9 +198,6 @@ export default async function OverviewPage({ searchParams }: PageProps<'/'>) {
         portfolioId={selected?.id ?? null}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <SnapshotDate date={date} today={today} min={firstSnapshotDate(db(), userId)} />
-      </div>
       {date ? <SnapshotBanner dateText={formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC')} /> : null}
 
       <section

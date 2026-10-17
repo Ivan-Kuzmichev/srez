@@ -24,17 +24,18 @@ export function WhatIfControls({ choice, rate }: { choice: string; rate: string 
     if (parsed && Number(parsed) >= 0 && Number(parsed) <= 100) go({ rate: parsed });
   };
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Select
-        aria-label={t.choiceLabel}
-        className="w-[min(18rem,100%)]"
-        value={choice}
-        onValueChange={(v) => go({ whatif: v })}
-        options={Object.entries(t.choices).map(([value, label]) => ({ value, label }))}
-      />
+    <div className="flex w-full items-center gap-2 wide:w-auto">
+      <div className="min-w-0 flex-1 wide:w-72 wide:flex-none">
+        <Select
+          aria-label={t.choiceLabel}
+          value={choice}
+          onValueChange={(v) => go({ whatif: v })}
+          options={Object.entries(t.choices).map(([value, label]) => ({ value, label }))}
+        />
+      </div>
       {choice === 'deposit' ? (
-        <label className="flex items-center gap-2 text-caption text-muted">
-          <span className="block w-24 shrink-0">
+        <label className="flex shrink-0 items-center gap-2 text-caption text-muted">
+          <span className="block w-20 shrink-0">
             <Input
               mono
               inputMode="decimal"

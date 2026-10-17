@@ -52,6 +52,7 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(all).toContainText('RUB');
 
   // «Срез на дату»: a day before anything happened, then back to today.
+  await page.getByRole('button', { name: 'Срез на дату' }).click();
   await page.getByLabel('Дата среза').fill('2001-01-01');
   await expect(page.getByTestId('snapshot-banner')).toContainText('Срез на конец дня 1 января 2001');
   await expect(page).toHaveURL(/date=2001-01-01/);
@@ -63,7 +64,7 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   // «А если бы»: the same money on a deposit at its own rate.
   const whatIf = page.getByTestId('whatif');
   await whatIf.getByLabel('С чем сравнить').click();
-  await page.getByRole('option', { name: 'Вклад под свой процент' }).click();
+  await page.getByRole('option', { name: 'Вклад под свой %' }).click();
   await whatIf.getByLabel('Ставка вклада, % годовых').fill('18');
   await whatIf.getByLabel('Ставка вклада, % годовых').press('Enter');
   await expect(page).toHaveURL(/whatif=deposit/);
