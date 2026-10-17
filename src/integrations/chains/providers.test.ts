@@ -191,6 +191,20 @@ describe('evm', () => {
     expect(t).toHaveLength(5);
   });
 
+  it('Tron: tokens on an address that never received TRX are read from their contract', async () => {
+    const a = mock.state.tron[MOCK_TRON_ADDRESS];
+    a.inactive = true;
+    try {
+      const b = await tronProvider(undefined, { sleep: async () => {} }).getBalances(
+        MOCK_TRON_ADDRESS,
+        'tron',
+      );
+      expect(b.map((x) => [x.symbol, x.amount.toFixed()])).toEqual([['USDT', '266.75']]);
+    } finally {
+      delete a.inactive;
+    }
+  });
+
   it('falls back to the next endpoint when one fails', async () => {
     mock.failNext('/rpc/ethereum', 503);
     vi.stubEnv('CHAIN_MOCK_URL', mock.url);

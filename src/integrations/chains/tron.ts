@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Decimal } from '@/domain/decimal';
-import type { Fetch } from '../errors';
+import { IntegrationError, type Fetch } from '../errors';
 import { isTronAddress, tronHex } from './address';
 import { requestJson } from './http';
 import { endpointsOf, network } from './networks';
@@ -19,6 +19,7 @@ const Account = z.object({
   ),
 });
 const Meta = z.object({ fingerprint: z.string().optional() }).optional();
+const Constant = z.object({ constant_result: z.array(z.string()).optional() });
 const Trc20Tx = z.object({
   transaction_id: z.string(),
   token_info: z.object({ symbol: z.string(), address: z.string(), decimals: z.number(), name: z.string() }),
@@ -67,11 +68,12 @@ export function tronProvider(
   const net = network('tron');
   const sleep = options.sleep ?? wait;
   const coin: TokenMeta = { contract: null, symbol: 'TRX', name: 'Tron', decimals: 6 };
-  const get = async <T>(path: string, method: string, schema: z.ZodType<T>): Promise<T> => {
+  const get = async <T>(path: string, method: string, schema: z.ZodType<T>, body?: unknown): Promise<T> => {
     for (let attempt = 0; ; attempt++) {
       try {
         return await requestJson('tron', endpointsOf(net), path, {
           method,
+          body,
           fetchFn,
           timeoutMs: 20_000,
           parse: (body) => schema.parse(body),
@@ -114,18 +116,31 @@ export function tronProvider(
 
     async getBalances(address): Promise<TokenBalance[]> {
       const body = await get(`/v1/accounts/${address}`, 'GET /v1/accounts/{address}', Account);
-      // An address that never received anything has no account yet: an empty list.
+      // An address that never received TRX has no account yet, though it may hold tokens.
       const account = body.data[0];
       const out: TokenBalance[] = [
         { ...coin, network: 'tron', amount: new Decimal(account?.balance ?? 0).div(SUN) },
       ];
-      const held = new Map(
-        Object.entries(Object.assign({}, ...(account?.trc20 ?? [])) as Record<string, string>),
-      );
+      // Known tokens from their contracts: `trc20` of the account is missing for such an address, so
+      // USDT received there read as zero and the balance check booked it as sent away.
+      const owner = tronHex(address)!;
       for (const t of net.tokens) {
-        const raw = held.get(t.contract);
-        if (raw)
-          out.push({ ...t, network: 'tron', amount: new Decimal(raw).div(new Decimal(10).pow(t.decimals)) });
+        const r = await get(
+          '/wallet/triggerconstantcontract',
+          'POST /wallet/triggerconstantcontract balanceOf',
+          Constant,
+          {
+            owner_address: address,
+            contract_address: t.contract,
+            function_selector: 'balanceOf(address)',
+            parameter: owner.slice(2).padStart(64, '0'),
+            visible: true,
+          },
+        );
+        const raw = r.constant_result?.[0];
+        if (!raw) throw new IntegrationError('tron', 'BAD_RESPONSE', 'No balanceOf result');
+        const amount = new Decimal(BigInt(`0x${raw}`).toString()).div(new Decimal(10).pow(t.decimals));
+        out.push({ ...t, network: 'tron', amount });
       }
       return out.filter((b) => b.amount.gt(0));
     },

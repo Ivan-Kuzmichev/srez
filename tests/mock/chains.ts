@@ -132,10 +132,25 @@ export async function startChainsMock(
       if (path.startsWith('/tron/')) {
         const rest = path.slice('/tron'.length);
         if (rest === '/wallet/getblock') return json(200, { blockID: '00'.repeat(32) });
+        // balanceOf on a token contract: from the account's TRC-20 list, zero when it is not there.
+        if (rest === '/wallet/triggerconstantcontract') {
+          const call = JSON.parse(raw || '{}');
+          const held = Object.assign({}, ...(state.tron[call.owner_address]?.account?.trc20 ?? []));
+          const units = BigInt(held[call.contract_address] ?? '0');
+          return json(200, {
+            result: { result: true },
+            constant_result: [units.toString(16).padStart(64, '0')],
+          });
+        }
         const m = /^\/v1\/accounts\/([^/]+)(\/transactions(\/trc20)?)?$/.exec(rest);
         if (!m) return json(404, { error: 'unknown route' });
         const a = state.tron[m[1]!];
-        if (!m[2]) return json(200, { data: a ? [{ address: m[1], ...a.account }] : [], success: true });
+        // `inactive`: never received TRX, so TronGrid has no account for it, tokens or not.
+        if (!m[2])
+          return json(200, {
+            data: a && !a.inactive ? [{ address: m[1], ...a.account }] : [],
+            success: true,
+          });
         const since = Number(url.searchParams.get('min_timestamp') ?? 0);
         const at = (r: Json) => r.block_timestamp as number;
         const rows = ((m[3] ? a?.trc20 : a?.transactions) ?? []).filter((r: Json) => at(r) >= since);
