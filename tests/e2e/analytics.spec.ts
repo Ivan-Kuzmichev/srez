@@ -132,10 +132,25 @@ test('a Tron wallet: TRX and USDT with their history, then the history rebuilt',
 
   await page.goto('/sources');
   const card = page.getByTestId('wallets');
-  const row = card.locator('div', { hasText: 'Tangem, Tron' }).last();
-  await row.getByRole('button', { name: 'Пересобрать историю' }).click();
+  const menu = () => card.getByRole('button', { name: /Действия с кошельком/ }).first();
+  await menu().click();
+  await page.getByRole('menuitem', { name: 'Пересобрать историю' }).click();
   await expect(page.getByRole('alertdialog')).toContainText('Ручные операции останутся');
   await page.getByRole('alertdialog').getByRole('button', { name: 'Пересобрать' }).click();
   await expect(page.getByText('История удалена, загружаем заново').first()).toBeVisible();
   await expect(fees).toPass({ timeout: 45_000 });
+
+  // Rename, then delete: the wallet and what the chain gave go.
+  await page.goto('/sources');
+  await menu().click();
+  await page.getByRole('menuitem', { name: 'Переименовать' }).click();
+  await page.getByRole('dialog').getByLabel('Название').fill('Tron, Tangem');
+  await page.getByRole('dialog').getByRole('button', { name: 'Сохранить' }).click();
+  await expect(card).toContainText('Tron, Tangem');
+  await menu().click();
+  await page.getByRole('menuitem', { name: 'Удалить' }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('Удалить кошелёк «Tron, Tangem»?');
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Удалить' }).click();
+  await expect(page.getByText('Кошелёк удалён').first()).toBeVisible();
+  await expect(page.getByTestId('wallets')).not.toContainText('Tron, Tangem');
 });

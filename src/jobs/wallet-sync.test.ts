@@ -13,7 +13,7 @@ import {
 import { createTestDb } from '@/db/test-db';
 import { loadFx, loadValuedCells } from '@/server/portfolio-data';
 import { updateSettings } from '@/server/settings';
-import { addWallet, rebuildWalletHistory } from '@/server/wallets';
+import { addWallet, deleteWallet, rebuildWalletHistory, renameWallet } from '@/server/wallets';
 import { accrueWallet } from './wallet-accrue';
 import {
   MOCK_BLOCKSCOUT_KEY,
@@ -224,5 +224,45 @@ describe('wallet sync', () => {
     const again = await syncWallet(db, sourceId, 'manual', { fetchFn, now });
     expect(again.newOperations).toBe(7);
     expect(held().USDT).toBe('266.75');
+  });
+
+  it('renames a wallet with its account; deleting drops the chain, keeps an account with manual entries', async () => {
+    const { db, sourceId, accountId } = wallet('tron', 'history');
+    await syncWallet(db, sourceId, 'manual', { fetchFn, now });
+    expect(renameWallet(db, 'someone-else', sourceId, 'Чужой')).toBe(false);
+    expect(renameWallet(db, 'u1', sourceId, 'Tangem, Tron')).toBe(true);
+    expect(db.select().from(sources).where(eq(sources.id, sourceId)).get()!.name).toBe('Tangem, Tron');
+    expect(db.select().from(finAccounts).where(eq(finAccounts.id, accountId)).get()!.name).toBe(
+      'Tangem, Tron',
+    );
+
+    // An entry of the owner's own: the account stays as a manual one, without the address.
+    const trx = db.select().from(operations).where(eq(operations.accountId, accountId)).get()!;
+    const manualSource = db
+      .insert(sources)
+      .values({ userId: 'u1', kind: 'manual', name: 'Вручную' })
+      .returning()
+      .get();
+    db.insert(operations)
+      .values({ ...trx, id: undefined, origin: 'manual', sourceId: manualSource.id, externalId: null })
+      .run();
+    expect(deleteWallet(db, 'someone-else', sourceId)).toBeNull();
+    expect(deleteWallet(db, 'u1', sourceId)).toBe('kept');
+    const kept = db.select().from(finAccounts).where(eq(finAccounts.id, accountId)).get()!;
+    expect(kept).toMatchObject({ sourceId: manualSource.id, externalId: null });
+    expect((kept.meta as Record<string, unknown> | null)?.wallet).toBeUndefined();
+    expect(db.select().from(operations).where(eq(operations.accountId, accountId)).all()).toHaveLength(1);
+    expect(db.select().from(sources).where(eq(sources.id, sourceId)).get()).toBeUndefined();
+
+    // Nothing of the owner's: the account goes with the wallet.
+    const other = wallet('tron', 'history');
+    await syncWallet(other.db, other.sourceId, 'manual', { fetchFn, now });
+    expect(deleteWallet(other.db, 'u1', other.sourceId)).toBe('deleted');
+    expect(
+      other.db.select().from(finAccounts).where(eq(finAccounts.id, other.accountId)).get(),
+    ).toBeUndefined();
+    expect(other.db.select().from(positions).where(eq(positions.accountId, other.accountId)).all()).toEqual(
+      [],
+    );
   });
 });

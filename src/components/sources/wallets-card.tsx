@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Pill } from '@/components/ui/pill';
 import { useToast } from '@/components/ui/toast';
 import { ru } from '@/lib/i18n/ru';
-import { rebuildWallet, syncWalletNow } from '@/server/actions/wallets';
+import { syncWalletNow } from '@/server/actions/wallets';
+import { WalletMenu } from './wallet-menu';
 
 export interface WalletCardItem {
   id: string;
@@ -22,7 +22,7 @@ export interface WalletCardItem {
   last: string | null;
 }
 
-/** «Кошельки» on the Sources screen: each wallet's state, a manual sync and a rebuild of its history. */
+/** «Кошельки» on the Sources screen: each wallet's state, a manual sync, and «⋯» for the rest. */
 export function WalletsCard({ wallets }: { wallets: WalletCardItem[] }) {
   const router = useRouter();
   const notify = useToast();
@@ -58,27 +58,7 @@ export function WalletsCard({ wallets }: { wallets: WalletCardItem[] }) {
                 {w.error ?? (w.last ? t.last(w.last) : t.never)}
               </span>
             </span>
-            <span className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
-              <ConfirmDialog
-                trigger={
-                  <Button variant="text" disabled={pending}>
-                    {t.rebuild}
-                  </Button>
-                }
-                title={t.rebuildTitle(w.name)}
-                description={t.rebuildText}
-                confirmLabel={t.rebuildConfirm}
-                danger
-                onConfirm={async () => {
-                  const r = await rebuildWallet(null, { sourceId: w.id });
-                  notify(
-                    r.ok
-                      ? { tone: 'success', title: t.rebuildQueued }
-                      : { tone: 'error', title: t.rebuildFailed },
-                  );
-                  router.refresh();
-                }}
-              />
+            <span className="flex items-center justify-end gap-1">
               <Button
                 variant="secondary"
                 disabled={pending}
@@ -94,6 +74,7 @@ export function WalletsCard({ wallets }: { wallets: WalletCardItem[] }) {
               >
                 {t.syncNow}
               </Button>
+              <WalletMenu sourceId={w.id} name={w.name} />
             </span>
           </div>
         ))}

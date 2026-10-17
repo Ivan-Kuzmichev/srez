@@ -10,7 +10,14 @@ import { EVM_NETWORKS } from '@/integrations/chains/networks';
 import { enqueueWalletSync } from '@/jobs/wallet-sync';
 import { authedAction } from '../action';
 import { logger } from '../logger';
-import { addWallet, previewWallet, rebuildWalletHistory, type WalletPreview } from '../wallets';
+import {
+  addWallet,
+  deleteWallet,
+  previewWallet,
+  rebuildWalletHistory,
+  renameWallet,
+  type WalletPreview,
+} from '../wallets';
 
 const EVM_IDS = EVM_NETWORKS.map((n) => n.id) as [string, ...string[]];
 const FAMILIES = ['bitcoin', 'evm', 'tron'] as const;
@@ -96,5 +103,27 @@ export const rebuildWallet = authedAction(
     enqueueWalletSync(db(), sourceId, 'manual');
     revalidatePath('/', 'layout');
     return { ok: true, data: null };
+  },
+);
+
+/** «Переименовать» on a wallet card: the source and its account. */
+export const renameWalletAction = authedAction(
+  z.object({ sourceId: z.string().min(1).max(64), name: z.string().trim().min(1).max(60) }),
+  async ({ sourceId, name }, session) => {
+    if (!renameWallet(db(), session.user.id, sourceId, name)) return { ok: false, code: 'NOT_FOUND' };
+    revalidatePath('/', 'layout');
+    return { ok: true, data: null };
+  },
+);
+
+/** «Удалить» on a wallet card: says whether the account stayed with the owner's own entries. */
+export const deleteWalletAction = authedAction(
+  z.object({ sourceId: z.string().min(1).max(64) }),
+  async ({ sourceId }, session) => {
+    const outcome = deleteWallet(db(), session.user.id, sourceId);
+    if (!outcome) return { ok: false, code: 'NOT_FOUND' };
+    logger('chains').info({ sourceId, account: outcome }, 'Wallet deleted');
+    revalidatePath('/', 'layout');
+    return { ok: true, data: { account: outcome } };
   },
 );

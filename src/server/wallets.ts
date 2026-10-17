@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
-import type { Db } from '@/db/client';
-import { finAccounts, instruments, operations, positions, sources, walletBalances } from '@/db/schema';
+import type { Db, Executor } from '@/db/client';
+import { ensureManualSource } from '@/db/mutations/accounts';
+import { finAccounts, instruments, jobs, operations, positions, sources, walletBalances } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
 import { getCoinPrices } from '@/integrations/coingecko/client';
 import type { Fetch } from '@/integrations/errors';
@@ -324,5 +325,63 @@ export function rebuildWalletHistory(db: Db, userId: string, sourceId: string): 
     tx.update(sources).set({ lastSyncAt: null }).where(eq(sources.id, sourceId)).run();
     enqueueRecalc(tx, account.id);
     return true;
+  });
+}
+
+/** The wallet's source and account, if they are this user's. */
+function ownWallet(db: Executor, userId: string, sourceId: string) {
+  return db
+    .select({ accountId: finAccounts.id, meta: finAccounts.meta })
+    .from(finAccounts)
+    .innerJoin(sources, eq(sources.id, finAccounts.sourceId))
+    .where(and(eq(sources.id, sourceId), eq(sources.userId, userId), eq(sources.kind, 'wallet')))
+    .get();
+}
+
+/** A wallet's name is its source's and its account's: «Источники», portfolios and the journal show the same. */
+export function renameWallet(db: Db, userId: string, sourceId: string, name: string): boolean {
+  return db.transaction((tx) => {
+    const w = ownWallet(tx, userId, sourceId);
+    if (!w) return false;
+    tx.update(sources).set({ name }).where(eq(sources.id, sourceId)).run();
+    tx.update(finAccounts).set({ name }).where(eq(finAccounts.id, w.accountId)).run();
+    return true;
+  });
+}
+
+/**
+ * «Удалить кошелёк»: what the chain gave goes, the address is forgotten and its syncs stop. An account
+ * left with the owner's own entries stays as a manual one; an empty one goes with its positions,
+ * snapshots and portfolio rules. Returns what happened to the account, or null when it is not theirs.
+ */
+export function deleteWallet(db: Db, userId: string, sourceId: string): 'kept' | 'deleted' | null {
+  return db.transaction((tx) => {
+    const w = ownWallet(tx, userId, sourceId);
+    if (!w) return null;
+    tx.delete(operations).where(eq(operations.sourceId, sourceId)).run();
+    tx.delete(walletBalances).where(eq(walletBalances.accountId, w.accountId)).run();
+    tx.delete(jobs)
+      .where(and(eq(jobs.status, 'queued'), sql`json_extract(${jobs.payload}, '$.sourceId') = ${sourceId}`))
+      .run();
+    const left = tx
+      .select({ id: operations.id })
+      .from(operations)
+      .where(eq(operations.accountId, w.accountId))
+      .get();
+    let outcome: 'kept' | 'deleted';
+    if (left) {
+      const { wallet: _wallet, ...meta } = (w.meta ?? {}) as Partial<WalletMeta> & Record<string, unknown>;
+      tx.update(finAccounts)
+        .set({ sourceId: ensureManualSource(tx, userId), externalId: null, meta })
+        .where(eq(finAccounts.id, w.accountId))
+        .run();
+      enqueueRecalc(tx, w.accountId);
+      outcome = 'kept';
+    } else {
+      tx.delete(finAccounts).where(eq(finAccounts.id, w.accountId)).run();
+      outcome = 'deleted';
+    }
+    tx.delete(sources).where(eq(sources.id, sourceId)).run();
+    return outcome;
   });
 }
