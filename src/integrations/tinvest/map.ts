@@ -122,6 +122,7 @@ function instrumentOf(o: OperationItem): InstrumentRef | null {
   };
 }
 
+const isFund = (o: OperationItem) => o.instrumentKind === 'INSTRUMENT_TYPE_ETF' || o.instrumentType === 'etf';
 const isCurrency = (o: OperationItem) =>
   o.instrumentKind === 'INSTRUMENT_TYPE_CURRENCY' || o.instrumentType === 'currency';
 
@@ -207,6 +208,10 @@ export function mapOperations(items: OperationItem[]): {
       const m = push(entry(o, 'dividend'));
       if (t === T('DIV_EXT')) toCard.push(m);
     } else if (t === T('COUPON')) push(entry(o, 'coupon'));
+    else if (t === T('BOND_REPAYMENT_FULL') && isFund(o))
+      // A fund with blocked assets pays out what it recovered under this type; its units stay
+      // (decision of 2026-10-17): money in, not a redemption that empties the position.
+      push(entry(o, 'dividend'));
     else if (t === T('BOND_REPAYMENT_FULL')) {
       const quantity = new Decimal(o.quantity);
       push(

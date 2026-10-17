@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { Decimal } from '@/domain/decimal';
-import { OperationItem } from './client';
+import { OperationItem, quotation } from './client';
 import { mapOperations, type MappedOperation } from './map';
 
 const fixture = JSON.parse(
@@ -106,6 +106,15 @@ describe('T-Invest operation mapping', () => {
     const r = find((m) => m.type === 'redemption');
     expect(r.quantityFromHolding).toBe(true);
     expect(str(r.amount)).toBe('20000');
+  });
+
+  it('a full repayment of a fund is money paid out, not a redemption of its units', () => {
+    const bond = items.find((o) => o.type === 'OPERATION_TYPE_BOND_REPAYMENT_FULL')!;
+    const fund = { ...bond, id: 'fund-1', instrumentType: 'etf', instrumentKind: 'INSTRUMENT_TYPE_ETF' };
+    const [m] = mapOperations([fund]).operations;
+    expect(m).toMatchObject({ type: 'dividend' });
+    expect(str(m!.quantity)).toBe('0');
+    expect(str(m!.amount)).toBe(str(quotation(bond.payment)));
   });
 
   it('maps fees, taxes and corrections without a security', () => {

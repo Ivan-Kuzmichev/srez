@@ -62,7 +62,7 @@
 | `DIVIDEND`, `DIVIDEND_TRANSFER` | `dividend` |
 | `DIV_EXT` | `dividend` + `withdrawal`: дивиденд выплачен на карту |
 | `COUPON` | `coupon` |
-| `BOND_REPAYMENT_FULL` | `redemption`; количество брокер не присылает, берётся остаток бумаги на счёте к этой дате |
+| `BOND_REPAYMENT_FULL` | у облигации — `redemption`; количество брокер не присылает, берётся остаток бумаги на счёте к этой дате. У фонда (`etf`, паи с заблокированными активами) — `dividend` на сумму выплаты, паи остаются (решение владельца 2026-10-17; миграция 0021 перевела уже загруженные) |
 | `BOND_REPAYMENT` | `amortization` |
 | `INPUT`, `INPUT_SWIFT`, `INPUT_ACQUIRING`, `INP_MULTI` | `deposit` |
 | `OUTPUT`, `OUTPUT_SWIFT`, `OUTPUT_ACQUIRING`, `OUT_MULTI` | `withdrawal` |
