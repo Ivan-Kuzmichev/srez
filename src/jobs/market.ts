@@ -23,7 +23,13 @@ import { ownerSettings } from '@/server/settings';
 import { BENCHMARKS, ensureBenchmarks, ensureBitcoin } from '@/server/benchmarks';
 import { enqueue } from './queue';
 import type { TinvestClient } from '@/integrations/tinvest/client';
-import { priceCurrency, refreshTinvestPrices, tinvestForPrices, tinvestHistory } from './tinvest-market';
+import {
+  priceCurrency,
+  refreshSectors,
+  refreshTinvestPrices,
+  tinvestForPrices,
+  tinvestHistory,
+} from './tinvest-market';
 import { defineJob } from './runner';
 
 /** Display currencies are always kept, so the ₽ / $ / € switch works from the first day. */
@@ -103,6 +109,7 @@ export async function refreshPrices(
   if (tinvest) {
     try {
       fromBroker = await refreshTinvestPrices(db, tinvest, used, now, today);
+      await refreshSectors(db, tinvest, used);
     } catch (err) {
       log.warn({ err }, 'T-Invest price refresh failed, falling back to ISS');
     }
@@ -254,7 +261,11 @@ export async function backfillKeyRates(
   today: string,
   fetchFn: Fetch = fetch,
 ): Promise<number> {
-  const last = db.select({ d: max(keyRates.date) }).from(keyRates).get()?.d ?? null;
+  const last =
+    db
+      .select({ d: max(keyRates.date) })
+      .from(keyRates)
+      .get()?.d ?? null;
   const from = last ? addDays(last, 1) : since;
   if (from > today) return 0;
   try {

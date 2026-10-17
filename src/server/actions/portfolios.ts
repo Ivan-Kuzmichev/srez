@@ -36,6 +36,8 @@ const PortfolioInput = z.object({
   deviationThreshold: percent,
   /** Empty: the default benchmark from the settings. */
   benchmarkId: z.string().max(64).default(''),
+  /** Percent of shares and funds by sector code (FR-PRT-10). */
+  sectorTargets: z.record(z.string().regex(/^[a-z_]{1,32}$/), percent).default({}),
 });
 
 function refused(err: unknown): ActionResult<never> {
@@ -57,6 +59,9 @@ export const savePortfolio = authedAction(PortfolioInput, async (input, session)
         ) as Partial<Record<AssetClass, Decimal>>,
         deviationThreshold: new Decimal(input.deviationThreshold),
         benchmarkId: input.benchmarkId || null,
+        sectorTargets: Object.fromEntries(
+          Object.entries(input.sectorTargets).map(([k, v]) => [k, new Decimal(v)]),
+        ),
       },
       input.id,
     );

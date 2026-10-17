@@ -48,6 +48,8 @@ export const SettingsSchema = z.object({
       issuerPct: z.number().min(0).max(100).default(15),
       singleStockPct: z.number().min(0).max(100).default(8),
       cryptoPct: z.number().min(0).max(100).default(15),
+      /** The largest sector of the shares and funds, percent of them (FR-ANL-9). */
+      sectorPct: z.number().min(0).max(100).default(40),
       notify: z.boolean().default(true),
     })
     .prefault({}),

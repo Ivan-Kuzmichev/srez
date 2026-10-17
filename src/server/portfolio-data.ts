@@ -9,6 +9,7 @@ import {
   payoutEvents,
   portfolioRules,
   portfolios,
+  portfolioSectorTargets,
   portfolioTargets,
   positionSnapshots,
   positions,
@@ -97,6 +98,8 @@ export interface ValuedCell {
   currency: string;
   /** For the one-issuer limit; null counts each security on its own. */
   issuer: string | null;
+  /** The economy sector code (FR-PRT-10): the owner's choice, else the broker's; '' or null when unknown. */
+  sector: string | null;
   isCash: boolean;
   quantity: Decimal;
   /** Current price in rubles; null when valued without a price. */
@@ -136,6 +139,10 @@ function hideWalletDust(db: Db, userId: string, cells: ValuedCell[]): ValuedCell
     return c.valueRub.gte(crypto.dustThresholdRub);
   });
 }
+
+/** The sector code in an instrument's meta, or null. */
+const sectorOf = (meta: Record<string, unknown> | null): string | null =>
+  typeof meta?.sector === 'string' ? meta.sector : null;
 
 /** The end of a local day as an instant: «2026-01-01» in Moscow → 2026-01-01 23:59:59.999 there. */
 export function endOfLocalDay(date: string, timeZone: string): Date {
@@ -187,6 +194,7 @@ export function loadValuedCellsAt(
       name: instruments.name,
       currency: instruments.currency,
       issuer: instruments.issuer,
+      instrumentMeta: instruments.meta,
     })
     .from(positionSnapshots)
     .innerJoin(finAccounts, eq(finAccounts.id, positionSnapshots.accountId))
@@ -230,6 +238,7 @@ export function loadValuedCellsAt(
       name: r.name,
       currency: r.currency,
       issuer: r.issuer,
+      sector: sectorOf(r.instrumentMeta),
       isCash,
       quantity,
       priceRub: quantity.isZero() ? null : valueRub.div(quantity),
@@ -260,6 +269,7 @@ function valueCells(db: Db, userId: string, fx: FxSeries): ValuedCell[] {
       name: instruments.name,
       currency: instruments.currency,
       issuer: instruments.issuer,
+      instrumentMeta: instruments.meta,
       lastPrice: pricesLast.price,
       lastCurrency: pricesLast.currency,
     })
@@ -339,6 +349,7 @@ function valueCells(db: Db, userId: string, fx: FxSeries): ValuedCell[] {
       name: r.name,
       currency: r.currency,
       issuer: r.issuer,
+      sector: sectorOf(r.instrumentMeta),
     };
   }
 }
@@ -478,6 +489,8 @@ export interface PortfolioRow {
   benchmarkId: string | null;
   rules: ScopeRule[];
   targets: Map<AssetClass, Decimal>;
+  /** Target shares by sector, percent of shares and funds (FR-PRT-10); empty when none is set. */
+  sectorTargets: Map<string, Decimal>;
 }
 
 export function listPortfolios(db: Db, userId: string): PortfolioRow[] {
@@ -491,6 +504,11 @@ export function listPortfolios(db: Db, userId: string): PortfolioRow[] {
   const ids = list.map((p) => p.id);
   const rules = db.select().from(portfolioRules).where(inArray(portfolioRules.portfolioId, ids)).all();
   const targets = db.select().from(portfolioTargets).where(inArray(portfolioTargets.portfolioId, ids)).all();
+  const sectorTargets = db
+    .select()
+    .from(portfolioSectorTargets)
+    .where(inArray(portfolioSectorTargets.portfolioId, ids))
+    .all();
   return list.map((p) => ({
     id: p.id,
     name: p.name,
@@ -504,6 +522,9 @@ export function listPortfolios(db: Db, userId: string): PortfolioRow[] {
       targets
         .filter((t) => t.portfolioId === p.id)
         .map((t) => [t.assetClass as AssetClass, new Decimal(t.targetPct)]),
+    ),
+    sectorTargets: new Map(
+      sectorTargets.filter((t) => t.portfolioId === p.id).map((t) => [t.sector, new Decimal(t.targetPct)]),
     ),
   }));
 }

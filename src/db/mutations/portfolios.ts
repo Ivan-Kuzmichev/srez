@@ -1,12 +1,23 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import type { Db } from '@/db/client';
-import { finAccounts, instruments, portfolioRules, portfolios, portfolioTargets, tags } from '@/db/schema';
+import {
+  finAccounts,
+  instruments,
+  portfolioRules,
+  portfolios,
+  portfolioSectorTargets,
+  portfolioTargets,
+  tags,
+} from '@/db/schema';
 import { ASSET_CLASS_ORDER, targetsValid, type AssetClass } from '@/domain/allocation';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
 
 export class PortfolioError extends Error {
   override name = 'PortfolioError';
-  constructor(readonly code: 'NOT_FOUND' | 'ACCOUNT' | 'TAG' | 'TARGETS' | 'NO_ACCOUNTS' | 'BENCHMARK') {
+  constructor(
+    readonly code:
+      'NOT_FOUND' | 'ACCOUNT' | 'TAG' | 'TARGETS' | 'SECTOR_TARGETS' | 'NO_ACCOUNTS' | 'BENCHMARK',
+  ) {
     super(code);
   }
 }
@@ -19,6 +30,8 @@ export interface PortfolioInput {
   deviationThreshold: Decimal;
   /** An index instrument; null takes the settings default. */
   benchmarkId?: string | null;
+  /** Target shares by sector, percent of shares and funds; absent sectors have none (FR-PRT-10). */
+  sectorTargets?: Record<string, Decimal>;
 }
 
 function check(db: Db, userId: string, input: PortfolioInput) {
@@ -52,6 +65,13 @@ function check(db: Db, userId: string, input: PortfolioInput) {
     const values = ASSET_CLASS_ORDER.map((c) => input.targets[c] ?? new Decimal(0));
     if (!targetsValid(values)) throw new PortfolioError('TARGETS');
   }
+  // Sector targets need not cover every sector, but together they cannot pass 100 %.
+  const sectors = Object.values(input.sectorTargets ?? {});
+  if (
+    sectors.some((v) => v.lt(0) || v.gt(100)) ||
+    sectors.reduce((s, v) => s.plus(v), new Decimal(0)).gt(100)
+  )
+    throw new PortfolioError('SECTOR_TARGETS');
 }
 
 /** Creates or updates a portfolio with its rules and targets, all or nothing (FR-PRT-2, 4). */
@@ -98,6 +118,11 @@ export function savePortfolio(db: Db, userId: string, input: PortfolioInput, id?
       });
       if (rows.length > 0) db.insert(portfolioTargets).values(rows).run();
     }
+    db.delete(portfolioSectorTargets).where(eq(portfolioSectorTargets.portfolioId, portfolioId)).run();
+    const sectorRows = Object.entries(input.sectorTargets ?? {})
+      .filter(([, v]) => v.gt(0))
+      .map(([sector, v]) => ({ portfolioId: portfolioId!, sector, targetPct: toDbDecimal(v) }));
+    if (sectorRows.length > 0) db.insert(portfolioSectorTargets).values(sectorRows).run();
     return portfolioId;
   });
 }

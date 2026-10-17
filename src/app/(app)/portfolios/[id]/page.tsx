@@ -8,8 +8,9 @@ import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
 import { SnapshotBanner, SnapshotPicker } from '@/components/portfolio/snapshot-date';
+import { TargetsCard, type TargetRow } from '@/components/portfolio/targets-card';
+import { sectorAllocation } from '@/domain/sectors';
 import { Button } from '@/components/ui/button';
-import { TargetBar } from '@/components/ui/target-bar';
 import { db } from '@/db/client';
 import { listAccounts } from '@/db/queries/accounts';
 import { Decimal } from '@/domain/decimal';
@@ -152,6 +153,49 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
       approx: c.approx,
       canSetPrice: !date && !c.isCash && (c.kind === 'custom' || c.approx),
       currency: c.currency,
+    };
+  });
+
+  // «Цели и ребаланс»: what reaches each target, for the row's tooltip (FR-PRT-4, FR-PRT-10).
+  const hintOf = (name: string, share: Decimal, target: Decimal | null, move: Decimal | null) => {
+    if (target === null || move === null || move.abs().lt(1)) return null;
+    const pp = formatPlain(share.minus(target).abs(), 1);
+    return {
+      title: move.lt(0) ? ru.targetsCard.above(name, pp) : ru.targetsCard.below(name, pp),
+      action: move.lt(0) ? ru.targetsCard.sell(rub(move.abs())) : ru.targetsCard.buy(rub(move)),
+    };
+  };
+  const classRows: TargetRow[] = s.classes.map((c) => {
+    const name = ru.classesShort[c.assetClass] ?? c.assetClass;
+    const move = c.target ? c.target.div(100).times(s.value).minus(c.value) : null;
+    return {
+      key: c.assetClass,
+      label: name,
+      valueLabel: formatShareOfTarget(c.share, c.target),
+      actual: c.share.toNumber(),
+      target: c.target?.toNumber() ?? null,
+      offTarget: c.offTarget,
+      hint: hintOf(name, c.share, c.target, move),
+    };
+  });
+  const sectorView = sectorAllocation(
+    s.cells
+      .filter((c) => c.assetClass === 'stocks' || c.assetClass === 'funds')
+      .map((c) => ({ sector: c.sector ?? '', value: c.valueRub })),
+    portfolio.sectorTargets,
+    portfolio.deviationThreshold,
+  );
+  const sectorRows: TargetRow[] = sectorView.rows.map((r) => {
+    const name = ru.sectors[r.sector] ?? r.sector;
+    return {
+      key: r.sector || 'none',
+      label: name,
+      valueLabel: r.target ? formatShareOfTarget(r.share, r.target) : formatPercent(r.share),
+      actual: r.share.toNumber(),
+      target: r.target?.toNumber() ?? null,
+      offTarget: r.offTarget,
+      muted: r.sector === '',
+      hint: hintOf(name, r.share, r.target, r.move),
     };
   });
 
@@ -304,41 +348,14 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
             selectDate
           />
         </section>
-        <section
-          className="flex min-w-0 flex-[2_1_300px] flex-col gap-[18px] rounded-card border border-border bg-surface p-4 wide:p-6"
-          data-testid="targets"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="m-0 text-card font-semibold">{ru.portfolio.targetsTitle}</h2>
-            {portfolio.targetsEnabled ? (
-              <span className="text-small text-muted">{ru.portfolio.targetsHint}</span>
-            ) : null}
-          </div>
-          {portfolio.targetsEnabled ? (
-            <>
-              <div className="flex flex-col gap-3.5">
-                {s.classes.map((c) => (
-                  <TargetBar
-                    key={c.assetClass}
-                    label={ru.classesShort[c.assetClass] ?? c.assetClass}
-                    valueLabel={formatShareOfTarget(c.share, c.target)}
-                    actual={c.share.toNumber()}
-                    target={c.target?.toNumber() ?? 0}
-                    scaleMax={50}
-                    offTarget={c.offTarget}
-                  />
-                ))}
-              </div>
-              {date ? null : (
-                <Button asChild variant="secondary-raised" className="self-start">
-                  <Link href={`/portfolios/${id}/rebalance`}>{ru.portfolio.rebalance}</Link>
-                </Button>
-              )}
-            </>
-          ) : (
-            <div className="text-caption text-muted">{ru.portfolio.noTargets}</div>
-          )}
-        </section>
+        <TargetsCard
+          classes={classRows}
+          sectors={sectorRows}
+          classesEnabled={portfolio.targetsEnabled}
+          sectorTargets={portfolio.sectorTargets.size > 0}
+          rebalanceHref={date ? null : `/portfolios/${id}/rebalance`}
+          editHref={`/portfolios/${id}/edit`}
+        />
       </div>
 
       {whatIf ? (

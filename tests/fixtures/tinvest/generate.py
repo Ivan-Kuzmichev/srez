@@ -161,13 +161,13 @@ def bond(nominal, maturity, aci=0):
 
 
 dump('instruments.json', {"instruments": [
-    ins(SBER, "Сбер Банк", "RU0009029540", 10),
-    ins(LKOH, "Лукойл", "RU0009024277", 1),
-    ins(GAZP, "Газпром", "RU0007661625", 10),
-    ins(OFZ, "ОФЗ 26238", "RU000A1038V6", 1, bond(1000, "2041-05-15T00:00:00Z", 16.45)),
-    ins(OFZ29, "ОФЗ 29014", "RU000A101N52", 1, bond(0, "2026-03-25T00:00:00Z")),
-    ins(TMOS, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
-    ins(TMOS_AT, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1),
+    ins(SBER, "Сбер Банк", "RU0009029540", 10, {"sector": "financial"}),
+    ins(LKOH, "Лукойл", "RU0009024277", 1, {"sector": "energy"}),
+    ins(GAZP, "Газпром", "RU0007661625", 10, {"sector": "energy"}),
+    ins(OFZ, "ОФЗ 26238", "RU000A1038V6", 1, {**bond(1000, "2041-05-15T00:00:00Z", 16.45), "sector": "government"}),
+    ins(OFZ29, "ОФЗ 29014", "RU000A101N52", 1, {**bond(0, "2026-03-25T00:00:00Z"), "sector": "government"}),
+    ins(TMOS, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1, {"sector": "other"}),
+    ins(TMOS_AT, "Т-Капитал Индекс МосБиржи", "RU000A101X76", 1, {"sector": "other"}),
     ins(USD, "Доллар США", "", 1000, {"isoCurrencyName": "usd", "nominal": mv(1, "usd")}),
 ]})
 

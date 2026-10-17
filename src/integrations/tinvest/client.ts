@@ -146,7 +146,12 @@ export const Bond = Instrument.extend({
   perpetualFlag: z.boolean().default(false),
   /** Accrued coupon interest per bond today. */
   aciValue: MoneyValue.optional(),
+  /** The economy sector: «it», «financial», «energy», «government»… */
+  sector: z.string().default(''),
 });
+
+/** Shares and funds by their own methods: the generic instrument carries no sector. */
+const WithSector = Instrument.extend({ sector: z.string().default('') });
 export type Bond = z.infer<typeof Bond>;
 
 const InstrumentShort = z.object({
@@ -406,6 +411,17 @@ export class TinvestClient {
   async getBond(uid: string): Promise<Bond> {
     const body = { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid };
     return (await this.call('InstrumentsService', 'BondBy', body, z.object({ instrument: Bond }))).instrument;
+  }
+
+  /**
+   * The economy sector of a share, a fund or a bond («it», «financial», «energy»…), '' when the broker
+   * gives none. ShareBy, EtfBy and BondBy carry it; GetInstrumentBy does not.
+   */
+  async getSector(uid: string, kind: 'share' | 'etf' | 'bond'): Promise<string> {
+    const method = kind === 'share' ? 'ShareBy' : kind === 'etf' ? 'EtfBy' : 'BondBy';
+    const body = { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid };
+    return (await this.call('InstrumentsService', method, body, z.object({ instrument: WithSector })))
+      .instrument.sector;
   }
 
   /** A currency with its ISO code: an operation's dollar purchase needs to find our USD cash. */

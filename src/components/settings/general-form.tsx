@@ -23,7 +23,13 @@ export interface GeneralSettings {
   };
   display: { baseCurrency: 'RUB' | 'USD' | 'EUR'; extraCurrencies: Extra[] };
   prices: { refreshMinutes: number; snapshotTime: string };
-  limits: { issuerPct: number; singleStockPct: number; cryptoPct: number; notify: boolean };
+  limits: {
+    issuerPct: number;
+    singleStockPct: number;
+    cryptoPct: number;
+    sectorPct: number;
+    notify: boolean;
+  };
   notify: NotifyState;
 }
 
@@ -68,6 +74,7 @@ export function GeneralSettingsForm({
               issuerPct: form.get('issuerPct'),
               singleStockPct: form.get('singleStockPct'),
               cryptoPct: form.get('cryptoPct'),
+              sectorPct: form.get('sectorPct'),
               notify: notifyLimits,
             },
           });
@@ -195,6 +202,7 @@ export function GeneralSettingsForm({
               ['issuerPct', r.limitIssuer],
               ['singleStockPct', r.limitStock],
               ['cryptoPct', r.limitCrypto],
+              ['sectorPct', r.limitSector],
             ] as const
           ).map(([name, label]) => (
             <Field

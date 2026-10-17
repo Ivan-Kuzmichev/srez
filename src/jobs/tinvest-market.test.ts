@@ -99,6 +99,24 @@ describe('T-Invest prices', () => {
     expect(priceCurrency({ kind: 'share', currency: 'USD', meta: null })).toBe('USD');
   });
 
+  it('sectors come from the broker once per instrument, a choice of the owner stays', async () => {
+    const { db, client, id } = await synced();
+    await refreshPrices(db, log, offline, now, client);
+    const meta = (isin: string) =>
+      db.select({ meta: instruments.meta }).from(instruments).where(eq(instruments.isin, isin)).get()!.meta;
+    expect(meta('RU0009029540')).toMatchObject({ sector: 'financial' });
+    expect(meta('RU0009024277')).toMatchObject({ sector: 'energy' });
+    expect(meta('RU000A101X76')).toMatchObject({ sector: 'other' });
+    expect(meta('RU000A1038V6')).toMatchObject({ sector: 'government' });
+    // The owner's sector for SBER is not asked again or overwritten.
+    db.update(instruments)
+      .set({ meta: { ...meta('RU0009029540'), sector: 'it', sectorManual: true } })
+      .where(eq(instruments.id, id('RU0009029540')))
+      .run();
+    await refreshPrices(db, log, offline, now, client);
+    expect(meta('RU0009029540')).toMatchObject({ sector: 'it', sectorManual: true });
+  });
+
   it('stores bond data when the sync creates the bond', async () => {
     const { db, id } = await synced();
     const ofz = db

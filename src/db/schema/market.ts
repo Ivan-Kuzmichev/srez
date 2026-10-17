@@ -140,6 +140,22 @@ export const portfolioTargets = sqliteTable(
   (t) => [primaryKey({ columns: [t.portfolioId, t.assetClass] })],
 );
 
+/**
+ * Target shares by economy sector (FR-PRT-10), percent of the portfolio's shares and funds. Only the
+ * sectors the owner set; the rest have no target. `sector` is the broker's code («it», «energy»…).
+ */
+export const portfolioSectorTargets = sqliteTable(
+  'portfolio_sector_targets',
+  {
+    portfolioId: text('portfolio_id')
+      .notNull()
+      .references(() => portfolios.id, { onDelete: 'cascade' }),
+    sector: text('sector').notNull(),
+    targetPct: decimal('target_pct').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.portfolioId, t.sector] })],
+);
+
 /** One row per user; `data` follows SettingsSchema with defaults (src/server/settings.ts). */
 export const settings = sqliteTable('settings', {
   userId: text('user_id')

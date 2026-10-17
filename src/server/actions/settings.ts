@@ -38,6 +38,7 @@ export const saveGeneralSettings = authedAction(
       issuerPct: z.coerce.number().min(1).max(100),
       singleStockPct: z.coerce.number().min(1).max(100),
       cryptoPct: z.coerce.number().min(1).max(100),
+      sectorPct: z.coerce.number().min(1).max(100),
       notify: z.boolean(),
     }),
   }),

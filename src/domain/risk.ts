@@ -1,5 +1,6 @@
 import type { AssetClass } from './allocation';
 import { Decimal } from './decimal';
+import { largestSector } from './sectors';
 
 /** docs/04-calculations.md, section 11. Everything runs on the TWR index of an area. */
 export interface IndexPoint {
@@ -113,6 +114,8 @@ export interface Holding {
   assetClass: AssetClass;
   currency: string;
   issuer: string | null;
+  /** The sector code; null or '' when unknown. */
+  sector?: string | null;
   isCash: boolean;
   /** Rubles. */
   value: Decimal;
@@ -150,6 +153,8 @@ export interface Limits {
   issuerPct: number;
   singleStockPct: number;
   cryptoPct: number;
+  /** Optional for older callers: no sector check without it. */
+  sectorPct?: number;
 }
 
 export interface LimitCheck {
@@ -183,13 +188,47 @@ export function limitChecks(holdings: readonly Holding[], total: Decimal, limits
     (m, x) => (!m || x.value.gt(m.value) ? x : m),
     null,
   );
+  // The largest known sector, as a share of the shares and funds (FR-ANL-9).
+  const equity = holdings.filter((h) => !h.isCash && (h.assetClass === 'stocks' || h.assetClass === 'funds'));
+  const top = largestSector(equity.map((h) => ({ sector: h.sector ?? '', value: h.value })));
+  const sectorLimit = new Decimal(limits.sectorPct ?? 100);
   return {
     issuer: check(issuer, limits.issuerPct),
     singleStock: check(stock, limits.singleStockPct),
     crypto: check({ name: null, value: crypto }, limits.cryptoPct),
+    sector: {
+      limit: sectorLimit,
+      share: top?.share ?? ZERO,
+      name: top?.sector ?? null,
+      exceeded: top !== null && limits.sectorPct !== undefined && top.share.gt(sectorLimit),
+    } satisfies LimitCheck,
   };
 }
 
 function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+}
+
+export interface Slice {
+  /** An instrument id, an asset class, a sector code; 'other' for the rest, 'cash' for money. */
+  key: string;
+  value: Decimal;
+  /** Percent of the total. */
+  share: Decimal;
+}
+
+/**
+ * «Состав» (FR-ANL-10): the `n` largest by value and the rest summed into 'other', each with its share.
+ * Zero and negative values are left out.
+ */
+export function topSlices(items: readonly { key: string; value: Decimal }[], n = 5): Slice[] {
+  const sums = new Map<string, Decimal>();
+  for (const i of items) if (i.value.gt(0)) sums.set(i.key, (sums.get(i.key) ?? ZERO).plus(i.value));
+  const sorted = [...sums].sort((a, b) => b[1].comparedTo(a[1]));
+  const total = sorted.reduce((s, [, v]) => s.plus(v), ZERO);
+  const head = sorted.slice(0, n);
+  const rest = sorted.slice(n).reduce((s, [, v]) => s.plus(v), ZERO);
+  const out = head.map(([key, value]) => ({ key, value, share: shareOf(value, total) }));
+  if (rest.gt(0)) out.push({ key: 'other', value: rest, share: shareOf(rest, total) });
+  return out;
 }

@@ -37,6 +37,8 @@ export interface PortfolioFormValues {
   threshold: string;
   /** '' takes the settings default. */
   benchmarkId: string;
+  /** Percent of shares and funds by sector code; '' has no target (FR-PRT-10). */
+  sectorTargets: Record<string, string>;
 }
 
 interface Preview {
@@ -55,6 +57,7 @@ export function PortfolioForm({
   accounts,
   tags,
   benchmarks,
+  sectors,
 }: {
   id?: string;
   initial: PortfolioFormValues;
@@ -62,6 +65,8 @@ export function PortfolioForm({
   tags: { id: string; name: string }[];
   /** First option: the default, labelled with its name. */
   benchmarks: { value: string; label: string }[];
+  /** Sector codes offered for targets. */
+  sectors: string[];
 }) {
   const router = useRouter();
   const notify = useToast();
@@ -81,6 +86,10 @@ export function PortfolioForm({
     ? Object.fromEntries(CLASSES.map((c) => [c, values.targets[c] ?? '']))
     : {};
   const sum = sumOf(values.targets);
+  const sectorSum = Object.values(values.sectorTargets).reduce(
+    (s, v) => s.plus(new Decimal(parseDecimalInput(v) ?? '0')),
+    new Decimal(0),
+  );
   const sumOk = sum.eq(100);
 
   useEffect(() => {
@@ -120,6 +129,9 @@ export function PortfolioForm({
       targets,
       deviationThreshold: values.threshold || '0',
       benchmarkId: values.benchmarkId,
+      sectorTargets: Object.fromEntries(
+        Object.entries(values.sectorTargets).filter(([, v]) => v.trim() !== ''),
+      ),
     });
     setBusy(false);
     if (!result.ok) {
@@ -267,6 +279,39 @@ export function PortfolioForm({
             checked={!values.targetsEnabled}
             onChange={(e) => setValues((v) => ({ ...v, targetsEnabled: !e.target.checked }))}
           />
+        </section>
+
+        <section
+          className="flex flex-col gap-4 rounded-card border border-border bg-surface p-4 wide:p-6"
+          data-testid="sector-targets"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="m-0 text-card font-semibold">{ru.portfolios.sectorTargets}</h2>
+            <Pill tone={sectorSum.gt(100) ? 'loss' : 'accent'} className="px-2.5 py-1">
+              {ru.portfolios.sectorSum(formatPlain(sectorSum, sectorSum.isInteger() ? 0 : 1))}
+            </Pill>
+          </div>
+          <div className="text-caption text-pretty text-muted">{ru.portfolios.sectorHint}</div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(150px,100%),1fr))] gap-3">
+            {sectors.map((code) => (
+              <Field key={code} label={ru.portfolios.targetLabel(ru.sectors[code] ?? code)}>
+                {(f) => (
+                  <Input
+                    id={f.id}
+                    inputMode="decimal"
+                    mono
+                    value={values.sectorTargets[code] ?? ''}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        sectorTargets: { ...v.sectorTargets, [code]: e.target.value },
+                      }))
+                    }
+                  />
+                )}
+              </Field>
+            ))}
+          </div>
         </section>
 
         <div className="hidden flex-wrap items-center justify-between gap-2 wide:flex">

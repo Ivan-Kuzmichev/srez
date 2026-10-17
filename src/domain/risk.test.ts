@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Decimal } from './decimal';
 import { twrGrowth } from './returns';
 import {
+  topSlices,
   beta,
   dailyReturns,
   drawdownSeries,
@@ -124,5 +125,41 @@ describe('risk measures', () => {
       true,
     ]);
     expect([c.crypto.share.toFixed(1), c.crypto.exceeded]).toEqual(['13.0', false]);
+    // No sector limit given: nothing to exceed.
+    expect(c.sector.exceeded).toBe(false);
+  });
+
+  it('the one-sector limit: the largest known sector of the shares and funds', () => {
+    const equity = [
+      h('YDEX', 300, { sector: 'it' }),
+      h('OZON', 200, { sector: 'it' }),
+      h('SBER', 400, { sector: 'financial' }),
+      h('TMOS', 100, { kind: 'etf', assetClass: 'funds', sector: '' }),
+      h('OFZ1', 900, { kind: 'bond', assetClass: 'bonds', sector: 'government' }),
+    ];
+    const c = limitChecks(equity, D(1900), {
+      issuerPct: 100,
+      singleStockPct: 100,
+      cryptoPct: 100,
+      sectorPct: 40,
+    });
+    // IT: 500 of 1 000 in shares and funds, bonds left out.
+    expect([c.sector.name, c.sector.share.toFixed(), c.sector.exceeded]).toEqual(['it', '50', true]);
+  });
+
+  it('«Состав»: the five largest and the rest summed, with shares', () => {
+    const s = topSlices(
+      [6, 5, 4, 3, 2, 1, 1].map((v, i) => ({ key: `a${i}`, value: D(v * 10) })),
+      5,
+    );
+    expect(s.map((x) => [x.key, x.share.toFixed(1)])).toEqual([
+      ['a0', '27.3'],
+      ['a1', '22.7'],
+      ['a2', '18.2'],
+      ['a3', '13.6'],
+      ['a4', '9.1'],
+      ['other', '9.1'],
+    ]);
+    expect(topSlices([{ key: 'x', value: D(0) }])).toEqual([]);
   });
 });

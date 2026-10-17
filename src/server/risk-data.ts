@@ -12,6 +12,8 @@ import {
   worstMonth,
   type Holding,
   type IndexPoint,
+  topSlices,
+  type Slice,
 } from '@/domain/risk';
 import { everything, type Scope } from '@/domain/scope';
 import { addDays, localDate } from '@/lib/time';
@@ -45,6 +47,16 @@ export interface RiskData {
   largest: ReturnType<typeof largest>;
   currencies: ReturnType<typeof riskCurrencies>;
   limits: ReturnType<typeof limitChecks>;
+  /** «Состав»: the largest holdings, the classes, the sectors of shares and funds (FR-ANL-10). */
+  composition: {
+    assets: Slice[];
+    /** How many holdings «Остальное» sums. */
+    restCount: number;
+    /** An asset slice's caption: its ticker, a bond's name. */
+    names: Record<string, string>;
+    classes: Slice[];
+    sectors: Slice[];
+  };
 }
 
 /**
@@ -115,6 +127,7 @@ export function riskData(
         assetClass: c.assetClass,
         currency: c.isCash ? (c.ticker ?? c.currency) : c.currency,
         issuer: c.issuer,
+        sector: c.sector,
         isCash: c.isCash,
         value: c.valueRub,
       });
@@ -133,5 +146,23 @@ export function riskData(
     largest: largest(holdings, value),
     currencies: riskCurrencies(holdings, value),
     limits: limitChecks(holdings, value, settings.limits),
+    composition: {
+      // Money is one slice, whatever its currencies.
+      assets: topSlices(holdings.map((h) => ({ key: h.isCash ? 'cash' : h.instrumentId, value: h.value }))),
+      names: Object.fromEntries(
+        holdings.map((h) => [h.instrumentId, h.ticker && h.kind !== 'bond' ? h.ticker : h.name]),
+      ),
+      restCount: Math.max(0, new Set(holdings.map((h) => (h.isCash ? 'cash' : h.instrumentId))).size - 5),
+      classes: topSlices(
+        holdings.map((h) => ({ key: h.assetClass, value: h.value })),
+        10,
+      ),
+      sectors: topSlices(
+        holdings
+          .filter((h) => !h.isCash && (h.assetClass === 'stocks' || h.assetClass === 'funds'))
+          .map((h) => ({ key: h.sector ?? '', value: h.value })),
+        8,
+      ),
+    },
   };
 }

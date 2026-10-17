@@ -143,13 +143,19 @@ function handle(state: MockState, method: string, body: Json, res: http.ServerRe
     }
     case 'InstrumentsService/GetInstrumentBy':
     case 'InstrumentsService/CurrencyBy':
+    case 'InstrumentsService/ShareBy':
+    case 'InstrumentsService/EtfBy':
     case 'InstrumentsService/BondBy': {
       const i = instrument(body);
       const wanted = method.endsWith('BondBy')
         ? 'INSTRUMENT_TYPE_BOND'
         : method.endsWith('CurrencyBy')
           ? 'INSTRUMENT_TYPE_CURRENCY'
-          : null;
+          : method.endsWith('ShareBy')
+            ? 'INSTRUMENT_TYPE_SHARE'
+            : method.endsWith('EtfBy')
+              ? 'INSTRUMENT_TYPE_ETF'
+              : null;
       if (!i || (wanted && i.instrumentKind !== wanted))
         return error(res, 404, '50002', 'Instrument not found');
       return ok({ instrument: i });

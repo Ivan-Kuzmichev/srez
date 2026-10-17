@@ -156,6 +156,15 @@ export function currentConditions(db: Db, userId: string, settings: Settings, no
       });
     if (l.crypto.exceeded)
       out.push({ key: 'limit:crypto', text: m.limitCrypto(pct(l.crypto.share), pct(l.crypto.limit)) });
+    if (l.sector.exceeded)
+      out.push({
+        key: `limit:sector:${l.sector.name}`,
+        text: m.limitSector(
+          ru.sectors[l.sector.name ?? ''] ?? l.sector.name ?? '',
+          pct(l.sector.share),
+          pct(l.sector.limit),
+        ),
+      });
   }
 
   // Monday from 10:00 local time, once a week.

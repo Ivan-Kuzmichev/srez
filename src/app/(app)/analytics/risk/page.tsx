@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
 import { AnalyticsHeader } from '@/components/analytics/header';
+import { CompositionChart } from '@/components/charts/composition-chart';
 import { DrawdownChart } from '@/components/charts/drawdown-chart';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LimitPill } from '@/components/ui/pill';
@@ -72,6 +73,30 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
   const top = r.largest.top;
   const lim = r.limits;
   const limitsHref = '/settings#limits';
+  const rub = (v: Decimal) => formatMoney(Money.of(v.round(), 'RUB'));
+  const c = r.composition;
+  const slice = (label: (key: string) => string) => (x: (typeof c.assets)[number]) => ({
+    key: x.key,
+    label: label(x.key),
+    amount: rub(x.value),
+    shareText: share(x.share),
+    share: x.share.toNumber(),
+  });
+  const compositionViews = {
+    assets: c.assets.map(
+      slice((k) =>
+        k === 'cash'
+          ? ru.composition.cash
+          : k === 'other'
+            ? ru.composition.other(c.restCount)
+            : (c.names[k] ?? k),
+      ),
+    ),
+    classes: c.classes.map(slice((k) => ru.classes[k] ?? k)),
+    sectors: c.sectors.map(
+      slice((k) => (k === 'other' ? ru.composition.otherSectors : (ru.sectors[k] ?? k))),
+    ),
+  };
 
   return (
     <>
@@ -125,6 +150,8 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
       </div>
 
       <DrawdownChart points={r.index.map((p) => ({ date: p.date, index: p.index.toString() }))} />
+
+      <CompositionChart views={compositionViews} total={rub(r.value)} />
 
       <div className="flex flex-wrap items-start gap-3 wide:gap-4">
         <section
@@ -248,6 +275,16 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
                     ? ru.risk.stockNow(lim.singleStock.name, share(lim.singleStock.share))
                     : ru.risk.noStocks,
                   over: lim.singleStock.exceeded,
+                },
+                {
+                  title: ru.risk.sector(formatPercent(lim.sector.limit, { digits: 0 })),
+                  note: lim.sector.name
+                    ? ru.risk.sectorNow(
+                        ru.sectors[lim.sector.name] ?? lim.sector.name,
+                        share(lim.sector.share),
+                      )
+                    : ru.risk.noSectors,
+                  over: lim.sector.exceeded,
                 },
               ].map((l) => (
                 <div

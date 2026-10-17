@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SectorPicker } from '@/components/portfolio/sector-picker';
 import { notFound } from 'next/navigation';
 import { AssetChart } from '@/components/charts/asset-chart';
 import { Button } from '@/components/ui/button';
@@ -104,6 +105,13 @@ export default async function AssetPage({ params, searchParams }: PageProps<'/as
             <span className="text-caption text-muted">
               {[ru.classes[i.assetClass] ?? i.assetClass, holding].filter(Boolean).join(' · ')}
             </span>
+            {i.assetClass === 'stocks' || i.assetClass === 'funds' ? (
+              <SectorPicker
+                instrumentId={i.id}
+                sector={typeof i.meta?.sector === 'string' ? i.meta.sector : null}
+                manual={i.meta?.sectorManual === true}
+              />
+            ) : null}
           </div>
           <Button asChild variant="primary" className="max-wide:hidden">
             <Link href="/operations/new">{ru.asset.addOperation}</Link>

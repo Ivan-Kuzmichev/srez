@@ -145,6 +145,32 @@ describe('areas', () => {
     expect(listPortfolios(db, 'u1')).toEqual([]);
     expect(db.select().from(operations).all()).toHaveLength(3);
   });
+
+  it('sector targets: kept per portfolio, the empty ones dropped, no more than 100 % in all', () => {
+    const db = setup();
+    const base = {
+      name: 'Акции',
+      targetsEnabled: false,
+      targets: {},
+      deviationThreshold: new Decimal(5),
+      rules: [{ accountId: 'a1', mode: 'all' as const, tagId: null }],
+    };
+    expect(() =>
+      savePortfolio(db, 'u1', { ...base, sectorTargets: { it: new Decimal(70), energy: new Decimal(40) } }),
+    ).toThrow(/SECTOR_TARGETS/);
+    const id = savePortfolio(db, 'u1', {
+      ...base,
+      sectorTargets: { it: new Decimal(40), financial: new Decimal(25), energy: new Decimal(0) },
+    });
+    const p = listPortfolios(db, 'u1').find((x) => x.id === id)!;
+    expect([...p.sectorTargets].map(([k, v]) => [k, v.toFixed()]).sort()).toEqual([
+      ['financial', '25'],
+      ['it', '40'],
+    ]);
+    // Saving without them clears them.
+    savePortfolio(db, 'u1', base, id);
+    expect(listPortfolios(db, 'u1').find((x) => x.id === id)!.sectorTargets.size).toBe(0);
+  });
 });
 
 function db0() {

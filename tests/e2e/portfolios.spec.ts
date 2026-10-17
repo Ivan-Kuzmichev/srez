@@ -77,11 +77,23 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await page.goto(`${whole}/rebalance`);
   await expect(page.getByText('У портфеля нет целей по классам')).toBeVisible();
   await page.goto(`${whole}/edit`);
+  // Sector targets of their own: more than 100 % is refused, then a valid one is kept.
+  const sectorTargets = page.getByTestId('sector-targets');
+  await sectorTargets.getByLabel('Финансы, %').fill('80');
+  await sectorTargets.getByLabel('Нефть и газ, %').fill('30');
+  await expect(sectorTargets).toContainText('Задано 110 % из 100');
+  await sectorTargets.getByLabel('Нефть и газ, %').fill('20');
   await page.getByLabel('Без целей, только учёт').uncheck();
   await page.getByLabel('Акции, %').fill('70');
   await page.getByLabel('Кэш, %').fill('30');
   await page.getByRole('button', { name: 'Сохранить' }).first().click();
   await expect(page).toHaveURL(/\/portfolios\/[0-9a-f-]+$/);
+  // «Цели и ребаланс» by sectors: the targets set above, against what is held.
+  const targetsCard = page.getByTestId('targets');
+  await targetsCard.getByRole('radio', { name: 'Отрасли' }).click();
+  await expect(targetsCard.getByTestId('targets-sectors')).toContainText('Финансы');
+  await expect(targetsCard.getByTestId('targets-sectors')).toContainText('/ 80 %');
+  await targetsCard.getByRole('radio', { name: 'Классы' }).click();
   await page.getByRole('link', { name: 'Рассчитать ребаланс' }).click();
   await page.getByLabel('Сколько вношу, ₽').fill('100000');
   await expect(page.getByTestId('rebalance-classes')).toContainText('Акции');
@@ -142,9 +154,17 @@ test('risk shows the largest positions and the limits', async ({ page }, info) =
   await expect(page.getByTestId('risk-cards')).toContainText('Максимальная просадка');
   await expect(page.getByTestId('risk-largest')).toContainText('LKOH');
   await expect(page.getByTestId('risk-currencies')).toContainText('Рубль');
+  // «Состав»: the ring by assets, by classes, by sectors.
+  const composition = page.getByTestId('composition');
+  await expect(composition).toContainText('LKOH');
+  await composition.getByRole('radio', { name: 'Классы' }).click();
+  await expect(composition).toContainText('Акции');
+  await composition.getByRole('radio', { name: 'Отрасли' }).click();
   const limits = page.getByTestId('risk-limits');
+  await expect(limits).toContainText('Одна отрасль до 40 % акций и фондов');
   await expect(limits).toContainText('Одна акция до 8 %');
   await expect(limits).toContainText('Превышен');
   await limits.getByRole('link', { name: 'Изменить' }).click();
   await expect(page.getByTestId('settings-limits')).toBeVisible();
+  await expect(page.getByLabel('Одна отрасль, до % акций и фондов')).toHaveValue('40');
 });

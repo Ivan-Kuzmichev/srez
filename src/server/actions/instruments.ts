@@ -1,7 +1,10 @@
 'use server';
 
+import { eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
+import { instruments } from '@/db/schema';
 import { IntegrationError } from '@/integrations/errors';
 import { authedAction } from '../action';
 import { logger } from '../logger';
@@ -53,4 +56,22 @@ export const createCustomAsset = authedAction(
       message: 'REQUIRED',
     }),
   async (input, session) => ({ ok: true, data: insertCustomAsset(db(), session.user.id, input) }),
+);
+
+/**
+ * The owner's sector for a share or a fund (FR-PRT-10): kept over the broker's. 'auto' goes back to the
+ * broker's, asked again on the next price refresh.
+ */
+export const setInstrumentSector = authedAction(
+  z.object({ instrumentId: z.string().max(64), sector: z.string().regex(/^[a-z_]{1,32}$/) }),
+  async ({ instrumentId, sector }, session) => {
+    const row = db().select().from(instruments).where(eq(instruments.id, instrumentId)).get();
+    // Custom assets belong to their owner; exchange instruments are shared by the one-owner app.
+    if (!row || (row.userId && row.userId !== session.user.id)) return { ok: false, code: 'NOT_FOUND' };
+    const { sector: _old, sectorManual: _manual, ...rest } = (row.meta ?? {}) as Record<string, unknown>;
+    const meta = sector === 'auto' ? rest : { ...rest, sector, sectorManual: true };
+    db().update(instruments).set({ meta }).where(eq(instruments.id, instrumentId)).run();
+    revalidatePath(`/assets/${instrumentId}`);
+    return { ok: true, data: null };
+  },
 );

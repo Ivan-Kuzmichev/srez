@@ -4,7 +4,7 @@ import { setLastPrice, upsertPrices, type InstrumentInUse } from '@/db/mutations
 import { instruments, prices, pricesLast, sources } from '@/db/schema';
 import { priceCurrency } from '@/domain/bonds';
 import { Decimal } from '@/domain/decimal';
-import { quotation, type Bond, type TinvestClient } from '@/integrations/tinvest/client';
+import { quotation, TinvestError, type Bond, type TinvestClient } from '@/integrations/tinvest/client';
 import { tinvestToken } from './source-token';
 import { tinvestClient } from './tinvest-client';
 
@@ -104,6 +104,33 @@ export async function refreshTinvestPrices(
     priced.add(inst.id);
   }
   return priced;
+}
+
+const SECTOR_KINDS = new Set(['share', 'etf', 'bond']);
+
+/**
+ * The broker's economy sector of held shares, funds and bonds, asked once per instrument and kept in
+ * `meta.sector` ('' when the broker has none). A sector the owner chose (`meta.sectorManual`) stays.
+ */
+export async function refreshSectors(
+  db: Executor,
+  client: TinvestClient,
+  used: InstrumentInUse[],
+): Promise<number> {
+  let filled = 0;
+  for (const inst of used) {
+    if (!SECTOR_KINDS.has(inst.kind) || !inst.externalUid || typeof inst.meta?.sector === 'string') continue;
+    let sector = '';
+    try {
+      sector = await client.getSector(inst.externalUid, inst.kind as 'share' | 'etf' | 'bond');
+    } catch (err) {
+      if (!(err instanceof TinvestError) || err.code !== 'NOT_FOUND') throw err;
+    }
+    inst.meta = { ...inst.meta, sector };
+    db.update(instruments).set({ meta: inst.meta }).where(eq(instruments.id, inst.id)).run();
+    filled++;
+  }
+  return filled;
 }
 
 const SIX_YEARS_MS = 6 * 365 * 86_400_000;

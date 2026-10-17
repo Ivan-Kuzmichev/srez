@@ -13,7 +13,8 @@
    "instrumentType": "share",
    "instrumentKind": "INSTRUMENT_TYPE_SHARE",
    "positionUid": "",
-   "countryOfRisk": "RU"
+   "countryOfRisk": "RU",
+   "sector": "financial"
   },
   {
    "uid": "02cfdf61-6298-4c0f-a9ca-9cabc82afaf3",
@@ -28,7 +29,8 @@
    "instrumentType": "share",
    "instrumentKind": "INSTRUMENT_TYPE_SHARE",
    "positionUid": "",
-   "countryOfRisk": "RU"
+   "countryOfRisk": "RU",
+   "sector": "energy"
   },
   {
    "uid": "962e2a95-02a9-4171-abd7-aa198dbe643a",
@@ -43,7 +45,8 @@
    "instrumentType": "share",
    "instrumentKind": "INSTRUMENT_TYPE_SHARE",
    "positionUid": "",
-   "countryOfRisk": "RU"
+   "countryOfRisk": "RU",
+   "sector": "energy"
   },
   {
    "uid": "3d9cc8b6-4a6c-4d5b-9f7c-1f6a2b5e7c01",
@@ -78,7 +81,8 @@
     "currency": "rub",
     "units": "16",
     "nano": 450000000
-   }
+   },
+   "sector": "government"
   },
   {
    "uid": "7c1e2a40-55b1-4f0e-9d3a-0b8f6c2d1e77",
@@ -113,7 +117,8 @@
     "currency": "rub",
     "units": "0",
     "nano": 0
-   }
+   },
+   "sector": "government"
   },
   {
    "uid": "9654c2dd-6993-427e-80fa-04e80a1cf4da",
@@ -128,7 +133,8 @@
    "instrumentType": "etf",
    "instrumentKind": "INSTRUMENT_TYPE_ETF",
    "positionUid": "",
-   "countryOfRisk": "RU"
+   "countryOfRisk": "RU",
+   "sector": "other"
   },
   {
    "uid": "5b0d3e1f-7a2c-4c8e-9e11-2f4a6b8c0d12",
@@ -143,7 +149,8 @@
    "instrumentType": "etf",
    "instrumentKind": "INSTRUMENT_TYPE_ETF",
    "positionUid": "",
-   "countryOfRisk": "RU"
+   "countryOfRisk": "RU",
+   "sector": "other"
   },
   {
    "uid": "a22a1263-8e1b-4546-a1aa-416463f104d3",
