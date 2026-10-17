@@ -36,4 +36,18 @@ describe('endpoints with fallbacks', () => {
       requestJson('evm', ['https://a', 'https://b'], '', { method: 't', fetchFn: fetchBad, parse: strict }),
     ).resolves.toEqual({ ok: true });
   });
+
+  it('a body cut off by the timeout is a timeout, not a broken answer', async () => {
+    // Headers in time, then the body stream fails the way an aborted fetch does.
+    const body = new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode('{"ok":'));
+        c.error(new DOMException('The operation was aborted due to timeout', 'TimeoutError'));
+      },
+    });
+    const fetchFn = async () => new Response(body);
+    await expect(
+      requestJson('blockscout', ['https://a'], '', { method: 't', fetchFn, parse }),
+    ).rejects.toMatchObject({ code: 'TIMEOUT' });
+  });
 });

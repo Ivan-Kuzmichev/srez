@@ -52,7 +52,16 @@ export async function requestJson<T>(
       last = new IntegrationError(integration, timeout ? 'TIMEOUT' : 'NETWORK', String(err));
       continue;
     }
-    const text = await res.text().catch(() => '');
+    let text: string;
+    try {
+      text = await res.text();
+    } catch (err) {
+      // The headers came in time, the body did not: the same timeout, not a broken answer.
+      const timeout = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
+      report(res.status, undefined, String(err));
+      last = new IntegrationError(integration, timeout ? 'TIMEOUT' : 'NETWORK', String(err));
+      continue;
+    }
     report(res.status, text);
     if (!res.ok) {
       last = new IntegrationError(integration, 'HTTP', `HTTP ${res.status}`, res.status);

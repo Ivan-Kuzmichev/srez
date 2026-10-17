@@ -106,7 +106,8 @@ async function blockscoutList<T>(
         // The key goes in a header, so it never shows up in a URL.
         headers: { authorization: key },
         fetchFn,
-        timeoutMs: 20_000,
+        // A token list over years of an address can take Blockscout well over 20 s on Ethereum.
+        timeoutMs: 60_000,
         parse: (body) => {
           const env = Envelope.parse(body);
           // Blockscout indexes internal transactions behind the chain and says so with status 0;
