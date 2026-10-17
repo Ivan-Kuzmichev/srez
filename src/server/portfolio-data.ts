@@ -518,6 +518,8 @@ export function upcomingPayouts(db: Db, cells: ValuedCell[], today: string, limi
         gte(payoutEvents.payDate, today),
         // Bond schedules run to maturity; «ближайшие» means the coming year.
         lte(payoutEvents.payDate, addDays(today, 366)),
+        // An offer pays only if the holder asks: a date to know, not money to expect.
+        ne(payoutEvents.kind, 'offer'),
       ),
     )
     .orderBy(asc(payoutEvents.payDate))

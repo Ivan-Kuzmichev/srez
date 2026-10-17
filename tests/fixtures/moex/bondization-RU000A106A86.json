@@ -1,0 +1,13 @@
+{
+"amortizations": {
+	"columns": ["isin", "name", "issuevalue", "amortdate", "facevalue", "initialfacevalue", "faceunit", "valueprc", "value", "value_rub", "data_source", "secid", "primary_boardid"], 
+	"data": [
+		["RU000A106A86", "Каршеринг Руссия 001P-02", 4107847000, "2026-05-22", 1000, 1000, "RUB", 100, 1000, 1000, "maturity", "RU000A106A86", "TQCB"]
+	]
+},
+"offers": {
+	"columns": ["isin", "name", "issuevalue", "offerdate", "offerdatestart", "offerdateend", "facevalue", "faceunit", "price", "value", "agent", "offertype", "secid", "primary_boardid"], 
+	"data": [
+		["RU000A106A86", "Каршеринг Руссия 001P-02", 4107847000, "2026-03-05", null, null, 1000, "RUB", 96, null, null, "Оферта", "RU000A106A86", "TQCB"]
+	]
+}}

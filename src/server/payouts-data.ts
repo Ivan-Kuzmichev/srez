@@ -182,7 +182,8 @@ export function payoutsView(
         quantity,
         perUnit: per,
         currency: e.currency,
-        amountRub: per.times(quantity).times(rubPer(fx, e.currency) ?? 1),
+        // An offer is shown on its date but pays only if the holder asks: no money expected.
+        amountRub: e.kind === 'offer' ? ZERO : per.times(quantity).times(rubPer(fx, e.currency) ?? 1),
         account: [...new Set(own.map((c) => c.accountName))].join(', '),
         estimate: e.isEstimate,
       });
@@ -244,8 +245,8 @@ export function payoutsView(
     portfolios: all.map((p) => ({ id: p.id, name: p.name })),
     received,
     expected,
-    expectedCount: upcoming.length,
-    nearest: upcoming[0]?.date ?? null,
+    expectedCount: upcoming.filter((u) => u.kind !== 'offer').length,
+    nearest: upcoming.find((u) => u.kind !== 'offer')?.date ?? null,
     forecast,
     perMonth,
     months,

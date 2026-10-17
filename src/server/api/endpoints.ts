@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, lt, lte, or, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, lte, ne, or, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { listLogs } from '@/db/queries/logs';
 import { applyFix, ReconcileError } from '@/db/mutations/reconcile';
@@ -344,6 +344,8 @@ export const endpoints: Endpoint<any, any>[] = [
                 inArray(payoutEvents.instrumentId, [...held.keys()]),
                 gte(payoutEvents.payDate, `${year}-01-01`),
                 lt(payoutEvents.payDate, `${year + 1}-01-01`),
+                // An offer pays only if the holder asks: not an expected payout.
+                ne(payoutEvents.kind, 'offer'),
               ),
             )
             .orderBy(asc(payoutEvents.payDate))

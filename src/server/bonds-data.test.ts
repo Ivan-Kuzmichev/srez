@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { saveBrokerAccounts } from '@/db/mutations/broker-accounts';
 import { recalcAccount } from '@/db/mutations/positions';
 import { createTinvestSource } from '@/db/mutations/sources';
-import { finAccounts, user } from '@/db/schema';
+import { finAccounts, payoutEvents, user } from '@/db/schema';
 import { createTestDb } from '@/db/test-db';
 import { TinvestClient } from '@/integrations/tinvest/client';
 import { refreshPrices } from '@/jobs/market';
@@ -60,5 +60,40 @@ describe('bonds of an area', () => {
     expect(b.soon).toEqual([]);
     expect(b.shock.lt(0)).toBe(true);
     expect(b.floatingShare.toFixed()).toBe('0');
+
+    // From the exchange: an offer at par in half a year, a quarter of the nominal back in 2030.
+    const ofzId = ofz.instrumentId;
+    db.insert(payoutEvents)
+      .values([
+        {
+          instrumentId: ofzId,
+          kind: 'offer',
+          payDate: '2027-04-10',
+          amountPerUnit: '1000',
+          currency: 'RUB',
+          source: 'moex',
+        },
+        {
+          instrumentId: ofzId,
+          kind: 'amortization',
+          payDate: '2030-05-15',
+          amountPerUnit: '250',
+          currency: 'RUB',
+          source: 'moex',
+        },
+      ])
+      .run();
+    const o = bondsData(db, 'u1', null, getSettings(db, 'u1'), now);
+    const row = o.rows[0]!;
+    expect(row.offer?.date).toBe('2027-04-10');
+    // Sold back at par from 62,4 % in half a year: far above the yield to 2041.
+    expect(row.offer!.ytm!.gt(row.ytm!)).toBe(true);
+    expect(o.redemptions.map((r) => [r.year, r.amount.toFixed()])).toEqual([
+      ['2030', '2500'],
+      ['2041', '10000'],
+    ]);
+    expect(o.soon.map((e) => [e.date, e.kind, e.amount.toFixed()])).toEqual([
+      ['2027-04-10', 'offer', '10000'],
+    ]);
   });
 });

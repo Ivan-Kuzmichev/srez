@@ -110,6 +110,17 @@ export function bondArea(holdings: readonly BondHolding[], delta: Decimal) {
 }
 
 /**
+ * The flows of a bond held to its offer and sold back there: what it pays up to the offer date,
+ * coupon of that day included, then the offer price instead of the rest (docs/04, section 12).
+ */
+export function flowsToOffer(
+  flows: readonly BondFlow[],
+  offer: { date: string; amount: Decimal },
+): BondFlow[] {
+  return [...flows.filter((f) => f.date <= offer.date), { date: offer.date, amount: offer.amount }];
+}
+
+/**
  * The currency a price of an instrument is in: a bond's nominal currency when known (a bond can trade
  * in rubles on a dollar nominal, its price a percent of dollars), else the instrument's own.
  */

@@ -227,4 +227,42 @@ export async function getPriceHistory(
   return out;
 }
 
+export interface BondScheduleEvent {
+  kind: 'amortization' | 'redemption' | 'offer';
+  /** «YYYY-MM-DD». */
+  date: string;
+  /** Per bond, in `currency`: the nominal paid back, or what the issuer pays at an offer. */
+  amount: string;
+  currency: string;
+}
+
+/**
+ * A bond's nominal schedule and offers (ISS `bondization`): partial repayments, the final one, put
+ * dates. ISS lists the last repayment of an amortizing bond as an amortization too: the latest date
+ * is the redemption. An offer is valued at its price, a percent of the face value then.
+ */
+export async function getBondization(secid: string, fetchFn: Fetch = fetch): Promise<BondScheduleEvent[]> {
+  const url = `${BASE}/securities/${encodeURIComponent(secid)}/bondization.json?iss.meta=off&iss.only=amortizations,offers&limit=100`;
+  const body = parse(z.object({ amortizations: Table, offers: Table }), await getJson('moex', url, fetchFn));
+  const out: BondScheduleEvent[] = [];
+  const amortizations = rows(body.amortizations).filter(
+    (r) => typeof r.amortdate === 'string' && r.value != null && Number(r.value) > 0,
+  );
+  const last = amortizations.reduce((m, r) => (String(r.amortdate) > m ? String(r.amortdate) : m), '');
+  for (const r of amortizations)
+    out.push({
+      kind: r.amortdate === last ? 'redemption' : 'amortization',
+      date: String(r.amortdate),
+      amount: String(r.value),
+      currency: issCurrency(r.faceunit),
+    });
+  for (const r of rows(body.offers)) {
+    if (typeof r.offerdate !== 'string' || r.facevalue == null) continue;
+    const price = r.price != null && Number(r.price) > 0 ? String(r.price) : '100';
+    const amount = shiftLeft2(decimalTimes(price, String(r.facevalue)));
+    out.push({ kind: 'offer', date: r.offerdate, amount, currency: issCurrency(r.faceunit) });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export const _test = { toMoney, decimalTimes };

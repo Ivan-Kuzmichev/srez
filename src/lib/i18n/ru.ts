@@ -612,6 +612,7 @@ export const ru = {
     back: 'Назад к портфелю',
   },
   payoutsPage: {
+    offerAmount: '—',
     allPortfolios: 'Все портфели',
     portfolio: 'Портфель',
     year: 'Год',
@@ -745,6 +746,8 @@ export const ru = {
       'В ближайшие 12 месяцев погашений, оферт и амортизаций нет. Когда появятся, они попадут сюда и в календарь выплат.',
     soonNoneShort: 'В ближайшие 12 месяцев погашений, оферт и амортизаций нет.',
     soonTitle: 'В ближайшие 12 месяцев',
+    toOffer: (pct: string) => `к оферте ${pct}`,
+    offerOn: (month: string) => `оферта ${month}`,
     soonKinds: { redemption: 'погашение', amortization: 'амортизация', offer: 'оферта' } as Record<
       string,
       string

@@ -165,12 +165,20 @@ export default async function BondsPage({ searchParams }: PageProps<'/analytics/
                   </Td>
                   <Td align="right" mono title={r.noSchedule ? t.noSchedule : undefined}>
                     {r.noSchedule ? <span className="text-muted">{t.noSchedule}</span> : ytmText(r)}
+                    {r.offer?.ytm ? (
+                      <span className="block text-small text-muted">
+                        {t.toOffer(pct1(r.offer.ytm.times(100)))}
+                      </span>
+                    ) : null}
                   </Td>
                   <Td align="right" mono>
                     {r.duration ? formatPlain(r.duration, 1) : ru.common.none}
                   </Td>
                   <Td className="whitespace-nowrap text-text-2">
                     {r.maturityDate ? month(r.maturityDate) : ru.common.none}
+                    {r.offer ? (
+                      <span className="block text-small text-muted">{t.offerOn(month(r.offer.date))}</span>
+                    ) : null}
                   </Td>
                   <Td className="whitespace-nowrap text-text-2">
                     {r.portfolios.join(', ') || ru.common.none}
@@ -204,6 +212,12 @@ export default async function BondsPage({ searchParams }: PageProps<'/analytics/
                     r.maturityDate ? month(r.maturityDate) : ru.common.none,
                   )}
                 </span>
+                {r.offer ? (
+                  <span className="text-small text-muted">
+                    {t.offerOn(month(r.offer.date))}
+                    {r.offer.ytm ? `, ${t.toOffer(pct1(r.offer.ytm.times(100)))}` : ''}
+                  </span>
+                ) : null}
                 {r.portfolios.length ? (
                   <span className="text-small text-muted">{r.portfolios.join(', ')}</span>
                 ) : null}

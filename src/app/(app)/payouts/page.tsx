@@ -63,7 +63,7 @@ function Row({ r, received }: { r: PayoutRow; received: boolean }) {
         <span className="num truncate text-small text-muted">{detail(r)}</span>
       </span>
       <span className={cn('num text-row whitespace-nowrap', received && 'text-gain')}>
-        {r.estimate ? approx(amount) : amount}
+        {r.kind === 'offer' ? ru.payoutsPage.offerAmount : r.estimate ? approx(amount) : amount}
       </span>
     </li>
   );

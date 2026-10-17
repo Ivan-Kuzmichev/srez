@@ -4,6 +4,8 @@ import type { Db, Executor } from '@/db/client';
 import { instruments, payoutEvents, positions } from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
 import { currencyOf, quotation, TinvestError, type TinvestClient } from '@/integrations/tinvest/client';
+import { getBondization } from '@/integrations/moex/client';
+import type { Fetch } from '@/integrations/errors';
 import type { Logger } from '@/server/logger';
 import { enqueue } from './queue';
 import { defineJob } from './runner';
@@ -38,8 +40,8 @@ function upsert(db: Executor, events: NewEvent[]): void {
   }
 }
 
-/** Securities held anywhere now, with a T-Invest uid. */
-function heldWithUid(db: Executor) {
+/** Securities held anywhere now. */
+function held(db: Executor) {
   const held = new Set(
     db
       .select({ id: positions.instrumentId, quantity: positions.quantity })
@@ -54,13 +56,57 @@ function heldWithUid(db: Executor) {
       id: instruments.id,
       kind: instruments.kind,
       externalUid: instruments.externalUid,
+      isin: instruments.isin,
+      ticker: instruments.ticker,
       currency: instruments.currency,
       meta: instruments.meta,
     })
     .from(instruments)
     .where(inArray(instruments.id, [...held]))
     .all()
-    .filter((i): i is typeof i & { externalUid: string } => i.externalUid !== null && i.kind !== 'currency');
+    .filter((i) => i.kind !== 'currency');
+}
+
+/** The ISS id of a bond: the one ISS gave, else its ISIN (ISS knows bonds by it), else the ticker. */
+const issSecid = (i: { isin: string | null; ticker: string | null; meta: Record<string, unknown> | null }) =>
+  (typeof i.meta?.secid === 'string' ? i.meta.secid : null) ?? i.isin ?? i.ticker;
+
+/**
+ * Amortizations, the final repayment and offers of held bonds from the exchange (ISS `bondization`):
+ * the broker's API has no amortization schedule. Every bond, with or without a broker uid.
+ */
+export async function refreshBondSchedules(
+  db: Db,
+  log: Logger,
+  now = new Date(),
+  fetchFn: Fetch = fetch,
+): Promise<number> {
+  const since = day(new Date(now.getTime() - BACK_MS))!;
+  let count = 0;
+  for (const inst of held(db).filter((i) => i.kind === 'bond')) {
+    const secid = issSecid(inst);
+    if (!secid) continue;
+    let schedule;
+    try {
+      schedule = await getBondization(secid, fetchFn);
+    } catch (err) {
+      log.warn({ instrumentId: inst.id, err }, 'Bond schedule failed');
+      continue;
+    }
+    const events: NewEvent[] = schedule
+      .filter((e) => e.date >= since)
+      .map((e) => ({
+        instrumentId: inst.id,
+        kind: e.kind,
+        payDate: e.date,
+        amountPerUnit: e.amount,
+        currency: e.currency,
+        source: 'moex' as const,
+      }));
+    upsert(db, events);
+    count += events.length;
+  }
+  return count;
 }
 
 /**
@@ -76,7 +122,8 @@ export async function refreshPayouts(
   const from = new Date(now.getTime() - BACK_MS);
   const to = new Date(now.getTime() + AHEAD_MS);
   let count = 0;
-  for (const inst of heldWithUid(db)) {
+  for (const inst of held(db)) {
+    if (!inst.externalUid) continue;
     const events: NewEvent[] = [];
     try {
       if (inst.kind === 'bond') {
@@ -151,8 +198,8 @@ export const refreshPayoutsJob = defineJob({
   payload: z.null(),
   async handler({ db, log }) {
     const client = tinvestForPrices(db);
-    if (!client) return;
-    const n = await refreshPayouts(db, client, log);
-    log.info({ events: n }, 'Payout schedules refreshed');
+    const n = client ? await refreshPayouts(db, client, log) : 0;
+    const schedules = await refreshBondSchedules(db, log);
+    log.info({ events: n, bondSchedules: schedules }, 'Payout schedules refreshed');
   },
 });

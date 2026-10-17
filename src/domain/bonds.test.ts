@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bondArea, bondMetrics, type BondFlow } from './bonds';
+import { bondArea, bondMetrics, flowsToOffer, type BondFlow } from './bonds';
 import { Decimal } from './decimal';
 
 const D = (v: string | number) => new Decimal(v);
@@ -81,5 +81,27 @@ describe('bond edge cases', () => {
     expect(a.ytm!.toFixed(2)).toBe('0.10');
     expect(a.value.toFixed()).toBe('200');
     expect(a.shock.toFixed()).toBe('-2');
+  });
+});
+
+describe('эталон 12.3: доходность к оферте', () => {
+  it('held to the offer and sold back at its price: 10,28 %', () => {
+    // Bought at par, 50 every half-year, a put at 100 % in a year, maturity far away at a discount yield.
+    const flows = schedule('50', 20, '1000');
+    const toOffer = flowsToOffer(flows, { date: addDays(today, 364), amount: D(1000) });
+    expect(toOffer.map((f) => [f.date, f.amount.toFixed()])).toEqual([
+      [addDays(today, 182), '50'],
+      [addDays(today, 364), '50'],
+      [addDays(today, 364), '1000'],
+    ]);
+    const m = bondMetrics({
+      today,
+      cleanPrice: D(1000),
+      aci: D(0),
+      flows: toOffer,
+      floating: false,
+      currentCoupon: D(50),
+    });
+    expect(m.ytm!.times(100).toFixed(2)).toBe('10.28');
   });
 });

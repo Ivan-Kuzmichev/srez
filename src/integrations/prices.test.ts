@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { _test as cbrTest, getDailyRates, getRateHistory } from './cbr/client';
 import { getCoinHistory, getCoinPrices } from './coingecko/client';
 import type { Fetch } from './errors';
-import { _test as moexTest, getLastPrice, getPriceHistory } from './moex/client';
+import { _test as moexTest, getBondization, getLastPrice, getPriceHistory } from './moex/client';
 
 const raw = (path: string) => readFileSync(`tests/fixtures/${path}`);
 const json = (path: string) => JSON.parse(raw(path).toString('utf8'));
@@ -105,6 +105,27 @@ describe('moex prices', () => {
       fake({ '/history/': () => Response.json(json('moex/history-SU26238RMFS4.json')) }),
     );
     expect(b[0]).toEqual({ date: '2026-09-28', close: '511.52' });
+  });
+
+  it('reads a bond schedule: amortizations, the last one as the redemption, offers at their price', async () => {
+    const amortizing = await getBondization(
+      'SU46020RMFS2',
+      fake({ '/bondization.json': () => Response.json(json('moex/bondization-SU46020RMFS2.json')) }),
+    );
+    expect(amortizing.map((e) => [e.kind, e.date, e.amount, e.currency])).toEqual([
+      ['amortization', '2034-08-09', '250', 'RUB'],
+      ['amortization', '2035-02-07', '250', 'RUB'],
+      ['amortization', '2035-08-08', '250', 'RUB'],
+      ['redemption', '2036-02-06', '250', 'RUB'],
+    ]);
+    const withOffer = await getBondization(
+      'RU000A106A86',
+      fake({ '/bondization.json': () => Response.json(json('moex/bondization-RU000A106A86.json')) }),
+    );
+    expect(withOffer.map((e) => [e.kind, e.date, e.amount])).toEqual([
+      ['offer', '2026-03-05', '960'],
+      ['redemption', '2026-05-22', '1000'],
+    ]);
   });
 
   it('multiplies decimals exactly', () => {

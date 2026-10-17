@@ -1,7 +1,7 @@
 import { and, gt, inArray } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { instruments, payoutEvents } from '@/db/schema';
-import { bondArea, bondMetrics, priceCurrency, type BondFlow } from '@/domain/bonds';
+import { bondArea, bondMetrics, flowsToOffer, priceCurrency, type BondFlow } from '@/domain/bonds';
 import { Decimal } from '@/domain/decimal';
 import { everything, type Scope } from '@/domain/scope';
 import { addDays, localDate } from '@/lib/time';
@@ -35,6 +35,8 @@ export interface BondRow {
   /** No coupon schedule known: kept out of the yield and duration. */
   noSchedule: boolean;
   maturityDate: string | null;
+  /** The next offer: its date and the yield held to it, sold back at the offer price. */
+  offer: { date: string; ytm: Decimal | null } | null;
   portfolios: string[];
 }
 
@@ -153,6 +155,26 @@ export function bondsData(
       noSchedule || !cleanPrice
         ? { ytm: null, duration: null, modified: null, approx: false }
         : bondMetrics({ today, cleanPrice, aci, flows, floating, currentCoupon });
+    const nextOffer = future.find((e) => e.kind === 'offer');
+    const offer = nextOffer
+      ? {
+          date: nextOffer.payDate,
+          ytm:
+            noSchedule || !cleanPrice
+              ? null
+              : bondMetrics({
+                  today,
+                  cleanPrice,
+                  aci,
+                  flows: flowsToOffer(flows, {
+                    date: nextOffer.payDate,
+                    amount: new Decimal(nextOffer.amountPerUnit),
+                  }),
+                  floating,
+                  currentCoupon,
+                }).ytm,
+        }
+      : null;
 
     for (const e of future) {
       const perUnit =
@@ -165,6 +187,15 @@ export function bondsData(
       if (e.kind !== 'coupon' && e.kind !== 'dividend' && e.payDate <= yearEnd)
         soon.push({ date: e.payDate, name: inst.name, kind: e.kind, amount });
     }
+    // Partial repayments give the nominal back too, in their own year.
+    for (const e of future)
+      if (e.kind === 'amortization') {
+        const y = e.payDate.slice(0, 4);
+        redemptions.set(
+          y,
+          (redemptions.get(y) ?? ZERO).plus(new Decimal(e.amountPerUnit).times(h.quantity).times(rate)),
+        );
+      }
     const redemption = future.find((e) => e.kind === 'redemption');
     const redeemDate = redemption?.payDate ?? maturity;
     const redeemPerUnit = redemption ? new Decimal(redemption.amountPerUnit) : nominal;
@@ -188,6 +219,7 @@ export function bondsData(
       ...m,
       noSchedule,
       maturityDate: maturity,
+      offer,
       portfolios: portfolios
         .filter((p) => h.cells.some((c) => p.scope(c.accountId, c.tagId)))
         .map((p) => p.name),
