@@ -3,7 +3,7 @@ import { Decimal } from '@/domain/decimal';
 import { IntegrationError, type Fetch } from '../errors';
 import { isEvmAddress } from './address';
 import { requestJson } from './http';
-import { blockscoutUrl, endpointsOf, network, type Network } from './networks';
+import { blockscoutUrl, endpointsOf, etherscanUrl, network, type Network } from './networks';
 import type { ChainProvider, TokenBalance, TokenMeta, Transfer } from './types';
 
 const RpcResult = z.object({ id: z.number(), result: z.string().optional(), error: z.unknown().optional() });
@@ -58,7 +58,7 @@ export async function readRate(
   return hexToDecimal(raw!).div(pow10(18));
 }
 
-// Blockscout's Etherscan-compatible routes: { status, message, result }.
+// Etherscan's routes, and Blockscout's copy of them: { status, message, result }.
 const Envelope = z.object({ status: z.string(), message: z.string(), result: z.unknown() });
 const NativeTx = z.object({
   hash: z.string(),
@@ -71,10 +71,21 @@ const NativeTx = z.object({
   gasPrice: z.string().optional(),
   isError: z.string().optional(),
 });
-// Internal transactions name the hash `transactionHash` and number the calls of one transaction.
+// Internal transactions: Blockscout names the hash `transactionHash` and numbers the calls of one
+// transaction `index`; Etherscan keeps `hash` and calls the number `traceId`.
 const InternalTx = NativeTx.omit({ hash: true })
-  .extend({ transactionHash: z.string(), index: z.string().optional() })
-  .transform(({ transactionHash, ...t }) => ({ ...t, hash: transactionHash }));
+  .extend({
+    hash: z.string().optional(),
+    transactionHash: z.string().optional(),
+    index: z.string().optional(),
+    traceId: z.string().optional(),
+  })
+  .refine((t) => !!(t.hash ?? t.transactionHash), { message: 'No transaction hash' })
+  .transform(({ transactionHash, traceId, index, hash, ...t }) => ({
+    ...t,
+    hash: (hash ?? transactionHash)!,
+    index: index ?? traceId,
+  }));
 const TokenTx = NativeTx.extend({
   contractAddress: z.string(),
   tokenSymbol: z.string(),
@@ -86,27 +97,59 @@ const PAGE = 1000;
 const INTERNAL_PENDING = /internal transactions .* not yet been processed/i;
 const MAX_PAGES = 10;
 
-async function blockscoutList<T>(
+/** Where the history of a network comes from, with its key. */
+export interface Explorer {
+  kind: 'blockscout' | 'etherscan';
+  key: string;
+}
+
+/** The keys an EVM provider may hold; both are optional. */
+export interface HistoryKeys {
+  blockscoutKey?: string | null;
+  etherscanKey?: string | null;
+}
+
+/**
+ * The explorer for a network's history, or null when no key covers it. Etherscan first where its
+ * free plan reaches (decision of 2026-10-17): from some networks Blockscout's answers freeze past ~17 KB.
+ */
+export function explorerFor(net: Network, keys: HistoryKeys): Explorer | null {
+  if (net.etherscan && keys.etherscanKey) return { kind: 'etherscan', key: keys.etherscanKey };
+  if (net.history && keys.blockscoutKey) return { kind: 'blockscout', key: keys.blockscoutKey };
+  return null;
+}
+
+/** Pauses after «rate limit reached»: Etherscan's free plan allows a few calls a second. */
+const RATE_BACKOFF_MS = [1000, 2000, 4000];
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function explorerList<T>(
+  explorer: Explorer,
   net: Network,
   action: 'txlist' | 'tokentx' | 'txlistinternal',
   address: string,
   sinceBlock: number,
-  key: string,
   schema: z.ZodType<T>,
   fetchFn?: Fetch,
+  sleep: (ms: number) => Promise<unknown> = wait,
 ): Promise<T[]> {
-  const out: T[] = [];
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    const rows = await requestJson(
-      'blockscout',
-      [blockscoutUrl()],
-      `/${net.chainId}/api?module=account&action=${action}&address=${address}&startblock=${sinceBlock}&sort=asc&page=${page}&offset=${PAGE}`,
+  const { kind, key } = explorer;
+  const query = (page: number) =>
+    `module=account&action=${action}&address=${address}&startblock=${sinceBlock}&sort=asc&page=${page}&offset=${PAGE}`;
+  const call = (page: number) =>
+    requestJson(
+      kind,
+      [kind === 'etherscan' ? etherscanUrl() : blockscoutUrl()],
+      kind === 'etherscan'
+        ? // Etherscan takes the key only in the query; the URL is never logged or shown.
+          `/v2/api?chainid=${net.chainId}&${query(page)}&apikey=${encodeURIComponent(key)}`
+        : `/${net.chainId}/api?${query(page)}`,
       {
         method: `${net.id} account/${action}`,
-        // The key goes in a header, so it never shows up in a URL.
-        headers: { authorization: key },
+        // Blockscout takes the key in a header, so it never shows up in a URL.
+        headers: kind === 'blockscout' ? { authorization: key } : undefined,
         fetchFn,
-        // A token list over years of an address can take Blockscout well over 20 s on Ethereum.
+        // A token list over years of an address can take well over 20 s on Ethereum.
         timeoutMs: 60_000,
         parse: (body) => {
           const env = Envelope.parse(body);
@@ -116,12 +159,31 @@ async function blockscoutList<T>(
           if (action === 'txlistinternal' && INTERNAL_PENDING.test(env.message))
             return z.array(schema).parse(Array.isArray(env.result) ? env.result : []);
           // «No transactions found» comes as status 0 with an empty list.
-          if (env.status !== '1' && !(Array.isArray(env.result) && env.result.length === 0))
-            throw new IntegrationError('blockscout', 'BAD_RESPONSE', env.message);
+          if (env.status !== '1' && !(Array.isArray(env.result) && env.result.length === 0)) {
+            // Etherscan answers a bad key and its rate limit with HTTP 200 and a reason in `result`.
+            const reason = `${env.message} ${typeof env.result === 'string' ? env.result : ''}`;
+            if (/invalid api key|missing\/invalid|api key/i.test(reason))
+              throw new IntegrationError(kind, 'HTTP', 'Key refused', 401);
+            if (/rate limit/i.test(reason)) throw new IntegrationError(kind, 'HTTP', 'Rate limit', 429);
+            throw new IntegrationError(kind, 'BAD_RESPONSE', env.message);
+          }
           return z.array(schema).parse(env.result);
         },
       },
     );
+  const out: T[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    let rows: T[];
+    for (let attempt = 0; ; attempt++) {
+      try {
+        rows = await call(page);
+        break;
+      } catch (err) {
+        const pause = RATE_BACKOFF_MS[attempt];
+        if ((err as { status?: number }).status !== 429 || pause === undefined) throw err;
+        await sleep(pause);
+      }
+    }
     out.push(...rows);
     if (rows.length < PAGE) break;
   }
@@ -215,7 +277,9 @@ function tangemLegs(net: Network, module: string, transfers: Transfer[]): Transf
   return out;
 }
 
-export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: Fetch } = {}): ChainProvider {
+export function evmProvider(
+  options: HistoryKeys & { fetchFn?: Fetch; sleep?: (ms: number) => Promise<unknown> } = {},
+): ChainProvider {
   const { fetchFn } = options;
   return {
     family: 'evm',
@@ -261,18 +325,19 @@ export function evmProvider(options: { blockscoutKey?: string | null; fetchFn?: 
       return own.filter((b) => b.amount.gt(0));
     },
 
-    /** Native, internal and token transfers from `sinceBlock`, oldest first. Needs the Blockscout key. */
+    /** Native, internal and token transfers from `sinceBlock`, oldest first. Needs an explorer key. */
     async getTransfers(address, netId, sinceBlock = 0): Promise<Transfer[]> {
       const net = network(netId);
-      if (!net.history) return [];
-      if (!options.blockscoutKey) throw new IntegrationError('blockscout', 'HTTP', 'No Blockscout key', 401);
-      const key = options.blockscoutKey;
+      if (!net.history && !net.etherscan) return [];
+      const explorer = explorerFor(net, options);
+      if (!explorer) throw new IntegrationError('blockscout', 'HTTP', 'No explorer key', 401);
       const me = address.toLowerCase();
-      const [native, internal, tokens] = await Promise.all([
-        blockscoutList(net, 'txlist', address, sinceBlock, key, NativeTx, fetchFn),
-        blockscoutList(net, 'txlistinternal', address, sinceBlock, key, InternalTx, fetchFn),
-        blockscoutList(net, 'tokentx', address, sinceBlock, key, TokenTx, fetchFn),
-      ]);
+      // One after the other: Etherscan's free plan counts calls per second.
+      const list = <T>(action: 'txlist' | 'tokentx' | 'txlistinternal', schema: z.ZodType<T>) =>
+        explorerList(explorer, net, action, address, sinceBlock, schema, fetchFn, options.sleep);
+      const native = await list('txlist', NativeTx);
+      const internal = await list('txlistinternal', InternalTx);
+      const tokens = await list('tokentx', TokenTx);
       const coin = {
         contract: null,
         symbol: net.native.symbol,
@@ -364,14 +429,19 @@ export async function blockNumber(netId: string, fetchFn?: Fetch): Promise<numbe
 }
 
 /** Whether Blockscout accepts a key: one cheap list call on Ethereum. A refused key is false; a network failure throws. */
-export async function checkBlockscoutKey(key: string, fetchFn?: Fetch): Promise<boolean> {
+/** One cheap call with a key: false when the explorer refuses it, an error when it does not answer. */
+export async function checkExplorerKey(
+  kind: Explorer['kind'],
+  key: string,
+  fetchFn?: Fetch,
+): Promise<boolean> {
   try {
-    await blockscoutList(
+    await explorerList(
+      { kind, key },
       network('ethereum'),
       'txlist',
       '0x' + '0'.repeat(40),
       99_999_999,
-      key,
       NativeTx,
       fetchFn,
     );

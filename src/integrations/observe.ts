@@ -5,7 +5,16 @@
  */
 export interface ExternalRequest {
   integration:
-    'tinvest' | 'moex' | 'cbr' | 'coingecko' | 'bitcoin' | 'evm' | 'tron' | 'blockscout' | 'telegram';
+    | 'tinvest'
+    | 'moex'
+    | 'cbr'
+    | 'coingecko'
+    | 'bitcoin'
+    | 'evm'
+    | 'tron'
+    | 'blockscout'
+    | 'etherscan'
+    | 'telegram';
   /** «OperationsService/GetOperationsByCursor», «GET /iss/securities.json». Never a token or a query secret. */
   method: string;
   /** HTTP status; 0 when no answer came. */

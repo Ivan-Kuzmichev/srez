@@ -3,8 +3,17 @@ import { z } from 'zod';
 import type { Db, Executor } from '@/db/client';
 import { loadPriceSeries, upsertPrices } from '@/db/mutations/market';
 import { recalcAccount } from '@/db/mutations/positions';
-import { finAccounts, instruments, operations, positions, sources, syncRuns, SYNC_TRIGGERS } from '@/db/schema';
+import {
+  finAccounts,
+  instruments,
+  operations,
+  positions,
+  sources,
+  syncRuns,
+  SYNC_TRIGGERS,
+} from '@/db/schema';
 import { Decimal } from '@/domain/decimal';
+import { explorerFor } from '@/integrations/chains/evm';
 import { network } from '@/integrations/chains/networks';
 import { chainProvider } from '@/integrations/chains/provider';
 import type { ChainProvider, TokenBalance, Transfer } from '@/integrations/chains/types';
@@ -34,6 +43,7 @@ export function enqueueWalletSync(db: Executor, sourceId: string, trigger: Trigg
 interface Deps {
   fetchFn?: Fetch;
   blockscoutKey?: string | null;
+  etherscanKey?: string | null;
   now?: Date;
   log?: Logger;
 }
@@ -76,10 +86,8 @@ export async function syncWallet(db: Db, sourceId: string, trigger: Trigger, dep
     .get();
 
   try {
-    const provider: ChainProvider = chainProvider(wallet.family, {
-      blockscoutKey: deps.blockscoutKey ?? null,
-      fetchFn: deps.fetchFn,
-    });
+    const keys = { blockscoutKey: deps.blockscoutKey ?? null, etherscanKey: deps.etherscanKey ?? null };
+    const provider: ChainProvider = chainProvider(wallet.family, { ...keys, fetchFn: deps.fetchFn });
     const nextBlock = { ...wallet.nextBlock };
     const balances: TokenBalance[] = [];
     let added = 0;
@@ -87,7 +95,7 @@ export async function syncWallet(db: Db, sourceId: string, trigger: Trigger, dep
       const net = network(netId);
       balances.push(...(await provider.getBalances(wallet.address, netId)));
       const withHistory =
-        wallet.mode === 'history' && net.history && (wallet.family !== 'evm' || !!deps.blockscoutKey);
+        wallet.mode === 'history' && (wallet.family === 'evm' ? !!explorerFor(net, keys) : net.history);
       if (!withHistory) continue;
       const transfers = await provider.getTransfers(wallet.address, netId, nextBlock[netId] ?? 0);
       added += await importTransfers(db, account, transfers, deps.fetchFn);
@@ -113,7 +121,10 @@ export async function syncWallet(db: Db, sourceId: string, trigger: Trigger, dep
     return { newOperations: added };
   } catch (err) {
     const status = (err as { status?: number }).status;
-    const message = status === 401 || status === 403 ? ru.walletSync.keyRefused : ru.walletSync.nodes;
+    const refusedBy =
+      (err as { integration?: string }).integration === 'etherscan' ? 'Etherscan' : 'Blockscout';
+    const message =
+      status === 401 || status === 403 ? ru.walletSync.keyRefused(refusedBy) : ru.walletSync.nodes;
     db.update(sources).set({ status: 'error', lastError: message }).where(eq(sources.id, sourceId)).run();
     db.update(syncRuns)
       .set({ status: 'error', finishedAt: new Date(), error: message })
@@ -226,7 +237,12 @@ async function squareBalances(
       .map((i) => [i.id, (i.meta as { coingeckoId?: string } | null)?.coingeckoId ?? ''] as const),
   );
   for (const id of gone)
-    wanted.set(id, { amount: new Decimal(0), coingeckoId: coinIds.get(id) ?? '', rebasing: false, network: '' });
+    wanted.set(id, {
+      amount: new Decimal(0),
+      coingeckoId: coinIds.get(id) ?? '',
+      rebasing: false,
+      network: '',
+    });
 
   let added = 0;
   const day = now.toISOString().slice(0, 10);
@@ -280,6 +296,7 @@ export const syncWalletJob = defineJob({
   async handler({ db, payload, log }) {
     const result = await syncWallet(db, payload.sourceId, payload.trigger, {
       blockscoutKey: serviceKey(db, 'blockscout'),
+      etherscanKey: serviceKey(db, 'etherscan'),
       log,
     });
     log.info({ sourceId: payload.sourceId, ...result }, 'Wallet sync done');

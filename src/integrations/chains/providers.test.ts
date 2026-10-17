@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   MOCK_BLOCKSCOUT_KEY,
   MOCK_BTC_ADDRESS,
+  MOCK_ETHERSCAN_KEY,
   MOCK_EVM_ADDRESS,
   MOCK_TANGEM_MODULE,
   MOCK_TANGEM_OWNER,
@@ -10,7 +11,7 @@ import {
   type ChainsMock,
 } from '../../../tests/mock/chains';
 import { bitcoinProvider } from './bitcoin';
-import { evmProvider, readRate, tangemModule } from './evm';
+import { checkExplorerKey, evmProvider, explorerFor, readRate, tangemModule } from './evm';
 import { network } from './networks';
 import { tronProvider } from './tron';
 
@@ -131,6 +132,55 @@ describe('evm', () => {
     const pending = 'Some internal transactions within this block range have not yet been processed';
     expect(await internal(answer('0', pending, null))).toEqual([]);
     expect(await internal(answer('0', pending, [call('1', '300000000000000000')]))).toHaveLength(1);
+  });
+
+  it('Etherscan: the same history with its key, before Blockscout where its free plan reaches', async () => {
+    const both = { blockscoutKey: MOCK_BLOCKSCOUT_KEY, etherscanKey: MOCK_ETHERSCAN_KEY };
+    expect(explorerFor(network('ethereum'), both)?.kind).toBe('etherscan');
+    expect(explorerFor(network('base'), both)?.kind).toBe('blockscout');
+    expect(explorerFor(network('base'), { etherscanKey: MOCK_ETHERSCAN_KEY })).toBeNull();
+    expect(explorerFor(network('bnb'), both)).toBeNull();
+
+    const before = mock.calls.length;
+    const t = await evmProvider(both).getTransfers(MOCK_EVM_ADDRESS, 'ethereum');
+    expect(t.map((x) => [x.direction, x.asset.symbol, x.amount.toFixed()])).toEqual([
+      ['in', 'ETH', '1'],
+      ['out', 'ETH', '0.05'],
+      ['in', 'stETH', '2'],
+      ['in', 'wstETH', '1.5'],
+      ['in', 'Visit claim-rewards.example', '1000'],
+    ]);
+    const used = mock.calls.slice(before).filter((c) => !c.includes('/rpc/'));
+    expect(used).toHaveLength(3);
+    expect(used.every((c) => c.includes('/etherscan/v2/api?chainid=1&'))).toBe(true);
+    // A refused key reads as HTTP 401, like Blockscout's, though Etherscan says it with status 0.
+    await expect(
+      evmProvider({ etherscanKey: 'wrong-key-1' }).getTransfers(MOCK_EVM_ADDRESS, 'ethereum'),
+    ).rejects.toMatchObject({ status: 401, integration: 'etherscan' });
+    expect(await checkExplorerKey('etherscan', MOCK_ETHERSCAN_KEY)).toBe(true);
+    expect(await checkExplorerKey('etherscan', 'wrong-key-1')).toBe(false);
+  });
+
+  it('the rate limit of Etherscan: a pause, then the same page again', async () => {
+    let limited = 2;
+    const fetchFn = async (url: string, init?: RequestInit) =>
+      url.includes('action=txlist&') && limited-- > 0
+        ? new Response(
+            JSON.stringify({
+              status: '0',
+              message: 'NOTOK',
+              result: 'Max calls per sec rate limit reached (3/sec)',
+            }),
+          )
+        : fetch(url, init);
+    const pauses: number[] = [];
+    const t = await evmProvider({
+      etherscanKey: MOCK_ETHERSCAN_KEY,
+      fetchFn,
+      sleep: async (ms) => pauses.push(ms),
+    }).getTransfers(MOCK_EVM_ADDRESS, 'ethereum');
+    expect(pauses).toEqual([1000, 2000]);
+    expect(t).toHaveLength(5);
   });
 
   it('falls back to the next endpoint when one fails', async () => {

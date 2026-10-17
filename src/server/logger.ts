@@ -222,7 +222,8 @@ export function observeExternalRequest(r: ExternalRequest, database: () => Db = 
       : r.integration === 'bitcoin' ||
           r.integration === 'evm' ||
           r.integration === 'tron' ||
-          r.integration === 'blockscout'
+          r.integration === 'blockscout' ||
+          r.integration === 'etherscan'
         ? 'chains'
         : r.integration === 'telegram'
           ? 'notify'

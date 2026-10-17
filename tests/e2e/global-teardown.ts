@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { MOCK_BLOCKSCOUT_KEY } from '../mock/chains';
+import { MOCK_BLOCKSCOUT_KEY, MOCK_ETHERSCAN_KEY } from '../mock/chains';
 import { MOCK_TOKEN } from '../mock/tinvest';
 import { MOCK_TELEGRAM_TOKEN } from '../mock/telegram';
 import * as users from './users';
@@ -15,6 +15,7 @@ function scanForSecrets(): void {
     MOCK_TOKEN,
     MOCK_TELEGRAM_TOKEN,
     MOCK_BLOCKSCOUT_KEY,
+    MOCK_ETHERSCAN_KEY,
     E2E_AUTH_SECRET,
     E2E_SECRET_KEY,
     ...Object.values(users).map((u) => u.password),

@@ -37,6 +37,11 @@ export interface Network {
   endpoints: string[];
   /** History via Blockscout PRO (with a key). */
   history: boolean;
+  /**
+   * History via Etherscan on its free plan (with a key): Ethereum, Arbitrum, Polygon. Preferred over
+   * Blockscout when its key is set: some networks freeze Blockscout's answers past ~17 KB.
+   */
+  etherscan?: boolean;
   /** Shown but switched off until a provider exists. */
   disabled?: boolean;
   /**
@@ -96,6 +101,7 @@ export const NETWORKS: Network[] = [
     name: 'Ethereum',
     family: 'evm',
     chainId: 1,
+    etherscan: true,
     native: { symbol: 'ETH', name: 'Ethereum', decimals: 18, coingeckoId: 'ethereum' },
     endpoints: ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'],
     history: true,
@@ -192,6 +198,7 @@ export const NETWORKS: Network[] = [
     name: 'Arbitrum',
     family: 'evm',
     chainId: 42161,
+    etherscan: true,
     native: { symbol: 'ETH', name: 'Ethereum', decimals: 18, coingeckoId: 'ethereum' },
     endpoints: [
       'https://arbitrum-one-rpc.publicnode.com',
@@ -252,6 +259,7 @@ export const NETWORKS: Network[] = [
     name: 'Polygon',
     family: 'evm',
     chainId: 137,
+    etherscan: true,
     native: { symbol: 'POL', name: 'Polygon', decimals: 18, coingeckoId: 'polygon-ecosystem-token' },
     endpoints: ['https://polygon-bor-rpc.publicnode.com', 'https://polygon.drpc.org'],
     history: true,
@@ -305,6 +313,7 @@ export const NETWORKS: Network[] = [
 ];
 
 export const BLOCKSCOUT_URL = 'https://api.blockscout.com';
+export const ETHERSCAN_URL = 'https://api.etherscan.io';
 
 export function network(id: string): Network {
   const n = NETWORKS.find((x) => x.id === id);
@@ -316,7 +325,7 @@ export const EVM_NETWORKS = NETWORKS.filter((n) => n.family === 'evm' && !n.disa
 
 /**
  * Endpoints of a network. CHAIN_MOCK_URL (tests, e2e) points every network at one mock server:
- * <mock>/bitcoin/api, <mock>/rpc/<network>, <mock>/tron, <mock>/blockscout.
+ * <mock>/bitcoin/api, <mock>/rpc/<network>, <mock>/tron, <mock>/blockscout, <mock>/etherscan.
  */
 export function endpointsOf(n: Network): string[] {
   const mock = process.env.CHAIN_MOCK_URL;
@@ -328,6 +337,11 @@ export function endpointsOf(n: Network): string[] {
 export function blockscoutUrl(): string {
   const mock = process.env.CHAIN_MOCK_URL;
   return mock ? `${mock}/blockscout` : BLOCKSCOUT_URL;
+}
+
+export function etherscanUrl(): string {
+  const mock = process.env.CHAIN_MOCK_URL;
+  return mock ? `${mock}/etherscan` : ETHERSCAN_URL;
 }
 
 /** A yield token by its symbol (instruments keep it as meta.yieldKey), with the networks it lives on. */

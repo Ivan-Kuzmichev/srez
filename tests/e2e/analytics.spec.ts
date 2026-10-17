@@ -73,6 +73,15 @@ test('a wallet by address: preview, add, the first sync brings the balances in',
   await key.getByRole('button', { name: 'Сохранить ключ' }).click();
   await expect(key).toContainText('Ключ задан, заканчивается на _key');
   expect(await page.content()).not.toContain('proapi_mock_key');
+  // Etherscan as well: it serves Ethereum and Arbitrum, Blockscout the rest.
+  const etherscan = page.getByTestId('etherscan-key');
+  await etherscan.getByLabel('Ключ Etherscan API').fill('wrong-etherscan-key');
+  await etherscan.getByRole('button', { name: 'Сохранить ключ' }).click();
+  await expect(page.getByText('Etherscan не принял ключ').first()).toBeVisible();
+  await etherscan.getByLabel('Ключ Etherscan API').fill('etherscan_mock_key');
+  await etherscan.getByRole('button', { name: 'Сохранить ключ' }).click();
+  await expect(etherscan).toContainText('Etherscan: Ключ задан, заканчивается на _key');
+  expect(await page.content()).not.toContain('etherscan_mock_key');
 
   await page.goto('/sources/wallets/new');
   await page.getByLabel('Публичный адрес').fill('0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed1');

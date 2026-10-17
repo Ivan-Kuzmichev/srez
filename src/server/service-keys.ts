@@ -3,11 +3,11 @@ import type { Executor } from '@/db/client';
 import { serviceKeys } from '@/db/schema';
 import { encryptSecret, type SecretPurpose } from './crypto';
 
-export type ServiceKeyName = 'blockscout' | 'telegram';
+export type ServiceKeyName = 'blockscout' | 'etherscan' | 'telegram';
 
 /** The encryption purpose of each key: a blob of one cannot be read as another. */
 export const keyPurpose = (name: ServiceKeyName): SecretPurpose =>
-  name === 'telegram' ? 'telegram-token' : 'blockscout-key';
+  name === 'telegram' ? 'telegram-token' : name === 'etherscan' ? 'etherscan-key' : 'blockscout-key';
 
 /** Stores a key encrypted; only its last four characters stay readable for the screen. */
 export function setServiceKey(db: Executor, name: ServiceKeyName, plain: string, now = new Date()): void {

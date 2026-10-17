@@ -29,7 +29,7 @@ export const apiTokens = sqliteTable(
   (t) => [uniqueIndex('api_tokens_hash_idx').on(t.tokenHash), index('api_tokens_user_idx').on(t.userId)],
 );
 
-/** Keys of outside services shared by the whole app (docs/03-data-model.md, section 1): Blockscout for EVM history. */
+/** Keys of outside services shared by the whole app (docs/03-data-model.md, section 1): Blockscout and Etherscan for EVM history, Telegram. */
 export const serviceKeys = sqliteTable('service_keys', {
   name: text('name').primaryKey(),
   secretEncrypted: blob('secret_encrypted', { mode: 'buffer' }).notNull(),

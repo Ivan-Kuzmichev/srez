@@ -126,6 +126,7 @@ interface ChainProvider {
 - **EVM (Ethereum, Arbitrum, Base, Polygon, BNB Chain).** Баланс нативной монеты и известных токенов — через публичный RPC пачкой вызовов. История переводов и поиск неизвестных токенов через RPC невозможны: нужен API обозревателя блоков.
 - **Tron.** TronGrid (`https://api.trongrid.io`, без ключа; решение владельца 2026-10-16): `GET /v1/accounts/{адрес}` — баланс TRX и токенов TRC-20, `/transactions` — переводы TRX и сожжённая комиссия (`ret[0].fee`, в сан, с любой транзакции владельца, в том числе с перевода USDT), `/transactions/trc20` — переводы токенов. Списки читаются по времени (`min_timestamp`, `order_by=block_timestamp,asc`), постранично через `fingerprint`; курсор кошелька для Tron — время блока в миллисекундах. Без ключа TronGrid отвечает 429 при частых запросах: пауза 1, 3, 8 с и повтор. Адрес — Base58Check с байтом `0x41` («T…»). Известные токены: USDT (`TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`); токены-двойники с тем же символом отсекаются по адресу контракта.
 - **История EVM — Blockscout PRO API** (`https://api.blockscout.com`, бесплатный ключ: 5 запросов в секунду, 100 тыс. кредитов в день, один ключ на все сети). Решение владельца 2026-10-09. Публичные хосты `*.blockscout.com` закрыты защитой от ботов, у Etherscan бесплатно только Ethereum, Arbitrum и Polygon. BNB Chain Blockscout не поддерживает: для неё только балансы. Ключ вводится в «Настройки → Крипта» и хранится зашифрованным (`service_keys`). Без ключа все EVM-сети работают в режиме «только балансы».
+- **История EVM — Etherscan API V2** (`https://api.etherscan.io/v2/api?chainid=…`, бесплатный ключ; решение владельца 2026-10-17). Бесплатный план покрывает Ethereum, Arbitrum и Polygon (`etherscan: true` в конфиге сетей); для них Etherscan берётся раньше Blockscout, если его ключ задан. Причина: из сети владельца ответы Blockscout (и всего `*.blockscout.com`) замирают после ~17 КБ — заголовки и начало приходят, остальное нет; Etherscan отдаёт сотни килобайт без задержек. Формат тот же, что у Blockscout (`txlist`, `txlistinternal`, `tokentx`); ключ — только параметром `apikey` (адрес запроса не пишется в логи), у внутренних транзакций хеш в `hash`, номер вызова в `traceId` (у Blockscout — `transactionHash` и `index`). Отказ ключа и превышение частоты Etherscan присылает как HTTP 200 со `status: "0"` и причиной в `result`: первое читается как 401, второе — пауза 1, 2, 4 с и повтор. Запросы одной сети идут друг за другом (бесплатно — несколько в секунду). Ключ хранится в `service_keys` под именем `etherscan`.
 
 Остальное:
 
@@ -151,6 +152,7 @@ Bot API: https://core.telegram.org/bots/api. Только `sendMessage`. Ток�
 - `api.coingecko.com`
 - публичные точки доступа блокчейнов из конфига (`integrations/chains/networks.ts`)
 - `api.blockscout.com` — история EVM по ключу (решение владельца, фаза 8)
+- `api.etherscan.io` — история EVM по ключу для Ethereum, Arbitrum и Polygon (решение владельца 2026-10-17)
 - `api.trongrid.io` — сеть Tron (решение владельца 2026-10-16; в конфиге сетей)
 
 Список проверяется тестом `tests/unit/outbound-hosts.test.ts`: новый хост в коде роняет проверку.

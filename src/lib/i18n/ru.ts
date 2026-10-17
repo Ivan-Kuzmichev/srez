@@ -922,16 +922,20 @@ export const ru = {
     off: 'не подключена',
     keyTitle: 'История EVM-кошельков',
     keyText:
-      'Историю переводов в Ethereum, Arbitrum, Base и Polygon отдаёт Blockscout по бесплатному ключу. Без ключа кошельки загружают только балансы. Ключ хранится зашифрованным.',
-    keyLabel: 'Ключ Blockscout PRO API',
+      'Историю переводов отдают обозреватели блоков по бесплатным ключам: Etherscan — Ethereum, Arbitrum и Polygon, Blockscout — они же и Base. Если заданы оба, для этих трёх сетей берётся Etherscan. Без ключа кошельки загружают только балансы. Ключи хранятся зашифрованными.',
+    explorers: { etherscan: 'Etherscan', blockscout: 'Blockscout' } as Record<string, string>,
+    keyLabel: { etherscan: 'Ключ Etherscan API', blockscout: 'Ключ Blockscout PRO API' } as Record<
+      string,
+      string
+    >,
     keySet: (last4: string) => `Ключ задан, заканчивается на ${last4}`,
     keyNone: 'Ключ не задан',
     keySave: 'Сохранить ключ',
     keyRemove: 'Удалить ключ',
     keySaved: 'Ключ проверен и сохранён',
     keyRemoved: 'Ключ удалён',
-    keyRefused: 'Blockscout не принял ключ',
-    keyUnreachable: 'Blockscout не ответил. Попробуйте позже',
+    keyRefused: (name: string) => `${name} не принял ключ`,
+    keyUnreachable: (name: string) => `${name} не ответил. Попробуйте позже`,
     prices: 'Цены',
     priceSource: 'Источник цен',
     sources: { coingecko: 'CoinGecko', exchange: 'Биржа, подключённая по ключу' } as Record<string, string>,
@@ -948,7 +952,7 @@ export const ru = {
     feeNote: 'Комиссия сети',
     balanceNote: 'Сверка с балансом в сети',
     nodes: 'Узлы сети не ответили. Повторим при следующей синхронизации.',
-    keyRefused: 'Blockscout не принял ключ. Проверьте его в «Настройки → Крипта».',
+    keyRefused: (name: string) => `${name} не принял ключ. Проверьте его в «Настройки → Крипта».`,
   },
   walletsCard: {
     title: 'Кошельки',

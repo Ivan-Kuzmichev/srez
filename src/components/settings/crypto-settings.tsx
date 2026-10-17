@@ -11,9 +11,9 @@ import { cn } from '@/lib/cn';
 import { ru } from '@/lib/i18n/ru';
 import {
   checkNodes,
-  removeBlockscoutKey,
-  saveBlockscoutKey,
+  removeExplorerKey,
   saveCryptoSettings,
+  saveExplorerKey,
   type NodeHealth,
 } from '@/server/actions/crypto-settings';
 
@@ -78,21 +78,36 @@ export function NodesCard({ networks }: { networks: string[] }) {
   );
 }
 
-/** The Blockscout key for EVM history (decision of 2026-10-09): checked, then stored encrypted. */
-export function BlockscoutKeyCard({ last4 }: { last4: string | null }) {
+type Explorer = 'etherscan' | 'blockscout';
+
+/**
+ * Keys for EVM history (decisions of 2026-10-09 and 2026-10-17): Etherscan for the networks of its free
+ * plan, Blockscout for the rest. Each is checked, then stored encrypted.
+ */
+export function ExplorerKeysCard({ last4 }: { last4: Record<Explorer, string | null> }) {
+  return (
+    <section className={card}>
+      <h2 className="m-0 text-card font-semibold">{t.keyTitle}</h2>
+      <div className="text-pretty text-muted">{t.keyText}</div>
+      <ExplorerKey service="etherscan" last4={last4.etherscan} />
+      <ExplorerKey service="blockscout" last4={last4.blockscout} />
+    </section>
+  );
+}
+
+function ExplorerKey({ service, last4 }: { service: Explorer; last4: string | null }) {
   const router = useRouter();
   const notify = useToast();
   const [pending, start] = useTransition();
   const [key, setKey] = useState('');
+  const name = t.explorers[service]!;
   return (
-    <section className={card} data-testid="blockscout-key">
-      <h2 className="m-0 text-card font-semibold">{t.keyTitle}</h2>
-      <div className="text-pretty text-muted">{t.keyText}</div>
+    <div className="flex flex-col gap-2 border-t border-border-subtle pt-4" data-testid={`${service}-key`}>
       <div className={cn('text-caption', last4 ? 'text-gain' : 'text-muted')}>
-        {last4 ? t.keySet(last4) : t.keyNone}
+        {name}: {last4 ? t.keySet(last4) : t.keyNone}
       </div>
       <div className="flex flex-wrap items-end gap-3">
-        <Field label={t.keyLabel} className="min-w-64 flex-1">
+        <Field label={t.keyLabel[service]!} className="min-w-64 flex-1">
           {(f) => (
             <Input
               id={f.id}
@@ -109,12 +124,16 @@ export function BlockscoutKeyCard({ last4 }: { last4: string | null }) {
           disabled={pending || key.trim().length < 8}
           onClick={() =>
             start(async () => {
-              const r = await saveBlockscoutKey(null, { key });
+              const r = await saveExplorerKey(null, { service, key });
               if (r.ok) {
                 setKey('');
                 notify({ tone: 'success', title: t.keySaved });
                 router.refresh();
-              } else notify({ tone: 'error', title: r.code === 'REFUSED' ? t.keyRefused : t.keyUnreachable });
+              } else
+                notify({
+                  tone: 'error',
+                  title: r.code === 'REFUSED' ? t.keyRefused(name) : t.keyUnreachable(name),
+                });
             })
           }
         >
@@ -126,7 +145,7 @@ export function BlockscoutKeyCard({ last4 }: { last4: string | null }) {
             disabled={pending}
             onClick={() =>
               start(async () => {
-                await removeBlockscoutKey(null, null);
+                await removeExplorerKey(null, { service });
                 notify({ tone: 'success', title: t.keyRemoved });
                 router.refresh();
               })
@@ -136,7 +155,7 @@ export function BlockscoutKeyCard({ last4 }: { last4: string | null }) {
           </Button>
         ) : null}
       </div>
-    </section>
+    </div>
   );
 }
 

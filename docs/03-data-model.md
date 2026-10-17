@@ -34,7 +34,7 @@
 **login_attempts** — для блокировки.
 `id`, `username`, `ip`, `success bool`, `created_at`.
 
-**service_keys** — ключи внешних сервисов, общие на всё приложение (например, Blockscout для истории EVM).
+**service_keys** — ключи внешних сервисов, общие на всё приложение (Blockscout и Etherscan для истории EVM, токен Telegram).
 `name` (первичный ключ), `secret_encrypted bytea`, `last4`, `created_at`, `updated_at`. Шифрование — как у токена брокера (`07-auth-security.md`).
 
 **api_tokens**

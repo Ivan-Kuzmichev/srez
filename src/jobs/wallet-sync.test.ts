@@ -18,6 +18,7 @@ import { accrueWallet } from './wallet-accrue';
 import {
   MOCK_BLOCKSCOUT_KEY,
   MOCK_BTC_ADDRESS,
+  MOCK_ETHERSCAN_KEY,
   MOCK_EVM_ADDRESS,
   MOCK_TANGEM_OWNER,
   MOCK_TRON_ADDRESS,
@@ -170,6 +171,27 @@ describe('wallet sync', () => {
     expect(db.select().from(sources).where(eq(sources.id, sourceId)).get()).toMatchObject({
       status: 'error',
       lastError: 'Blockscout не принял ключ. Проверьте его в «Настройки → Крипта».',
+    });
+  });
+
+  it('only an Etherscan key: the history of Ethereum and Arbitrum still loads; a refused one names Etherscan', async () => {
+    const { db, sourceId, accountId } = wallet('evm', 'history');
+    await syncWallet(db, sourceId, 'manual', { fetchFn, etherscanKey: MOCK_ETHERSCAN_KEY, now });
+    const moved = db
+      .select({ type: operations.type, quantity: operations.quantity })
+      .from(operations)
+      .where(and(eq(operations.accountId, accountId), eq(operations.origin, 'chain')))
+      .all();
+    // The same six operations as with Blockscout, nothing squared against the balance.
+    expect(moved).toHaveLength(6);
+
+    const other = wallet('evm', 'history');
+    await expect(
+      syncWallet(other.db, other.sourceId, 'manual', { fetchFn, etherscanKey: 'wrong-key-1', now }),
+    ).rejects.toBeTruthy();
+    expect(other.db.select().from(sources).where(eq(sources.id, other.sourceId)).get()).toMatchObject({
+      status: 'error',
+      lastError: 'Etherscan не принял ключ. Проверьте его в «Настройки → Крипта».',
     });
   });
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { checkBlockscoutKey } from '@/integrations/chains/evm';
+import { checkExplorerKey } from '@/integrations/chains/evm';
 import { chainProvider } from '@/integrations/chains/provider';
 import { NETWORKS } from '@/integrations/chains/networks';
 import { authedAction } from '../action';
@@ -44,26 +44,28 @@ export const checkNodes = authedAction(z.null(), async () => {
   return { ok: true, data };
 });
 
-/** The Blockscout key: checked with one call while it is still in plain text here, then stored encrypted. */
-export const saveBlockscoutKey = authedAction(
-  z.object({ key: z.string().trim().min(8).max(200) }),
-  async ({ key }) => {
+const Service = z.enum(['blockscout', 'etherscan']);
+
+/** An explorer key for EVM history: checked with one call while it is still in plain text here, then stored encrypted. */
+export const saveExplorerKey = authedAction(
+  z.object({ service: Service, key: z.string().trim().min(8).max(200) }),
+  async ({ service, key }) => {
     try {
-      if (!(await checkBlockscoutKey(key))) return { ok: false, code: 'REFUSED' };
+      if (!(await checkExplorerKey(service, key))) return { ok: false, code: 'REFUSED' };
     } catch (err) {
-      logger('chains').warn({ err }, 'Blockscout key check failed');
+      logger('chains').warn({ err, service }, 'Explorer key check failed');
       return { ok: false, code: 'UNREACHABLE' };
     }
-    setServiceKey(db(), 'blockscout', key);
-    logger('chains').info('Blockscout key saved');
+    setServiceKey(db(), service, key);
+    logger('chains').info({ service }, 'Explorer key saved');
     revalidatePath('/settings/crypto');
     return { ok: true, data: null };
   },
 );
 
-export const removeBlockscoutKey = authedAction(z.null(), async () => {
-  removeServiceKey(db(), 'blockscout');
-  logger('chains').info('Blockscout key removed');
+export const removeExplorerKey = authedAction(z.object({ service: Service }), async ({ service }) => {
+  removeServiceKey(db(), service);
+  logger('chains').info({ service }, 'Explorer key removed');
   revalidatePath('/settings/crypto');
   return { ok: true, data: null };
 });

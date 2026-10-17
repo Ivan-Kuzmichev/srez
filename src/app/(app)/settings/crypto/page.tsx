@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import {
-  BlockscoutKeyCard,
   CRYPTO_FORM_ID,
   CryptoSettingsForm,
+  ExplorerKeysCard,
   NodesCard,
 } from '@/components/settings/crypto-settings';
 import { SettingsHeader } from '@/components/shell/settings-header';
@@ -30,7 +30,12 @@ export default async function CryptoSettingsPage() {
         }
       />
       <NodesCard networks={NETWORKS.map((n) => n.name)} />
-      <BlockscoutKeyCard last4={serviceKeyInfo(db(), 'blockscout')?.last4 ?? null} />
+      <ExplorerKeysCard
+        last4={{
+          etherscan: serviceKeyInfo(db(), 'etherscan')?.last4 ?? null,
+          blockscout: serviceKeyInfo(db(), 'blockscout')?.last4 ?? null,
+        }}
+      />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px,100%),1fr))] items-start gap-3 wide:gap-4">
         <CryptoSettingsForm
           initial={s.crypto}

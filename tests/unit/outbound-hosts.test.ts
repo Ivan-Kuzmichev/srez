@@ -12,6 +12,7 @@ const ALLOWED = new Set([
   'api.coingecko.com',
   'api.telegram.org',
   'api.blockscout.com',
+  'api.etherscan.io',
   ...NETWORKS.flatMap((n) => n.endpoints.map((e) => new URL(e).host)),
 ]);
 // Not requests: the SVG namespace, local addresses.

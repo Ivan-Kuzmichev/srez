@@ -9,6 +9,7 @@ import { join } from 'node:path';
 const DIR = join(import.meta.dirname, '..', 'fixtures', 'chains');
 const read = (name: string) => JSON.parse(readFileSync(join(DIR, name), 'utf8'));
 export const MOCK_BLOCKSCOUT_KEY = 'proapi_mock_key';
+export const MOCK_ETHERSCAN_KEY = 'etherscan_mock_key';
 export const MOCK_BTC_ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 export const MOCK_EVM_ADDRESS = '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed';
 /** An EVM wallet in Tangem's yield mode: its module holds the Aave deposit. */
@@ -161,9 +162,14 @@ export async function startChainsMock(
         if (rest === '/search') return json(200, { coins: [] });
         if (rest === '/ping') return json(200, { gecko_says: '(V3) To the Moon!' });
       }
-      const bs = /^\/blockscout\/(\d+)\/api$/.exec(path);
+      // Etherscan V2: the same history, the key in `apikey`, a refusal as HTTP 200 with status 0.
+      const es = path === '/etherscan/v2/api' ? String(url.searchParams.get('chainid')) : null;
+      if (es && url.searchParams.get('apikey') !== MOCK_ETHERSCAN_KEY)
+        return json(200, { status: '0', message: 'NOTOK', result: 'Invalid API Key (#err2)|1' });
+      const bs = es ? [path, es] : /^\/blockscout\/(\d+)\/api$/.exec(path);
       if (bs) {
-        if (req.headers.authorization !== MOCK_BLOCKSCOUT_KEY) return json(401, { message: 'Unauthorized' });
+        if (!es && req.headers.authorization !== MOCK_BLOCKSCOUT_KEY)
+          return json(401, { message: 'Unauthorized' });
         const address = String(url.searchParams.get('address')).toLowerCase();
         const since = Number(url.searchParams.get('startblock') ?? 0);
         const page = Number(url.searchParams.get('page') ?? 1);
