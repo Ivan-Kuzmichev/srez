@@ -73,7 +73,7 @@ export function TargetsCard({
       ) : null}
 
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-        {view === 'classes' && classesEnabled && rebalanceHref ? (
+        {classesEnabled && rebalanceHref ? (
           <Button asChild variant="secondary-raised">
             <Link href={rebalanceHref}>{ru.portfolio.rebalance}</Link>
           </Button>

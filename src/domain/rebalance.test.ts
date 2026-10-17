@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { AssetClass } from './allocation';
 import { Decimal } from './decimal';
-import { lotsFor, ordersFor, rebalance, roundToStep } from './rebalance';
+import {
+  lotsFor,
+  ordersFor,
+  rebalance,
+  roundToStep,
+  sectorOrders,
+  sectorRebalance,
+  ordersWithSectors,
+} from './rebalance';
 
 const D = (v: number | string) => new Decimal(v);
 // Reference 7.1.
@@ -148,5 +156,180 @@ describe('orders (reference 8.2)', () => {
     const some = ordersFor(plan, new Map([['crypto', { ...cand('ETH', '200000', 1), lot: D('0.01') }]]));
     expect(some[0]).toMatchObject({ side: 'sell' });
     expect(some[0]!.quantity.lte(1)).toBe(true);
+  });
+});
+
+describe('эталон 8.3: ребаланс по отраслям', () => {
+  const D = (v: string | number) => new Decimal(v);
+  const values = new Map([
+    ['it', D(618)],
+    ['financial', D(172)],
+    ['energy', D(94)],
+    ['materials', D(61)],
+    ['consumer', D(55)],
+  ]);
+  const targets = new Map([
+    ['it', D(40)],
+    ['financial', D(25)],
+    ['energy', D(15)],
+    ['materials', D(10)],
+    ['consumer', D(10)],
+  ]);
+  const trades = (p: ReturnType<typeof sectorRebalance>) =>
+    Object.fromEntries(p.map((x) => [x.sector, x.trade.toFixed()]));
+
+  it('buying only 200: the sectors below target by their gap, IT gets nothing', () => {
+    const p = sectorRebalance({ values, targets, trade: D(200), mode: 'buy-only', step: D(1) });
+    expect(trades(p)).toEqual({ financial: '76', energy: '51', consumer: '38', materials: '35', it: '0' });
+  });
+
+  it('buying and selling: every sector to its target, the trades add up to nothing', () => {
+    const p = sectorRebalance({ values, targets, trade: D(0), mode: 'buy-sell', step: D(1) });
+    expect(trades(p)).toEqual({ financial: '78', energy: '56', consumer: '45', materials: '39', it: '-218' });
+    expect(p.every((x) => x.deviation!.abs().lt(0.2))).toBe(true);
+  });
+
+  it('a sector without a target takes what the targets leave; one with nothing held becomes a gap', () => {
+    const p = sectorRebalance({
+      values: new Map([
+        ['it', D(500)],
+        ['telecom', D(500)],
+      ]),
+      targets: new Map([
+        ['it', D(40)],
+        ['energy', D(20)],
+      ]),
+      trade: D(500),
+      mode: 'buy-only',
+      step: D(1),
+    });
+    // After 1 500: energy needs 300 and IT 100 (40 % of 1 500 is 600); the 100 left go to telecom.
+    expect(trades(p)).toEqual({ energy: '300', it: '100', telecom: '100' });
+    const cand = (ticker: string, price: number) => ({
+      instrumentId: ticker,
+      ticker,
+      name: ticker,
+      kind: 'share',
+      price: D(price),
+      lot: D(1),
+      quantity: D(10),
+      assetClass: 'stocks' as const,
+    });
+    const { orders, gaps } = sectorOrders(
+      p,
+      new Map([
+        ['it', cand('YDEX', 50)],
+        ['telecom', cand('MTSS', 25)],
+      ]),
+    );
+    expect(orders.map((o) => [o.ticker, o.side, o.quantity.toFixed()])).toEqual([
+      ['YDEX', 'buy', '2'],
+      ['MTSS', 'buy', '4'],
+    ]);
+    expect(gaps).toEqual([{ sector: 'energy', amount: D(300) }]);
+  });
+});
+
+describe('ребаланс по отраслям: края', () => {
+  const D = (v: string | number) => new Decimal(v);
+  const cand = (ticker: string, price: number, assetClass: 'stocks' | 'funds' | 'bonds' = 'stocks') => ({
+    instrumentId: ticker,
+    ticker,
+    name: ticker,
+    kind: 'share',
+    price: D(price),
+    lot: D(1),
+    quantity: D(10),
+    assetClass,
+  });
+
+  it('without free sectors the rest goes to the targeted ones by target; a sale stays within the holding', () => {
+    const p = sectorRebalance({
+      values: new Map([
+        ['it', D(800)],
+        ['energy', D(200)],
+      ]),
+      targets: new Map([
+        ['it', D(50)],
+        ['energy', D(50)],
+      ]),
+      trade: D(0),
+      mode: 'buy-sell',
+      step: D(1),
+    });
+    expect(Object.fromEntries(p.map((x) => [x.sector, x.trade.toFixed()]))).toEqual({
+      energy: '300',
+      it: '-300',
+    });
+    const { orders } = sectorOrders(
+      p,
+      new Map([
+        ['it', cand('YDEX', 10)],
+        ['energy', cand('LKOH', 100)],
+      ]),
+    );
+    // 30 YDEX to sell, but only 10 are held.
+    expect(orders.map((o) => [o.ticker, o.side, o.quantity.toFixed()])).toEqual([
+      ['LKOH', 'buy', '3'],
+      ['YDEX', 'sell', '10'],
+    ]);
+    const leftOver = sectorRebalance({
+      values: new Map([['it', D(500)]]),
+      targets: new Map([
+        ['it', D(30)],
+        ['energy', D(70)],
+      ]),
+      trade: D(1000),
+      mode: 'buy-only',
+      step: D(1),
+    });
+    // Energy's gap is 1 050, more than the 1 000: it takes all; IT is above its 450.
+    expect(Object.fromEntries(leftOver.map((x) => [x.sector, x.trade.toFixed()]))).toEqual({
+      energy: '1000',
+      it: '0',
+    });
+  });
+
+  it('orders with sectors replace the equity orders; without sector targets the class orders stay', () => {
+    const plan = rebalance({
+      values: new Map([
+        ['stocks', D(1000)],
+        ['bonds', D(1000)],
+      ]),
+      targets: new Map([
+        ['stocks', D(50)],
+        ['bonds', D(50)],
+      ]),
+      contribution: D(400),
+      mode: 'buy-only',
+      useExcessCash: false,
+      step: D(1),
+    });
+    const classCandidates = new Map([
+      ['stocks', cand('SBER', 100)],
+      ['bonds', cand('OFZ', 100, 'bonds')],
+    ]) as Parameters<typeof ordersWithSectors>[1];
+    const plain = ordersWithSectors(plan, classCandidates, null);
+    expect(plain.orders.map((o) => o.ticker).sort()).toEqual(['OFZ', 'SBER']);
+    expect(plain.sectors).toEqual([]);
+    const split = ordersWithSectors(plan, classCandidates, {
+      values: new Map([['financial', D(1000)]]),
+      targets: new Map([['energy', D(50)]]),
+      candidates: new Map([['financial', cand('SBER', 100)]]),
+      mode: 'buy-only',
+      step: D(1),
+    });
+    // 200 on shares: all to energy (nothing held there), so no SBER order, a gap instead.
+    expect(split.orders.map((o) => o.ticker)).toEqual(['OFZ']);
+    expect(split.gaps).toEqual([{ sector: 'energy', amount: D(200) }]);
+    expect(
+      ordersWithSectors(plan, classCandidates, {
+        ...split,
+        values: new Map(),
+        targets: new Map(),
+        candidates: new Map(),
+        mode: 'buy-only',
+      }).sectors,
+    ).toEqual([]);
   });
 });

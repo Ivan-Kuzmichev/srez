@@ -19,17 +19,23 @@ export const saveRebalancePlan = authedAction(
       .max(20),
     mode: z.enum(['buy-only', 'buy-sell']),
     useExcessCash: z.boolean(),
+    bySectors: z.boolean().default(false),
   }),
-  async ({ portfolioId, contribution, mode, useExcessCash }, session) => {
+  async ({ portfolioId, contribution, mode, useExcessCash, bySectors }, session) => {
     const base = rebalanceBase(db(), session.user.id, portfolioId);
     if (!base) return { ok: false, code: 'NOT_FOUND' };
-    const { plan, orders } = planFor(base, { contribution: new Decimal(contribution), mode, useExcessCash });
+    const { plan, orders, sectors, gaps } = planFor(base, {
+      contribution: new Decimal(contribution),
+      mode,
+      useExcessCash,
+      bySectors,
+    });
     db()
       .insert(rebalancePlans)
       .values({
         portfolioId,
-        input: { contribution, mode, useExcessCash },
-        result: toJson({ ...plan, orders }) as Record<string, unknown>,
+        input: { contribution, mode, useExcessCash, bySectors },
+        result: toJson({ ...plan, orders, sectors, gaps }) as Record<string, unknown>,
       })
       .run();
     revalidatePath(`/portfolios/${portfolioId}/rebalance`);

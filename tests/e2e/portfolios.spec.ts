@@ -103,6 +103,11 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await page.getByRole('link', { name: 'Рассчитать ребаланс' }).click();
   await page.getByLabel('Сколько вношу, ₽').fill('100000');
   await expect(page.getByTestId('rebalance-classes')).toContainText('Акции');
+  // Sector targets set: the shares and funds go by sector; a sector with nothing held asks for a pick.
+  await expect(page.getByTestId('rebalance-sectors')).toContainText('Финансы');
+  await expect(page.getByTestId('rebalance-orders')).toContainText('выберите бумагу сами');
+  // By class only: orders into the held stocks.
+  await page.getByLabel('Акции и фонды — по целям отраслей').uncheck();
   await expect(page.getByTestId('rebalance-orders')).toContainText(/SBER|LKOH/);
   await page.getByRole('button', { name: 'Сохранить как план' }).click();
   await expect(page.getByText('План сохранён').first()).toBeVisible();

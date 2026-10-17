@@ -177,3 +177,157 @@ export function ordersFor(plan: RebalancePlan, candidates: Map<AssetClass, Candi
   }
   return out;
 }
+
+/** The equity part of a plan spread over sectors (FR-PRT-10, docs/04 section 8). */
+export interface SectorInput {
+  /** Value of the shares and funds per sector code ('' unknown), rubles. */
+  values: Map<string, Decimal>;
+  /** Target shares of the shares and funds, percent; sectors without one have none. */
+  targets: Map<string, Decimal>;
+  /** What the class plan buys (+) or sells (−) of shares and funds together. */
+  trade: Decimal;
+  mode: 'buy-only' | 'buy-sell';
+  step?: Decimal;
+}
+
+export interface SectorPlan {
+  sector: string;
+  before: Decimal;
+  beforeShare: Decimal;
+  target: Decimal | null;
+  trade: Decimal;
+  after: Decimal;
+  afterShare: Decimal;
+  /** after share − target, percentage points; null without a target. */
+  deviation: Decimal | null;
+}
+
+/**
+ * Splits the shares-and-funds trade over sectors. Buying only: the sectors below target get it in
+ * proportion to the gap, never past it; what is left goes to the sectors without a target by value
+ * (or, with none, to the targeted ones by target). Buying and selling: each targeted sector to its
+ * target, the rest by value. Amounts are rounded to the step and still add up to the trade.
+ */
+export function sectorRebalance(input: SectorInput): SectorPlan[] {
+  const step = input.step ?? new Decimal(100);
+  const sectors = [...new Set([...input.values.keys(), ...input.targets.keys()])];
+  const v = (s: string) => input.values.get(s) ?? ZERO;
+  const target = (s: string) => input.targets.get(s) ?? null;
+  const before = sectors.reduce((sum, s) => sum.plus(v(s)), ZERO);
+  const after = before.plus(input.trade);
+  const goal = (s: string) => target(s)!.div(100).times(after).minus(v(s));
+  const targeted = sectors.filter((s) => target(s) !== null);
+  const free = sectors.filter((s) => target(s) === null);
+
+  const raw = new Map<string, Decimal>(sectors.map((s) => [s, ZERO]));
+  let left = input.trade;
+  if (input.mode === 'buy-only') {
+    const gaps = targeted.map((s) => Decimal.max(0, goal(s)));
+    const sum = gaps.reduce((a, g) => a.plus(g), ZERO);
+    targeted.forEach((s, i) => {
+      const share = sum.isZero() ? ZERO : Decimal.min(gaps[i]!, input.trade.times(gaps[i]!).div(sum));
+      raw.set(s, Decimal.max(0, share));
+    });
+    left = input.trade.minus(targeted.reduce((a, s) => a.plus(raw.get(s)!), ZERO));
+  } else {
+    for (const s of targeted) raw.set(s, goal(s));
+    left = input.trade.minus(targeted.reduce((a, s) => a.plus(raw.get(s)!), ZERO));
+  }
+  // What the targets did not take: by value to the free sectors, else by target to the targeted.
+  const freeValue = free.reduce((a, s) => a.plus(v(s)), ZERO);
+  const pool = freeValue.gt(0) ? free : targeted;
+  const weight = (s: string) => (freeValue.gt(0) ? v(s) : (target(s) ?? ZERO));
+  const weights = pool.reduce((a, s) => a.plus(weight(s)), ZERO);
+  if (!left.isZero() && weights.gt(0))
+    for (const s of pool) raw.set(s, raw.get(s)!.plus(left.times(weight(s)).div(weights)));
+
+  const rounded = roundToStep(
+    sectors.map((s) => raw.get(s)!),
+    input.trade,
+    step,
+  );
+  return sectors
+    .map((s, i): SectorPlan => {
+      const trade = rounded[i]!;
+      const value = v(s).plus(trade);
+      const afterShare = after.isZero() ? ZERO : value.div(after).times(100);
+      const t = target(s);
+      return {
+        sector: s,
+        before: v(s),
+        beforeShare: before.isZero() ? ZERO : v(s).div(before).times(100),
+        target: t,
+        trade,
+        after: value,
+        afterShare,
+        deviation: t === null ? null : afterShare.minus(t),
+      };
+    })
+    .sort((a, b) => b.trade.comparedTo(a.trade));
+}
+
+/** A sector trade with nothing of the sector held: the owner picks the security. */
+export interface SectorGap {
+  sector: string;
+  amount: Decimal;
+}
+
+/**
+ * Orders for the sector trades: into the largest held position of each sector, whole lots. A sector
+ * with a trade and no position comes back as a gap instead.
+ */
+export function sectorOrders(
+  plans: readonly SectorPlan[],
+  candidates: Map<string, Candidate & { assetClass: AssetClass }>,
+): { orders: Order[]; gaps: SectorGap[] } {
+  const orders: Order[] = [];
+  const gaps: SectorGap[] = [];
+  for (const p of plans) {
+    if (p.trade.isZero()) continue;
+    const cand = candidates.get(p.sector);
+    if (!cand) {
+      if (p.trade.gt(0)) gaps.push({ sector: p.sector, amount: p.trade });
+      continue;
+    }
+    let quantity = lotsFor(p.trade, cand.price, cand.lot);
+    if (p.trade.lt(0)) quantity = Decimal.min(quantity, cand.quantity);
+    if (quantity.isZero()) continue;
+    orders.push({
+      assetClass: cand.assetClass,
+      instrumentId: cand.instrumentId,
+      ticker: cand.ticker,
+      name: cand.name,
+      kind: cand.kind,
+      side: p.trade.gt(0) ? 'buy' : 'sell',
+      quantity,
+      price: cand.price,
+      amount: quantity.times(cand.price),
+    });
+  }
+  return { orders, gaps };
+}
+
+/**
+ * Orders of a plan: by class, or, with sectors on, the shares and funds by sector instead (their
+ * class trade split by `sectorRebalance`). The calculator and «Сохранить как план» both use it.
+ */
+export function ordersWithSectors(
+  plan: RebalancePlan,
+  classCandidates: Map<AssetClass, Candidate>,
+  sectors: {
+    values: Map<string, Decimal>;
+    targets: Map<string, Decimal>;
+    candidates: Map<string, Candidate & { assetClass: AssetClass }>;
+    mode: 'buy-only' | 'buy-sell';
+    step?: Decimal;
+  } | null,
+): { orders: Order[]; sectors: SectorPlan[]; gaps: SectorGap[] } {
+  if (!sectors || sectors.targets.size === 0)
+    return { orders: ordersFor(plan, classCandidates), sectors: [], gaps: [] };
+  const equity = (c: ClassPlan) => c.assetClass === 'stocks' || c.assetClass === 'funds';
+  const trade = plan.classes.filter(equity).reduce((s, c) => s.plus(c.trade), ZERO);
+  const sectorPlans = sectorRebalance({ ...sectors, trade });
+  const rest = ordersFor({ ...plan, classes: plan.classes.filter((c) => !equity(c)) }, classCandidates);
+  const bySector = sectorOrders(sectorPlans, sectors.candidates);
+  return { orders: [...rest, ...bySector.orders], sectors: sectorPlans, gaps: bySector.gaps };
+}

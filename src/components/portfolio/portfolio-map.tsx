@@ -84,7 +84,10 @@ export function PortfolioMap({ tiles }: { tiles: MapTileView[] }) {
           const roomy = px.w > 120 && px.h > 110;
           const named = px.w > 150;
           const tiny = px.w < 56 || px.h < 48;
-          const body = (
+          // Too thin for padding and a border (they would stretch it past the map): a strip of color,
+          // its figures in the tooltip.
+          const sliver = px.w < 24 || px.h < 24;
+          const body = sliver ? null : (
             <>
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span
@@ -107,6 +110,7 @@ export function PortfolioMap({ tiles }: { tiles: MapTileView[] }) {
             'absolute box-border flex flex-col justify-between gap-1 overflow-hidden rounded-[6px] border border-surface px-3 py-2.5 text-text no-underline hover:text-text',
             HEAT[step],
             tiny && 'px-1.5 py-1',
+            sliver && 'border-0 p-0',
           );
           const style = {
             left: `${r.left}%`,

@@ -11,6 +11,7 @@ import {
 import { ASSET_CLASS_ORDER, type AssetClass } from '@/domain/allocation';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
 import { scopeOf } from '@/domain/scope';
+import { sectorAllocation } from '@/domain/sectors';
 import { parseDecimalInput } from '@/lib/parse';
 import { authedAction, type ActionResult } from '../action';
 import { loadFx, loadUserLedger, loadValuedCells, summarizeArea } from '../portfolio-data';
@@ -89,8 +90,10 @@ export const previewPortfolio = authedAction(
   z.object({
     rules: z.array(Rule).max(100),
     targets: z.partialRecord(z.enum(ASSET_CLASS_ORDER), percent).default({}),
+    sectorTargets: z.record(z.string().regex(/^[a-z_]{1,32}$/), percent).default({}),
+    threshold: percent.default('5'),
   }),
-  async ({ rules, targets }, session) => {
+  async ({ rules, targets, sectorTargets, threshold }, session) => {
     const userId = session.user.id;
     const fx = loadFx(db());
     const cells = loadValuedCells(db(), userId, fx);
@@ -104,9 +107,20 @@ export const previewPortfolio = authedAction(
       getSettings(db(), userId).display.timezone,
       {
         values: new Map(Object.entries(targets).map(([k, v]) => [k as AssetClass, new Decimal(v)])),
-        threshold: new Decimal(5),
+        threshold: new Decimal(threshold),
       },
     );
+    const sectors = sectorAllocation(
+      s.cells
+        .filter((c) => c.assetClass === 'stocks' || c.assetClass === 'funds')
+        .map((c) => ({ sector: c.sector ?? '', value: c.valueRub })),
+      new Map(
+        Object.entries(sectorTargets)
+          .filter(([, v]) => new Decimal(v).gt(0))
+          .map(([k, v]) => [k, new Decimal(v)]),
+      ),
+      new Decimal(threshold),
+    ).rows;
     return {
       ok: true,
       data: {
@@ -118,6 +132,12 @@ export const previewPortfolio = authedAction(
           share: toDbDecimal(c.share),
           target: c.target ? toDbDecimal(c.target) : null,
           offTarget: c.offTarget,
+        })),
+        sectors: sectors.map((r) => ({
+          sector: r.sector,
+          share: toDbDecimal(r.share),
+          target: r.target ? toDbDecimal(r.target) : null,
+          offTarget: r.offTarget,
         })),
       },
     };

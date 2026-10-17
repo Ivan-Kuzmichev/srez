@@ -10,12 +10,13 @@ import { Checkbox } from '@/components/ui/choice';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, Input } from '@/components/ui/field';
 import { Pill } from '@/components/ui/pill';
+import { Segmented } from '@/components/ui/segmented';
 import { Select } from '@/components/ui/select';
 import { useToast } from '@/components/ui/toast';
 import { Decimal } from '@/domain/decimal';
 import { Money } from '@/domain/money';
 import { cn } from '@/lib/cn';
-import { approx, formatMoney, formatPlain, formatShareOfTarget } from '@/lib/format';
+import { approx, formatMoney, formatPercent, formatPlain, formatShareOfTarget } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { parseDecimalInput } from '@/lib/parse';
 import { deletePortfolio, previewPortfolio, savePortfolio } from '@/server/actions/portfolios';
@@ -46,6 +47,7 @@ interface Preview {
   approx: boolean;
   positions: number;
   classes: { assetClass: string; share: string; target: string | null; offTarget: boolean }[];
+  sectors: { sector: string; share: string; target: string | null; offTarget: boolean }[];
 }
 
 const sumOf = (targets: Record<string, string>) =>
@@ -74,6 +76,7 @@ export function PortfolioForm({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [previewView, setPreviewView] = useState<'classes' | 'sectors'>('classes');
 
   const rules = Object.entries(values.modes)
     .filter(([, r]) => r.mode !== 'none')
@@ -98,6 +101,10 @@ export function PortfolioForm({
       const result = await previewPortfolio(null, {
         rules: rules.filter((r) => r.mode === 'all' || r.tagId),
         targets,
+        sectorTargets: Object.fromEntries(
+          Object.entries(values.sectorTargets).filter(([, v]) => v.trim() !== ''),
+        ),
+        threshold: values.threshold || '5',
       });
       setPreview(result.ok ? result.data : null);
     }, 300);
@@ -294,7 +301,18 @@ export function PortfolioForm({
           <div className="text-caption text-pretty text-muted">{ru.portfolios.sectorHint}</div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(150px,100%),1fr))] gap-3">
             {sectors.map((code) => (
-              <Field key={code} label={ru.portfolios.targetLabel(ru.sectors[code] ?? code)}>
+              <Field
+                key={code}
+                label={
+                  // One line in every cell, so the inputs of a row stay level.
+                  <span
+                    className="block truncate"
+                    title={ru.portfolios.targetLabel(ru.sectors[code] ?? code)}
+                  >
+                    {ru.portfolios.targetLabel(ru.sectors[code] ?? code)}
+                  </span>
+                }
+              >
                 {(f) => (
                   <Input
                     id={f.id}
@@ -351,22 +369,50 @@ export function PortfolioForm({
               <span className="text-muted">{ru.portfolios.previewPositions}</span>
               <span className="num">{preview.positions}</span>
             </div>
-            {values.targetsEnabled ? (
-              <>
-                <span className="text-small text-muted">{ru.portfolios.previewFact}</span>
-                {preview.classes.map((c) => (
-                  <TargetBar
-                    key={c.assetClass}
-                    label={ru.classesShort[c.assetClass] ?? c.assetClass}
-                    valueLabel={formatShareOfTarget(c.share, c.target)}
-                    actual={Number(c.share)}
-                    target={Number(c.target ?? 0)}
-                    scaleMax={50}
-                    offTarget={c.offTarget}
-                  />
-                ))}
-              </>
-            ) : null}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-small text-muted">
+                {previewView === 'classes' ? ru.portfolios.previewFact : ru.targetsCard.hintSectors}
+              </span>
+              <Segmented
+                aria-label={ru.targetsCard.view}
+                value={previewView}
+                onValueChange={(v) => setPreviewView(v as 'classes' | 'sectors')}
+                options={Object.entries(ru.targetsCard.views).map(([value, label]) => ({ value, label }))}
+              />
+            </div>
+            {previewView === 'classes' ? (
+              preview.classes.map((c) => (
+                <TargetBar
+                  key={c.assetClass}
+                  label={ru.classesShort[c.assetClass] ?? c.assetClass}
+                  valueLabel={
+                    values.targetsEnabled ? formatShareOfTarget(c.share, c.target) : formatPercent(c.share)
+                  }
+                  actual={Number(c.share)}
+                  target={values.targetsEnabled ? Number(c.target ?? 0) : null}
+                  scaleMax={Math.max(50, ...preview.classes.map((x) => Number(x.share) * 1.1))}
+                  offTarget={values.targetsEnabled && c.offTarget}
+                />
+              ))
+            ) : preview.sectors.length === 0 ? (
+              <div className="text-caption text-muted">{ru.targetsCard.noSectors}</div>
+            ) : (
+              preview.sectors.map((r) => (
+                <TargetBar
+                  key={r.sector || 'none'}
+                  label={ru.sectors[r.sector] ?? r.sector}
+                  valueLabel={r.target ? formatShareOfTarget(r.share, r.target) : formatPercent(r.share)}
+                  actual={Number(r.share)}
+                  target={r.target ? Number(r.target) : null}
+                  scaleMax={Math.max(
+                    50,
+                    ...preview.sectors.map((x) => Math.max(Number(x.share), Number(x.target ?? 0)) * 1.1),
+                  )}
+                  offTarget={r.offTarget}
+                  muted={r.sector === ''}
+                />
+              ))
+            )}
           </>
         ) : (
           <div className="text-caption text-muted">{ru.portfolios.previewEmpty}</div>

@@ -77,6 +77,21 @@ export default async function RebalancePage({ params }: PageProps<'/portfolios/[
             },
           ])}
           lastPlan={base.lastPlanAt ? formatDateYear(base.lastPlanAt, tz) : null}
+          sectorValues={[...base.sectorValues].map(([k, v]) => [k, v.toString()])}
+          sectorTargets={[...base.sectorTargets].map(([k, v]) => [k, v.toString()])}
+          sectorCandidates={[...base.sectorCandidates].map(([k, x]) => [
+            k,
+            {
+              instrumentId: x.instrumentId,
+              ticker: x.ticker,
+              name: x.name,
+              kind: x.kind,
+              price: x.price.toString(),
+              lot: x.lot.toString(),
+              quantity: x.quantity.toString(),
+              assetClass: x.assetClass,
+            },
+          ])}
         />
       ) : (
         <section className="rounded-card border border-border bg-surface p-4 text-caption text-muted wide:p-6">

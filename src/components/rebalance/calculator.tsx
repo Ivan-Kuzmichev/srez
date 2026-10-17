@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/toast';
 import type { AssetClass } from '@/domain/allocation';
 import { Decimal } from '@/domain/decimal';
 import { Money } from '@/domain/money';
-import { ordersFor, rebalance, type Candidate } from '@/domain/rebalance';
+import { ordersWithSectors, rebalance, type Candidate } from '@/domain/rebalance';
 import { cn } from '@/lib/cn';
 import {
   formatMoney,
@@ -39,6 +39,10 @@ export interface CalculatorProps {
     },
   ][];
   lastPlan: string | null;
+  /** Shares and funds by sector, the sector targets, the largest position of each sector. */
+  sectorValues: [string, string][];
+  sectorTargets: [string, string][];
+  sectorCandidates: [string, CalculatorProps['candidates'][number][1] & { assetClass: AssetClass }][];
 }
 
 const rub = (v: Decimal) => formatMoney(Money.of(v.round(), 'RUB'));
@@ -50,10 +54,12 @@ export function RebalanceCalculator(props: CalculatorProps) {
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState<'buy-only' | 'buy-sell'>('buy-only');
   const [useCash, setUseCash] = useState(false);
+  const hasSectors = props.sectorTargets.length > 0;
+  const [bySectors, setBySectors] = useState(hasSectors);
   const contribution = new Decimal(parseDecimalInput(amount) ?? '0');
   const valid = contribution.gte(0);
 
-  const { plan, orders } = useMemo(() => {
+  const { plan, orders, sectors, gaps } = useMemo(() => {
     const values = new Map(props.values.map(([c, v]) => [c, new Decimal(v)]));
     const targets = new Map(props.targets.map(([c, v]) => [c, new Decimal(v)]));
     const candidates = new Map<AssetClass, Candidate>(
@@ -70,12 +76,38 @@ export function RebalanceCalculator(props: CalculatorProps) {
       mode,
       useExcessCash: useCash,
     });
-    return { plan, orders: ordersFor(plan, candidates) };
-  }, [props.values, props.targets, props.candidates, amount, mode, useCash]);
+    const dec = (x: CalculatorProps['candidates'][number][1]) => ({
+      ...x,
+      price: new Decimal(x.price),
+      lot: new Decimal(x.lot),
+      quantity: new Decimal(x.quantity),
+    });
+    const split = ordersWithSectors(
+      plan,
+      candidates,
+      bySectors
+        ? {
+            values: new Map(props.sectorValues.map(([k, v]) => [k, new Decimal(v)])),
+            targets: new Map(props.sectorTargets.map(([k, v]) => [k, new Decimal(v)])),
+            candidates: new Map(
+              props.sectorCandidates.map(([k, x]) => [k, { ...dec(x), assetClass: x.assetClass }]),
+            ),
+            mode,
+          }
+        : null,
+    );
+    return { plan, ...split };
+  }, [props, amount, mode, useCash, bySectors]);
 
   const rows = [...plan.classes].sort((a, b) => b.trade.comparedTo(a.trade));
+  // With sectors on, the shares and funds are ordered by sector; their gaps are listed by sector.
+  const bySectorClasses = (c: AssetClass) => sectors.length > 0 && (c === 'stocks' || c === 'funds');
   const missing = rows.filter(
-    (r) => r.assetClass !== 'cash' && !r.trade.isZero() && !orders.some((o) => o.assetClass === r.assetClass),
+    (r) =>
+      r.assetClass !== 'cash' &&
+      !r.trade.isZero() &&
+      !bySectorClasses(r.assetClass) &&
+      !orders.some((o) => o.assetClass === r.assetClass),
   );
   const text = orders
     .map(
@@ -117,6 +149,17 @@ export function RebalanceCalculator(props: CalculatorProps) {
             ))}
           </div>
         </fieldset>
+        {hasSectors ? (
+          <label className="flex min-h-11 flex-[1_1_260px] cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              className="m-0 size-[18px] accent-accent"
+              checked={bySectors}
+              onChange={(e) => setBySectors(e.target.checked)}
+            />
+            <span>{ru.rebalance.bySectorsToggle}</span>
+          </label>
+        ) : null}
         {mode === 'buy-only' ? (
           <label className="flex min-h-11 flex-[1_1_260px] cursor-pointer items-center gap-2.5">
             <input
@@ -229,6 +272,54 @@ export function RebalanceCalculator(props: CalculatorProps) {
         ) : null}
       </section>
 
+      {sectors.length > 0 ? (
+        <section
+          className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6"
+          data-testid="rebalance-sectors"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="m-0 text-card font-semibold">{ru.rebalance.bySector}</h2>
+            <span className="text-caption text-muted">{ru.rebalance.bySectorHint}</span>
+          </div>
+          <ul className="m-0 flex list-none flex-col p-0">
+            {sectors.map((r) => {
+              const quiet = r.trade.isZero();
+              return (
+                <li
+                  key={r.sector || 'none'}
+                  className="flex min-h-14 items-center justify-between gap-3 border-b border-border-subtle last:border-b-0"
+                >
+                  <span className="flex flex-col gap-0.5">
+                    <span>{ru.sectors[r.sector] ?? r.sector}</span>
+                    <span className="num text-small text-muted">
+                      {r.target
+                        ? ru.rebalance.phoneShares(
+                            formatPlain(r.beforeShare, 1),
+                            formatPlain(r.afterShare, 1),
+                            formatPlain(r.target, 0),
+                          )
+                        : ru.rebalance.sectorNoTarget(
+                            formatPlain(r.beforeShare, 1),
+                            formatPlain(r.afterShare, 1),
+                          )}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      'num text-row whitespace-nowrap',
+                      quiet && 'text-muted',
+                      !quiet && r.trade.lt(0) && 'text-loss',
+                    )}
+                  >
+                    {quiet ? (mode === 'buy-only' ? ru.rebalance.noTrade : ru.rebalance.keep) : rub(r.trade)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
       <section
         className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 wide:p-6"
         data-testid="rebalance-orders"
@@ -256,6 +347,7 @@ export function RebalanceCalculator(props: CalculatorProps) {
                     contribution: contribution.toString(),
                     mode,
                     useExcessCash: useCash,
+                    bySectors: bySectors && hasSectors,
                   });
                   notify(
                     r.ok
@@ -269,7 +361,7 @@ export function RebalanceCalculator(props: CalculatorProps) {
             </Button>
           </div>
         </div>
-        {orders.length === 0 && missing.length === 0 ? (
+        {orders.length === 0 && missing.length === 0 && gaps.length === 0 ? (
           <div className="text-caption text-muted">{ru.rebalance.ordersEmpty}</div>
         ) : null}
         <ul className="m-0 flex list-none flex-col p-0">
@@ -297,6 +389,17 @@ export function RebalanceCalculator(props: CalculatorProps) {
               <span className="num text-row whitespace-nowrap">
                 {ru.rebalance.line(formatQuantity(o.quantity), formatTradeAmount(o.price), rub(o.amount))}
               </span>
+            </li>
+          ))}
+          {gaps.map((g) => (
+            <li
+              key={`gap-${g.sector}`}
+              className="flex min-h-[60px] items-center justify-between gap-3 border-b border-border-subtle text-caption text-muted last:border-b-0"
+            >
+              <span>
+                {ru.sectors[g.sector] ?? g.sector}: {ru.rebalance.pickSecurity}
+              </span>
+              <span className="num">{rub(g.amount)}</span>
             </li>
           ))}
           {missing.map((r) => (

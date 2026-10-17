@@ -55,4 +55,22 @@ describe('эталон 16.1: отрасли от акций и фондов', ()
     expect(largestSector(items)).toEqual({ sector: 'it', share: D('61.8') });
     expect(largestSector([{ sector: '', value: D(5) }])).toBeNull();
   });
+
+  it('nothing held: shares are zero, a target asks for its whole share of nothing', () => {
+    const { base, rows } = sectorAllocation([], new Map([['it', D(50)]]), D(5));
+    expect(base.toFixed()).toBe('0');
+    expect(rows.map((r) => [r.sector, r.share.toFixed(), r.offTarget, r.move!.toFixed()])).toEqual([
+      ['it', '0', true, '0'],
+    ]);
+    // Equal values sort by the larger target.
+    const tie = sectorAllocation(
+      [
+        { sector: 'a', value: D(10) },
+        { sector: 'b', value: D(10) },
+      ],
+      new Map([['b', D(60)]]),
+      D(5),
+    );
+    expect(tie.rows.map((r) => r.sector)).toEqual(['b', 'a']);
+  });
 });
