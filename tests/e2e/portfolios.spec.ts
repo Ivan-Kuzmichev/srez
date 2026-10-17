@@ -66,6 +66,14 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(map.getByRole('listitem', { name: /^LKOH/ })).toBeVisible();
   await map.getByRole('radio', { name: 'Всё' }).click();
   await expect(map).toContainText('с первой покупки');
+  // Every tile inside the map, the thinnest too (padding once stretched them past its edge).
+  const mapBox = (await map.getByRole('list').boundingBox())!;
+  for (const r of await map.getByRole('listitem').evaluateAll((els) =>
+    els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect),
+  )) {
+    expect(r.bottom).toBeLessThanOrEqual(mapBox.y + mapBox.height + 0.5);
+    expect(r.right).toBeLessThanOrEqual(mapBox.x + mapBox.width + 0.5);
+  }
 
   // «А если бы»: the same money on a deposit at its own rate.
   const whatIf = page.getByTestId('whatif');

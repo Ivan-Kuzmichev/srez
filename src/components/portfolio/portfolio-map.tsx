@@ -106,11 +106,16 @@ export function PortfolioMap({ tiles }: { tiles: MapTileView[] }) {
               {roomy ? <span className="num text-small opacity-[0.72]">{tile.valueText}</span> : null}
             </>
           );
+          // One padding and border set per size: Tailwind does not let a later class win over an
+          // earlier one, so a thin tile must never carry the roomy tile's padding at all.
           const className = cn(
-            'absolute box-border flex flex-col justify-between gap-1 overflow-hidden rounded-[6px] border border-surface px-3 py-2.5 text-text no-underline hover:text-text',
+            'absolute box-border flex flex-col justify-between gap-1 overflow-hidden rounded-[6px] text-text no-underline hover:text-text',
             HEAT[step],
-            tiny && 'px-1.5 py-1',
-            sliver && 'border-0 p-0',
+            sliver
+              ? 'rounded-[3px]'
+              : tiny
+                ? 'border border-surface px-1.5 py-1'
+                : 'border border-surface px-3 py-2.5',
           );
           const style = {
             left: `${r.left}%`,
