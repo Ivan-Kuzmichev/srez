@@ -31,6 +31,11 @@ function defaultDatabasePath(nodeEnv: string): string {
   return nodeEnv === 'production' ? './data/srez.db' : join(homedir(), '.srez', 'dev.db');
 }
 
+/** Tests that point an integration at a mock through process.env read it again. */
+export function resetEnvCache(): void {
+  cached = undefined;
+}
+
 export function env(): Env {
   if (!cached) {
     const parsed = EnvSchema.parse(process.env);

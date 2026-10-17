@@ -13,23 +13,35 @@ export interface CompositionSlice {
   shareText: string;
   /** Plot only. */
   share: number;
+  /**
+   * The color: a class keeps its own (stocks…cash), «Остальное» and «без отрасли» are neutral, the
+   * rest take the class scale in order.
+   */
+  tone: 'stocks' | 'bonds' | 'funds' | 'crypto' | 'cash' | 'neutral' | number;
 }
 
-/** The class scale, light to dark, then the neutral «Остальное» (docs/08-ui.md, section 1). */
-const FILLS = [
-  'stroke-class-stocks',
-  'stroke-class-bonds',
-  'stroke-class-funds',
-  'stroke-class-crypto',
-  'stroke-class-cash',
-];
-const SWATCHES = ['bg-class-stocks', 'bg-class-bonds', 'bg-class-funds', 'bg-class-crypto', 'bg-class-cash'];
-const color = (s: CompositionSlice, i: number, kind: 'fill' | 'swatch') =>
-  s.key === 'other' || s.key === ''
-    ? kind === 'fill'
-      ? 'stroke-border-strong'
-      : 'bg-border-strong'
-    : (kind === 'fill' ? FILLS : SWATCHES)[i % FILLS.length]!;
+/** The class scale, light to dark (docs/08-ui.md, section 1); neutral for the rest. */
+const SCALE = ['stocks', 'bonds', 'funds', 'crypto', 'cash'] as const;
+const FILL: Record<string, string> = {
+  stocks: 'stroke-class-stocks',
+  bonds: 'stroke-class-bonds',
+  funds: 'stroke-class-funds',
+  crypto: 'stroke-class-crypto',
+  cash: 'stroke-class-cash',
+  neutral: 'stroke-border-strong',
+};
+const SWATCH: Record<string, string> = {
+  stocks: 'bg-class-stocks',
+  bonds: 'bg-class-bonds',
+  funds: 'bg-class-funds',
+  crypto: 'bg-class-crypto',
+  cash: 'bg-class-cash',
+  neutral: 'bg-border-strong',
+};
+const toneOf = (s: CompositionSlice) => (typeof s.tone === 'number' ? SCALE[s.tone % SCALE.length]! : s.tone);
+const color = (s: CompositionSlice, kind: 'fill' | 'swatch') => (kind === 'fill' ? FILL : SWATCH)[toneOf(s)]!;
+/** The middle of the ring fits about fourteen characters. */
+const short = (label: string) => (label.length > 14 ? `${label.slice(0, 13)}…` : label);
 
 const R = 70;
 const W = 26;
@@ -68,7 +80,7 @@ export function CompositionChart({
   const arcs = slices.map((s, i) => {
     const from = starts[i]!;
     const to = from + s.share / sum;
-    return { s, i, d: arc(from, Math.max(from, to - gap)) };
+    return { s, d: arc(from, Math.max(from, to - gap)) };
   });
   const shown = slices.find((s) => s.key === active) ?? null;
 
@@ -99,26 +111,26 @@ export function CompositionChart({
             role="img"
             aria-label={t.label(slices.map((s) => `${s.label} ${s.shareText}`).join(', '))}
           >
-            {arcs.map(({ s, i, d }) => (
+            {arcs.map(({ s, d }) => (
               <path
                 key={s.key}
                 d={d}
                 fill="none"
                 strokeWidth={active === s.key ? W + 4 : W}
-                className={cn(color(s, i, 'fill'), 'cursor-pointer transition-[stroke-width]')}
+                className={cn(color(s, 'fill'), 'cursor-pointer transition-[stroke-width]')}
                 onPointerEnter={() => setActive(s.key)}
                 onPointerLeave={() => setActive(null)}
               />
             ))}
             <text x={C} y={C - 6} textAnchor="middle" className="fill-muted text-small">
-              {shown ? shown.label : t.total}
+              {shown ? short(shown.label) : t.total}
             </text>
             <text x={C} y={C + 14} textAnchor="middle" className="num fill-text text-caption">
               {shown ? shown.amount : total}
             </text>
           </svg>
           <ul className="m-0 flex min-w-0 flex-[1_1_220px] list-none flex-col p-0 text-row">
-            {slices.map((s, i) => (
+            {slices.map((s) => (
               <li
                 key={s.key}
                 tabIndex={0}
@@ -132,7 +144,7 @@ export function CompositionChart({
                 )}
               >
                 <span
-                  className={cn('size-2.5 shrink-0 rounded-[3px]', color(s, i, 'swatch'))}
+                  className={cn('size-2.5 shrink-0 rounded-[3px]', color(s, 'swatch'))}
                   aria-hidden="true"
                 />
                 <span className="min-w-0 flex-1 truncate">{s.label}</span>

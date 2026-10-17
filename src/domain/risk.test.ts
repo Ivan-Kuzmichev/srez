@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Decimal } from './decimal';
 import { twrGrowth } from './returns';
 import {
+  REST_SLICE,
   topSlices,
   beta,
   dailyReturns,
@@ -158,8 +159,24 @@ describe('risk measures', () => {
       ['a2', '18.2'],
       ['a3', '13.6'],
       ['a4', '9.1'],
-      ['other', '9.1'],
+      [REST_SLICE, '9.1'],
     ]);
     expect(topSlices([{ key: 'x', value: D(0) }])).toEqual([]);
+    // The broker's own sector «other» stays apart from the rest summed.
+    const sectors = topSlices(
+      ['it', 'telecom', 'consumer', 'materials', 'energy', 'other', 'health_care'].map((k, i) => ({
+        key: k,
+        value: D(70 - i * 10),
+      })),
+    );
+    expect(sectors.map((x) => x.key)).toEqual([
+      'it',
+      'telecom',
+      'consumer',
+      'materials',
+      'energy',
+      REST_SLICE,
+    ]);
+    expect(new Set(sectors.map((x) => x.key)).size).toBe(sectors.length);
   });
 });

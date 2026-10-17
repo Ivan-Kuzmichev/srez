@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
 import { AnalyticsHeader } from '@/components/analytics/header';
-import { CompositionChart } from '@/components/charts/composition-chart';
+import { CompositionChart, type CompositionSlice } from '@/components/charts/composition-chart';
 import { DrawdownChart } from '@/components/charts/drawdown-chart';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LimitPill } from '@/components/ui/pill';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn';
 import { formatMoney, formatMonthRange, formatMonthYear, formatPercent, formatPlain } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { listPortfolios } from '@/server/portfolio-data';
+import { REST_SLICE } from '@/domain/risk';
 import { riskData } from '@/server/risk-data';
 import { requireSession } from '@/server/session';
 import { getSettings } from '@/server/settings';
@@ -75,26 +76,41 @@ export default async function RiskPage({ searchParams }: PageProps<'/analytics/r
   const limitsHref = '/settings#limits';
   const rub = (v: Decimal) => formatMoney(Money.of(v.round(), 'RUB'));
   const c = r.composition;
-  const slice = (label: (key: string) => string) => (x: (typeof c.assets)[number]) => ({
-    key: x.key,
-    label: label(x.key),
-    amount: rub(x.value),
-    shareText: share(x.share),
-    share: x.share.toNumber(),
-  });
+  // Neutral for «Остальное» and an unknown sector; the others take the class scale in order.
+  const slices = (
+    list: typeof c.assets,
+    label: (key: string) => string,
+    tone: (key: string, i: number) => CompositionSlice['tone'] = (k, i) => i,
+  ): CompositionSlice[] => {
+    let next = 0;
+    return list.map((x) => {
+      const neutral = x.key === REST_SLICE || x.key === '';
+      return {
+        key: x.key,
+        label: label(x.key),
+        amount: rub(x.value),
+        shareText: share(x.share),
+        share: x.share.toNumber(),
+        tone: neutral ? 'neutral' : tone(x.key, next++),
+      };
+    });
+  };
   const compositionViews = {
-    assets: c.assets.map(
-      slice((k) =>
-        k === 'cash'
-          ? ru.composition.cash
-          : k === 'other'
-            ? ru.composition.other(c.restCount)
-            : (c.names[k] ?? k),
-      ),
+    assets: slices(c.assets, (k) =>
+      k === 'cash'
+        ? ru.composition.cash
+        : k === REST_SLICE
+          ? ru.composition.other(c.restCount)
+          : (c.names[k] ?? k),
     ),
-    classes: c.classes.map(slice((k) => ru.classes[k] ?? k)),
-    sectors: c.sectors.map(
-      slice((k) => (k === 'other' ? ru.composition.otherSectors : (ru.sectors[k] ?? k))),
+    // A class keeps its color everywhere; «Прочее» has none of the scale.
+    classes: slices(
+      c.classes,
+      (k) => ru.classes[k] ?? k,
+      (k) => (k === 'other' ? 'neutral' : (k as CompositionSlice['tone'])),
+    ),
+    sectors: slices(c.sectors, (k) =>
+      k === REST_SLICE ? ru.composition.otherSectors : (ru.sectors[k] ?? k),
     ),
   };
 

@@ -157,11 +157,11 @@ export function riskData(
         holdings.map((h) => ({ key: h.assetClass, value: h.value })),
         10,
       ),
+      // Five and the rest, as for the assets: the class scale has five colors.
       sectors: topSlices(
         holdings
           .filter((h) => !h.isCash && (h.assetClass === 'stocks' || h.assetClass === 'funds'))
           .map((h) => ({ key: h.sector ?? '', value: h.value })),
-        8,
       ),
     },
   };

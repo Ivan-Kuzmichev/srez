@@ -209,8 +209,14 @@ function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
 
+/**
+ * The key of «Остальное»: no instrument id, class or sector code looks like it (the broker has a sector
+ * «other», and the class «other» exists too).
+ */
+export const REST_SLICE = '~rest';
+
 export interface Slice {
-  /** An instrument id, an asset class, a sector code; 'other' for the rest, 'cash' for money. */
+  /** An instrument id, an asset class, a sector code; REST_SLICE for the rest, 'cash' for money. */
   key: string;
   value: Decimal;
   /** Percent of the total. */
@@ -218,7 +224,7 @@ export interface Slice {
 }
 
 /**
- * «Состав» (FR-ANL-10): the `n` largest by value and the rest summed into 'other', each with its share.
+ * «Состав» (FR-ANL-10): the `n` largest by value and the rest summed into REST_SLICE, each with its share.
  * Zero and negative values are left out.
  */
 export function topSlices(items: readonly { key: string; value: Decimal }[], n = 5): Slice[] {
@@ -229,6 +235,6 @@ export function topSlices(items: readonly { key: string; value: Decimal }[], n =
   const head = sorted.slice(0, n);
   const rest = sorted.slice(n).reduce((s, [, v]) => s.plus(v), ZERO);
   const out = head.map(([key, value]) => ({ key, value, share: shareOf(value, total) }));
-  if (rest.gt(0)) out.push({ key: 'other', value: rest, share: shareOf(rest, total) });
+  if (rest.gt(0)) out.push({ key: REST_SLICE, value: rest, share: shareOf(rest, total) });
   return out;
 }

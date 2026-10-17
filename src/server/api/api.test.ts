@@ -1,6 +1,7 @@
 import { Writable } from 'node:stream';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { resetEnvCache } from '@/server/env';
 import { saveBrokerAccounts } from '@/db/mutations/broker-accounts';
 import { createTinvestSource } from '@/db/mutations/sources';
 import { finAccounts, sources, user } from '@/db/schema';
@@ -24,6 +25,8 @@ let mock: TinvestMock;
 beforeAll(async () => {
   mock = await startTinvestMock();
   process.env.TINVEST_API_URL = mock.url;
+  // env() may have been read already by an import: the sync job must reach the mock, not the broker.
+  resetEnvCache();
   configureHealthProbes({
     fetchFn: async () => new Response('', { status: 200 }),
     transport: async () => ({ status: 401, headers: {}, body: '{}' }),
