@@ -308,3 +308,29 @@ describe('sales by the average method', () => {
     expect(fifo.reduce((s, c) => s.plus(c.cost), D(0)).toFixed()).toBe('500');
   });
 });
+
+describe('начисления по крипте в разложении прибыли', () => {
+  it('a growing-balance token accrual is income, a wrapper one stays in its price', () => {
+    const l = buildLedger(
+      [
+        op('transfer_in', { instrumentId: 'aUSDT', qty: 1000, price: '1', currency: 'USD' }),
+        op('accrual', { instrumentId: 'aUSDT', qty: '41.46', price: '0.999', currency: 'USD' }),
+        op('transfer_in', { instrumentId: 'wstETH', qty: 2, price: '3000', currency: 'USD' }),
+        op('accrual', {
+          instrumentId: 'wstETH',
+          qty: 0,
+          price: '2500',
+          currency: 'USD',
+          accruedInterest: D('0.0004'),
+        }),
+      ],
+      ctx(),
+    );
+    const a = position(l, 'aUSDT');
+    expect(a.quantity.toFixed()).toBe('1041.46');
+    // Its cost holds the accrual at the day's price, so the course is the price move alone.
+    expect(a.costBasis.toFixed()).toBe('1041.41854');
+    expect(a.payoutsTotal.toFixed()).toBe('41.41854');
+    expect(position(l, 'wstETH').payoutsTotal.toFixed()).toBe('0');
+  });
+});

@@ -134,6 +134,9 @@ export function buildLedger(operations: readonly LedgerOperation[], ctx: LedgerC
       if (c.lots.some((l) => l.currency !== op.currency))
         issues.push({ operationId: op.id, code: 'MIXED_CURRENCY' });
       if (op.type === 'buy' && !c.firstBuyAt) c.firstBuyAt = op.executedAt;
+      // A growing-balance token's accrual enters at the day's price, so the course leaves it out:
+      // it is income, like a coupon. A wrapper's (quantity 0) is already in its price, the course.
+      if (op.type === 'accrual') c.payoutsTotal = c.payoutsTotal.plus(op.quantity.times(op.price));
     } else if (SELL.has(op.type)) {
       // The accrued interest received with a bond sale is part of the proceeds (section 1).
       const proceeds = op.quantity
