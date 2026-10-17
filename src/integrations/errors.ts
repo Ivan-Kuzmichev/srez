@@ -64,17 +64,30 @@ export async function getBytes(
   url: string,
   fetchFn: Fetch,
   timeoutMs = 8000,
+  /** A POST instead (the CBR's SOAP service): its body and content type. */
+  post?: { body: string; contentType: string },
 ): Promise<Uint8Array> {
   const started = Date.now();
+  const method = post ? methodOf(url).replace(/^GET /, 'POST ') : methodOf(url);
   let res: Response;
   try {
-    res = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) });
+    res = await fetchFn(
+      url,
+      post
+        ? {
+            method: 'POST',
+            body: post.body,
+            headers: { 'content-type': post.contentType },
+            signal: AbortSignal.timeout(timeoutMs),
+          }
+        : { signal: AbortSignal.timeout(timeoutMs) },
+    );
   } catch (err) {
     const timeout = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
     if (observed(integration))
       reportExternalRequest({
         integration,
-        method: methodOf(url),
+        method,
         status: 0,
         durationMs: Date.now() - started,
         error: String(err),
@@ -85,7 +98,7 @@ export async function getBytes(
   if (observed(integration))
     reportExternalRequest({
       integration,
-      method: methodOf(url),
+      method,
       status: res.status,
       durationMs: Date.now() - started,
     });

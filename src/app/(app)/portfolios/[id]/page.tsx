@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ReturnsChart } from '@/components/charts/returns-chart';
+import { ValueChart } from '@/components/charts/value-chart';
+import { WhatIfControls } from '@/components/portfolio/whatif-controls';
 import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
@@ -46,6 +48,7 @@ import {
   tagNames,
 } from '@/server/portfolio-data';
 import { requireSession } from '@/server/session';
+import { WHATIF_CHOICES, whatIfData, type WhatIfChoice } from '@/server/whatif-data';
 import { getSettings } from '@/server/settings';
 
 export const metadata: Metadata = { title: ru.pages.portfolio };
@@ -80,6 +83,16 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
     : loadValuedCells(db(), userId, fx);
   const s = summarizeArea(db(), userId, scope, cells, ledgerAt, fx, tz, targets, end);
   const firstDay = firstSnapshotDate(db(), userId);
+  // «А если бы» (FR-PRT-8): the portfolio's own index by default; a rate of 0–100 % for «свой процент».
+  const sp = await searchParams;
+  const choice: WhatIfChoice = WHATIF_CHOICES.includes(sp.whatif as WhatIfChoice)
+    ? (sp.whatif as WhatIfChoice)
+    : 'MCFTR';
+  const rateText =
+    typeof sp.rate === 'string' && /^\d{1,2}(\.\d{1,4})?$|^100$/.test(sp.rate) ? sp.rate : '12';
+  const whatIf = date
+    ? null
+    : whatIfData(db(), userId, scope, ledger, fx, s.value, tz, choice, new Decimal(rateText));
   const dateText = date ? formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC') : '';
   const split = profitSplit(db(), userId, scope, cells, fx);
   const settings = getSettings(db(), userId);
@@ -321,6 +334,63 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
           )}
         </section>
       </div>
+
+      {whatIf ? (
+        <section
+          className="flex flex-col gap-4 rounded-card border border-border bg-surface p-4 wide:p-6"
+          data-testid="whatif"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="m-0 text-card font-semibold">{ru.whatIf.title}</h2>
+            <WhatIfControls choice={choice} rate={rateText} />
+          </div>
+          <div className="text-caption text-pretty text-muted">
+            {ru.whatIf.text(formatDateLong(new Date(`${whatIf.from}T12:00:00Z`), 'UTC'))}
+          </div>
+          {whatIf.missing ? (
+            <div className="rounded-control bg-surface-2 px-4 py-3.5 text-caption text-muted">
+              {ru.whatIf.missing}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(180px,100%),1fr))] gap-4">
+                <div className="flex flex-col gap-1">
+                  <div className="text-small text-muted">{ru.whatIf.wouldBe}</div>
+                  <div className="num text-body whitespace-nowrap">{rub(whatIf.alt)}</div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="text-small text-muted">{ru.whatIf.actual}</div>
+                  <div className="num text-body whitespace-nowrap">{rub(whatIf.actual)}</div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="text-small text-muted">{ru.whatIf.diff}</div>
+                  <div
+                    className={cn(
+                      'num text-body whitespace-nowrap',
+                      whatIf.diff.gte(0) ? 'text-gain' : 'text-loss',
+                    )}
+                  >
+                    {change(whatIf.diff)}
+                    {whatIf.alt.gt(0)
+                      ? ` · ${formatPercent(whatIf.diff.div(whatIf.alt).times(100), { signed: true })}`
+                      : ''}
+                  </div>
+                </div>
+              </div>
+              <ValueChart
+                points={whatIf.points.map((p) => ({
+                  date: p.date,
+                  value: p.actual.toNumber(),
+                  invested: p.alt.toNumber(),
+                }))}
+                currency="RUB"
+                label={ru.whatIf.title}
+                names={{ value: ru.whatIf.portfolio, invested: ru.whatIf.short[choice]! }}
+              />
+            </>
+          )}
+        </section>
+      ) : null}
 
       {date && items.length === 0 ? (
         <div className="rounded-card border border-border bg-surface px-6 py-5 text-caption text-muted">

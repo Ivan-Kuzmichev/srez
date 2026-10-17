@@ -73,4 +73,31 @@ export async function getRateHistory(
   });
 }
 
+export interface KeyRate {
+  /** «YYYY-MM-DD», the day the rate applies to. */
+  date: string;
+  /** Percent a year, as a decimal string. */
+  rate: string;
+}
+
+/**
+ * The Bank of Russia key rate by day (DailyInfo web service, `KeyRateXML`; SOAP 1.2, no key). The
+ * service lists working days only: a day without an entry keeps the rate of the last one before.
+ */
+export async function getKeyRates(from: string, to: string, fetchFn: Fetch = fetch): Promise<KeyRate[]> {
+  const body = `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><KeyRateXML xmlns="http://web.cbr.ru/"><fromDate>${from}</fromDate><ToDate>${to}</ToDate></KeyRateXML></soap12:Body></soap12:Envelope>`;
+  const xml = new TextDecoder('utf-8').decode(
+    await getBytes('cbr', 'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx', fetchFn, 15_000, {
+      body,
+      contentType: 'application/soap+xml; charset=utf-8',
+    }),
+  );
+  const out = [...xml.matchAll(/<KR><DT>(\d{4}-\d{2}-\d{2})T[^<]*<\/DT><Rate>([\d.]+)<\/Rate><\/KR>/g)].map(
+    (m) => ({ date: m[1]!, rate: m[2]! }),
+  );
+  if (out.length === 0 && !/<KeyRateXMLResult/.test(xml))
+    throw new IntegrationError('cbr', 'BAD_RESPONSE', 'No KeyRateXMLResult');
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export const _test = { perUnit };

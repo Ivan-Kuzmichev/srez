@@ -39,10 +39,13 @@ export function ValueChart({
   points,
   currency,
   label,
+  names = { value: ru.chart.value, invested: ru.chart.invested },
 }: {
   points: ChartPoint[];
   currency: string;
   label: string;
+  /** The two lines' names: «Стоимость» and «Вложено» unless the caller compares something else. */
+  names?: { value: string; invested: string };
 }) {
   const format = (v: number) => formatMoney(Money.of(v.toFixed(currency === 'BTC' ? 8 : 2), currency));
   const formatDate = (date: string) => formatDay(new Date(`${date}T12:00:00Z`), 'UTC');
@@ -87,11 +90,11 @@ export function ValueChart({
         <div className="flex flex-wrap gap-5 text-caption text-muted">
           <div className="flex items-center gap-2">
             <span className="h-[3px] w-[18px] rounded-sm bg-accent" />
-            <span>{ru.chart.value}</span>
+            <span>{names.value}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-0 w-[18px] border-t-2 border-dashed border-muted" />
-            <span>{ru.chart.invested}</span>
+            <span>{names.invested}</span>
           </div>
         </div>
         <Segmented
@@ -181,10 +184,10 @@ export function ValueChart({
               >
                 <span className="text-muted">{formatDate(point.date)}</span>
                 <span className="num">
-                  {ru.chart.value}: {format(point.value)}
+                  {names.value}: {format(point.value)}
                 </span>
                 <span className="num text-muted">
-                  {ru.chart.invested}: {format(point.invested)}
+                  {names.invested}: {format(point.invested)}
                 </span>
               </div>
             </>

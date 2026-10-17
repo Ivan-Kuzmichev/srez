@@ -73,6 +73,9 @@
 **fx_rates**
 `date`, `base`, `quote`, `rate`, `source`. Первичный ключ `(date, base, quote)`. Базой всегда хранится рубль, кросс-курсы считаются.
 
+**key_rates** — ключевая ставка Банка России по дням, которые перечисляет ЦБ (рабочие), для «А если бы» (FR-PRT-8; добавлено 2026-10-17, миграция 0022).
+`date` (pk), `rate` — процент годовых. День без строки берёт ставку последнего дня до него.
+
 **payout_events** — расписание выплат по инструменту.
 `id`, `instrument_id`, `kind` (`dividend` | `coupon` | `redemption` | `amortization` | `offer`), `record_date`, `pay_date`, `amount_per_unit`, `currency`, `source`, `is_estimate bool`.
 Уникальность: `(instrument_id, kind, pay_date)`.

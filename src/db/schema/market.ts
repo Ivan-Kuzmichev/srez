@@ -46,6 +46,15 @@ export const fxRates = sqliteTable(
 );
 
 /**
+ * The Bank of Russia key rate, percent a year, on the days the CBR lists (working days): «А если бы»
+ * grows a deposit at it (FR-PRT-8). A day without a row keeps the rate of the last one before.
+ */
+export const keyRates = sqliteTable('key_rates', {
+  date: date('date').primaryKey(),
+  rate: decimal('rate').notNull(),
+});
+
+/**
  * Value at the end of a day per (account, instrument, tag). Derived: rebuilt from operations, prices
  * and rates. `approx` marks a value taken at cost because no price was known.
  */

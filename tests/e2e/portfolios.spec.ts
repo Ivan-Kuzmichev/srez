@@ -60,8 +60,19 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(page.getByTestId('snapshot-banner')).toHaveCount(0);
   await expect(page.getByTestId('positions')).toContainText('LKOH');
 
+  // «А если бы»: the same money on a deposit at its own rate.
+  const whatIf = page.getByTestId('whatif');
+  await whatIf.getByLabel('С чем сравнить').click();
+  await page.getByRole('option', { name: 'Вклад под свой процент' }).click();
+  await whatIf.getByLabel('Ставка вклада, % годовых').fill('18');
+  await whatIf.getByLabel('Ставка вклада, % годовых').press('Enter');
+  await expect(page).toHaveURL(/whatif=deposit/);
+  await expect(page).toHaveURL(/rate=18/);
+  await expect(whatIf).toContainText('Было бы');
+  await expect(whatIf).toContainText('На вкладе');
+
   // Rebalance: a hint without targets; with them, classes, orders from held stocks and a saved plan.
-  const whole = page.url();
+  const whole = page.url().split('?')[0]!;
   await page.goto(`${whole}/rebalance`);
   await expect(page.getByText('У портфеля нет целей по классам')).toBeVisible();
   await page.goto(`${whole}/edit`);

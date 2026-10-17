@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, max } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db } from '@/db/client';
 import {
@@ -12,8 +12,8 @@ import {
   type InstrumentInUse,
 } from '@/db/mutations/market';
 import { lastSnapshotDates, rebuildAccountSnapshots } from '@/db/mutations/snapshots';
-import { finAccounts, instruments } from '@/db/schema';
-import { getDailyRates, getRateHistory, CBR_IDS } from '@/integrations/cbr/client';
+import { finAccounts, instruments, keyRates } from '@/db/schema';
+import { getDailyRates, getKeyRates, getRateHistory, CBR_IDS } from '@/integrations/cbr/client';
 import { getCoinHistory, getCoinPrices } from '@/integrations/coingecko/client';
 import type { Fetch } from '@/integrations/errors';
 import { getLastPrice, getPriceHistory, getSecurity, type MoexPriceRef } from '@/integrations/moex/client';
@@ -241,7 +241,34 @@ export async function backfillHistory(
       }
     }
   }
+  // The key rate for «А если бы» (FR-PRT-8): not a price, so it does not rebuild the snapshots.
+  if (earliest) await backfillKeyRates(db, log, earliest, today, fetchFn);
   return added;
+}
+
+/** Key rate days from `since` (or after the last stored one) to `today`; returns the rows stored. */
+export async function backfillKeyRates(
+  db: Db,
+  log: Logger,
+  since: string,
+  today: string,
+  fetchFn: Fetch = fetch,
+): Promise<number> {
+  const last = db.select({ d: max(keyRates.date) }).from(keyRates).get()?.d ?? null;
+  const from = last ? addDays(last, 1) : since;
+  if (from > today) return 0;
+  try {
+    const rows = await getKeyRates(from, today, fetchFn);
+    for (const r of rows)
+      db.insert(keyRates)
+        .values(r)
+        .onConflictDoUpdate({ target: keyRates.date, set: { rate: r.rate } })
+        .run();
+    return rows.length;
+  } catch (err) {
+    log.warn({ from, to: today, err }, 'Key rate history failed');
+    return 0;
+  }
 }
 
 /** The last complete day: today after the snapshot time in the display zone, otherwise yesterday. */

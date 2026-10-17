@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   fxRates,
   instruments,
+  keyRates,
   operations,
   positionSnapshots,
   prices,
@@ -16,7 +17,7 @@ import { insertOperation, seedAccount } from '@/db/test-fixtures';
 import { createTestDb } from '@/db/test-db';
 import type { Fetch } from '@/integrations/errors';
 import { createLogger } from '@/server/logger';
-import { backfillHistory, refreshPrices, snapshotThrough, updateSnapshots } from './market';
+import { backfillHistory, backfillKeyRates, refreshPrices, snapshotThrough, updateSnapshots } from './market';
 
 const raw = (p: string) => readFileSync(`tests/fixtures/${p}`);
 const routes: Record<string, () => Response> = {
@@ -198,5 +199,22 @@ describe('snapshotThrough', () => {
   it('counts today only after the snapshot time in the display zone', () => {
     expect(snapshotThrough(new Date('2026-10-03T20:49:00Z'), 'Europe/Moscow', '23:50')).toBe('2026-10-02');
     expect(snapshotThrough(new Date('2026-10-03T20:51:00Z'), 'Europe/Moscow', '23:50')).toBe('2026-10-03');
+  });
+});
+
+describe('key rate', () => {
+  it('loads the days since the first money, then only the days after the last one stored', async () => {
+    const db = createTestDb();
+    const asked: string[] = [];
+    const cbr: Fetch = async (_url, init) => {
+      asked.push(String(init?.body).match(/<fromDate>([^<]+)</)![1]!);
+      return new Response(readFileSync('tests/fixtures/cbr/keyrate.xml'));
+    };
+    expect(await backfillKeyRates(db, log, '2025-12-15', '2026-01-20', cbr)).toBe(23);
+    expect(db.select().from(keyRates).all()).toHaveLength(23);
+    expect(await backfillKeyRates(db, log, '2025-12-15', '2026-01-20', cbr)).toBe(0);
+    expect(asked).toEqual(['2025-12-15']);
+    await backfillKeyRates(db, log, '2025-12-15', '2026-01-22', cbr);
+    expect(asked.at(-1)).toBe('2026-01-21');
   });
 });

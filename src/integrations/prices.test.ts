@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { _test as cbrTest, getDailyRates, getRateHistory } from './cbr/client';
+import { _test as cbrTest, getDailyRates, getKeyRates, getRateHistory } from './cbr/client';
 import { getCoinHistory, getCoinPrices } from './coingecko/client';
 import type { Fetch } from './errors';
 import { _test as moexTest, getBondization, getLastPrice, getPriceHistory } from './moex/client';
@@ -38,6 +38,19 @@ describe('cbr', () => {
     );
     expect(h[0]).toEqual({ date: '2026-09-01', code: 'USD', rate: '86.3793' });
     expect(h.length).toBeGreaterThan(3);
+  });
+
+  it('reads the key rate by day from the SOAP service, oldest first', async () => {
+    let request: RequestInit | undefined;
+    const rates = await getKeyRates('2025-12-15', '2026-01-20', async (_url, init) => {
+      request = init;
+      return new Response(raw('cbr/keyrate.xml'));
+    });
+    expect(request?.method).toBe('POST');
+    expect(String(request?.body)).toContain('<fromDate>2025-12-15</fromDate>');
+    expect(rates).toHaveLength(23);
+    expect(rates[0]).toEqual({ date: '2025-12-15', rate: '16.50' });
+    expect(rates.at(-1)).toEqual({ date: '2026-01-20', rate: '16.00' });
   });
 
   it('shifts by nominals exactly', () => {

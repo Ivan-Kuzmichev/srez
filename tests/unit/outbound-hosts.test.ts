@@ -15,8 +15,8 @@ const ALLOWED = new Set([
   'api.etherscan.io',
   ...NETWORKS.flatMap((n) => n.endpoints.map((e) => new URL(e).host)),
 ]);
-// Not requests: the SVG namespace, local addresses.
-const NOT_REQUESTS = new Set(['www.w3.org', 'localhost', 'localhost:3000']);
+// Not requests: the SVG namespace, the CBR's SOAP namespace, local addresses.
+const NOT_REQUESTS = new Set(['www.w3.org', 'web.cbr.ru', 'localhost', 'localhost:3000']);
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
