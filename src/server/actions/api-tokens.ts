@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { API_SCOPES } from '@/db/schema';
 import { db } from '@/db/client';
 import { authedAction } from '../action';
 import {
@@ -15,7 +16,7 @@ import {
 import { logger } from '../logger';
 
 // write:data opens the API's changes: fixing reconciliation discrepancies (docs/06-api.md, section 4).
-const Scopes = z.array(z.enum(['read:data', 'read:logs', 'run:sync', 'write:data'])).max(4);
+const Scopes = z.array(z.enum(API_SCOPES)).max(API_SCOPES.length);
 const Ttl = z.enum(Object.keys(TOKEN_TTLS) as [TokenTtl, ...TokenTtl[]]);
 const Name = z.string().trim().min(1).max(60);
 

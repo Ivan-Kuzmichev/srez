@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { API_SCOPES } from '@/db/schema';
 import { db } from '@/db/client';
 import { authedAction } from '../action';
 import { updateTokenSettings } from '../api-tokens';
@@ -29,7 +30,7 @@ export const saveDevSettings = authedAction(
     token: z
       .object({
         name: z.string().trim().min(1).max(60),
-        scopes: z.array(z.enum(['read:data', 'read:logs', 'run:sync'])).max(3),
+        scopes: z.array(z.enum(API_SCOPES)).max(API_SCOPES.length),
         localOnly: z.boolean(),
       })
       .nullable(),

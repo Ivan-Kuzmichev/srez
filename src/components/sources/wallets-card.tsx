@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
+import { IconSources } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
 import { useToast } from '@/components/ui/toast';
@@ -43,25 +44,30 @@ export function WalletsCard({ wallets }: { wallets: WalletCardItem[] }) {
         {wallets.map((w) => (
           <div
             key={w.id}
-            className="flex min-h-[64px] flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border-subtle py-2 last:border-b-0"
+            className="flex min-h-[64px] items-center gap-3 border-b border-border-subtle py-2 last:border-b-0"
           >
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="flex flex-wrap items-center gap-2">
-                <span>{w.name}</span>
-                <Pill tone={w.ok ? 'gain' : 'loss'}>{w.ok ? t.ok : t.error}</Pill>
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate">{w.name}</span>
+                <Pill tone={w.ok ? 'gain' : 'loss'} className="shrink-0">
+                  {w.ok ? t.ok : t.error}
+                </Pill>
               </span>
               <span className="num truncate text-small text-muted">
                 {w.address.slice(0, 8)}…{w.address.slice(-6)} · {w.networks}
                 {w.balancesOnly ? ` · ${t.balancesOnly}` : ''}
               </span>
-              <span className={w.ok ? 'text-small text-muted' : 'text-small text-loss'}>
+              <span className={w.ok ? 'truncate text-small text-muted' : 'text-small text-pretty text-loss'}>
                 {w.error ?? (w.last ? t.last(w.last) : t.never)}
               </span>
             </span>
-            <span className="flex items-center justify-end gap-1">
-              <Button
-                variant="secondary"
+            <span className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                aria-label={t.syncWallet(w.name)}
+                title={t.syncNow}
                 disabled={pending}
+                className="flex size-11 cursor-pointer items-center justify-center rounded-control border-0 bg-transparent text-muted hover:text-text disabled:cursor-not-allowed disabled:text-faint"
                 onClick={() =>
                   start(async () => {
                     const r = await syncWalletNow(null, { sourceId: w.id });
@@ -72,8 +78,8 @@ export function WalletsCard({ wallets }: { wallets: WalletCardItem[] }) {
                   })
                 }
               >
-                {t.syncNow}
-              </Button>
+                <IconSources size={18} />
+              </button>
               <WalletMenu sourceId={w.id} name={w.name} />
             </span>
           </div>

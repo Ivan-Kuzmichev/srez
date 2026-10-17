@@ -41,6 +41,18 @@ test('issue an API token, call the API with it, see the call on the screen and i
   ]);
   expect(report.suggestedFilename()).toMatch(/^srez-report-.*\.json$/);
 
+  // A right added to the token already out takes effect on «Сохранить», without reissuing it.
+  const fix = () =>
+    request.post('/api/v1/reconciliation/999999/fix', {
+      headers: { authorization: `Bearer ${token}` },
+      data: { fix: 'exclude', date: '2026-10-17' },
+    });
+  expect((await fix()).status()).toBe(403);
+  await card.getByLabel('Исправлять расхождения сверки').check();
+  await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(page.getByText('Настройки сохранены').first()).toBeVisible();
+  expect((await fix()).status()).toBe(404);
+
   await card.getByRole('button', { name: 'Отозвать' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Отозвать' }).click();
   await expect(card).toContainText('Не выпущен');

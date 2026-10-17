@@ -961,6 +961,7 @@ export const ru = {
     last: (when: string) => `синхронизирован ${when}`,
     never: 'ещё не синхронизирован',
     actions: (name: string) => `Действия с кошельком «${name}»`,
+    syncWallet: (name: string) => `Синхронизировать кошелёк «${name}»`,
     rename: 'Переименовать',
     renameTitle: 'Название кошелька',
     renameLabel: 'Название',
