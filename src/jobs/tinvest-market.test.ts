@@ -7,11 +7,11 @@ import { instruments, prices, pricesLast, user } from '@/db/schema';
 import { createTestDb } from '@/db/test-db';
 import { Decimal } from '@/domain/decimal';
 import type { Fetch } from '@/integrations/errors';
-import { TinvestClient } from '@/integrations/tinvest/client';
+import { TinvestClient, type Bond } from '@/integrations/tinvest/client';
 import { createLogger } from '@/server/logger';
 import { MOCK_TOKEN, startTinvestMock, type TinvestMock } from '../../tests/mock/tinvest';
 import { backfillHistory, refreshPrices } from './market';
-import { priceInMoney } from './tinvest-market';
+import { ensureBondMeta, priceCurrency, priceInMoney } from './tinvest-market';
 import { syncSource } from './tinvest-sync';
 
 const log = createLogger({
@@ -50,6 +50,53 @@ describe('T-Invest prices', () => {
     expect(priceInMoney(new Decimal('62.4'), { kind: 'bond', meta: { nominal: '0' } })).toBeNull();
     expect(priceInMoney(new Decimal('62.4'), { kind: 'bond', meta: null })).toBeNull();
     expect(priceInMoney(new Decimal('300'), { kind: 'share', meta: null })?.toString()).toBe('300');
+  });
+
+  it('a ruble-traded bond on a dollar nominal is priced in dollars; its old ruble prices go once', async () => {
+    const { db, id } = await synced();
+    const bondId = id('RU000A1038V6');
+    const read = () => db.select().from(instruments).where(eq(instruments.id, bondId)).get()!;
+    // As stored before the nominal currency was kept: 94,45 % × 100 taken as rubles.
+    const { nominalCurrency: _, ...old } = read().meta as Record<string, unknown>;
+    db.update(instruments)
+      .set({ meta: { ...old, nominal: '100' } })
+      .where(eq(instruments.id, bondId))
+      .run();
+    db.insert(prices)
+      .values({
+        instrumentId: bondId,
+        date: '2026-10-01',
+        close: '94.45',
+        currency: 'RUB',
+        source: 'tinvest',
+      })
+      .run();
+    const client = {
+      getBond: async () =>
+        ({
+          nominal: { currency: 'usd', units: '100', nano: 0 },
+          aciValue: { currency: 'usd', units: '0', nano: 460_000_000 },
+          floatingCouponFlag: false,
+          maturityDate: new Date('2029-05-09T00:00:00Z'),
+          amortizationFlag: false,
+          couponQuantityPerYear: 12,
+        }) as Bond,
+    } as unknown as TinvestClient;
+    const inst = read();
+    const meta = await ensureBondMeta(db, client, inst, '2026-10-08');
+    expect(meta).toMatchObject({ nominal: '100', nominalCurrency: 'USD' });
+    expect(priceCurrency({ ...inst, meta })).toBe('USD');
+    expect(priceInMoney(new Decimal('94.4451'), { kind: 'bond', meta })?.toString()).toBe('94.4451');
+    expect(db.select().from(prices).where(eq(prices.instrumentId, bondId)).all()).toEqual([]);
+    // Known now: the next read keeps the prices.
+    db.insert(prices)
+      .values({ instrumentId: bondId, date: '2026-10-02', close: '94.5', currency: 'USD', source: 'tinvest' })
+      .run();
+    await ensureBondMeta(db, client, { ...inst, meta }, '2026-10-09');
+    expect(db.select().from(prices).where(eq(prices.instrumentId, bondId)).all()).toHaveLength(1);
+    // A ruble bond stays in rubles.
+    expect(priceCurrency({ kind: 'bond', currency: 'RUB', meta: { nominalCurrency: 'RUB' } })).toBe('RUB');
+    expect(priceCurrency({ kind: 'share', currency: 'USD', meta: null })).toBe('USD');
   });
 
   it('stores bond data when the sync creates the bond', async () => {

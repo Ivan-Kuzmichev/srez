@@ -1,7 +1,7 @@
 import { and, gt, inArray } from 'drizzle-orm';
 import type { Db } from '@/db/client';
 import { instruments, payoutEvents } from '@/db/schema';
-import { bondArea, bondMetrics, type BondFlow } from '@/domain/bonds';
+import { bondArea, bondMetrics, priceCurrency, type BondFlow } from '@/domain/bonds';
 import { Decimal } from '@/domain/decimal';
 import { everything, type Scope } from '@/domain/scope';
 import { addDays, localDate } from '@/lib/time';
@@ -92,6 +92,7 @@ export function bondsData(
           .select({
             id: instruments.id,
             name: instruments.name,
+            kind: instruments.kind,
             currency: instruments.currency,
             meta: instruments.meta,
           })
@@ -120,7 +121,8 @@ export function bondsData(
   for (const [id, h] of held) {
     const inst = info.get(id)!;
     const meta = inst.meta ?? {};
-    const rate = rubPer(fx, inst.currency) ?? ONE;
+    // Price, nominal and schedule are in the nominal currency, even for a bond traded in rubles.
+    const rate = rubPer(fx, priceCurrency(inst)) ?? ONE;
     const nominal = typeof meta.nominal === 'string' ? new Decimal(meta.nominal) : null;
     const floating = meta.couponType === 'floating';
     const mine = events

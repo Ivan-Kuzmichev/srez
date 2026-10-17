@@ -23,7 +23,7 @@ import { ownerSettings } from '@/server/settings';
 import { BENCHMARKS, ensureBenchmarks, ensureBitcoin } from '@/server/benchmarks';
 import { enqueue } from './queue';
 import type { TinvestClient } from '@/integrations/tinvest/client';
-import { refreshTinvestPrices, tinvestForPrices, tinvestHistory } from './tinvest-market';
+import { priceCurrency, refreshTinvestPrices, tinvestForPrices, tinvestHistory } from './tinvest-market';
 import { defineJob } from './runner';
 
 /** Display currencies are always kept, so the ₽ / $ / € switch works from the first day. */
@@ -113,8 +113,8 @@ export async function refreshPrices(
       const ref = await moexRef(db, inst, fetchFn);
       const price = ref && (await getLastPrice(ref, fetchFn));
       if (!price) continue;
-      setLastPrice(db, inst.id, price, inst.currency, 'moex', now);
-      upsertPrices(db, inst.id, inst.currency, 'moex', [{ date: today, close: price }]);
+      setLastPrice(db, inst.id, price, priceCurrency(inst), 'moex', now);
+      upsertPrices(db, inst.id, priceCurrency(inst), 'moex', [{ date: today, close: price }]);
     } catch (err) {
       log.warn({ instrument: inst.ticker, err }, 'Price refresh failed');
     }
@@ -186,7 +186,7 @@ export async function backfillHistory(
           const ref = await moexRef(db, inst, fetchFn);
           if (!ref) continue;
           const rows = await getPriceHistory(ref, from, to, fetchFn);
-          upsertPrices(db, inst.id, inst.currency, 'moex', rows);
+          upsertPrices(db, inst.id, priceCurrency(inst), 'moex', rows);
           added += rows.length;
         } else if (inst.kind === 'crypto' && coinId(inst)) {
           const days = Math.min(365, Math.ceil((Date.parse(today) - Date.parse(from)) / 86_400_000) + 1);

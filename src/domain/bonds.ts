@@ -108,3 +108,16 @@ export function bondArea(holdings: readonly BondHolding[], delta: Decimal) {
     shock,
   };
 }
+
+/**
+ * The currency a price of an instrument is in: a bond's nominal currency when known (a bond can trade
+ * in rubles on a dollar nominal, its price a percent of dollars), else the instrument's own.
+ */
+export function priceCurrency(inst: {
+  kind: string;
+  currency: string;
+  meta: Record<string, unknown> | null;
+}): string {
+  const nominal = inst.meta?.nominalCurrency;
+  return inst.kind === 'bond' && typeof nominal === 'string' && nominal ? nominal : inst.currency;
+}

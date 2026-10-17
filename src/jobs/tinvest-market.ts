@@ -1,11 +1,14 @@
 import { and, eq, isNotNull, ne } from 'drizzle-orm';
 import type { Db, Executor } from '@/db/client';
 import { setLastPrice, upsertPrices, type InstrumentInUse } from '@/db/mutations/market';
-import { instruments, sources } from '@/db/schema';
+import { instruments, prices, pricesLast, sources } from '@/db/schema';
+import { priceCurrency } from '@/domain/bonds';
 import { Decimal } from '@/domain/decimal';
 import { quotation, type Bond, type TinvestClient } from '@/integrations/tinvest/client';
 import { tinvestToken } from './source-token';
 import { tinvestClient } from './tinvest-client';
+
+export { priceCurrency };
 
 /** A client on the first working T-Invest token, or null: prices then come from ISS. */
 export function tinvestForPrices(db: Executor): TinvestClient | null {
@@ -23,6 +26,9 @@ export function tinvestForPrices(db: Executor): TinvestClient | null {
 export function bondMeta(b: Bond, today: string | null = null): Record<string, unknown> {
   return {
     nominal: quotation(b.nominal).toString(),
+    // A bond can trade in rubles on a dollar nominal (замещающие облигации): its price, a percent of
+    // the nominal, is then dollars.
+    nominalCurrency: b.nominal?.currency ? b.nominal.currency.toUpperCase() : null,
     aci: quotation(b.aciValue).toString(),
     metaDate: today,
     couponType: b.floatingCouponFlag ? 'floating' : 'fixed',
@@ -48,14 +54,28 @@ export function priceInMoney(price: Decimal, inst: Pick<InstrumentInUse, 'kind' 
 export async function ensureBondMeta(
   db: Executor,
   client: TinvestClient,
-  inst: Pick<InstrumentInUse, 'id' | 'kind' | 'externalUid' | 'meta'>,
+  inst: Pick<InstrumentInUse, 'id' | 'kind' | 'externalUid' | 'meta'> & { currency?: string },
   today: string | null = null,
 ) {
   if (inst.kind !== 'bond' || !inst.externalUid) return inst.meta;
-  const fresh = typeof inst.meta?.nominal === 'string' && (today === null || inst.meta?.metaDate === today);
+  const fresh =
+    typeof inst.meta?.nominal === 'string' &&
+    inst.meta?.nominalCurrency !== undefined &&
+    (today === null || inst.meta?.metaDate === today);
   if (fresh) return inst.meta;
   const meta = { ...inst.meta, ...bondMeta(await client.getBond(inst.externalUid), today) };
   db.update(instruments).set({ meta }).where(eq(instruments.id, inst.id)).run();
+  // The nominal currency learned for the first time and not the trading one: the prices stored so far
+  // were percent × nominal taken as the trading currency. They go, and the next backfill reloads them.
+  const learned = meta.nominalCurrency;
+  if (inst.meta?.nominalCurrency === undefined && inst.currency && learned && learned !== inst.currency) {
+    db.delete(prices)
+      .where(and(eq(prices.instrumentId, inst.id), ne(prices.source, 'manual')))
+      .run();
+    db.delete(pricesLast)
+      .where(and(eq(pricesLast.instrumentId, inst.id), ne(pricesLast.source, 'manual')))
+      .run();
+  }
   return meta;
 }
 
@@ -78,8 +98,9 @@ export async function refreshTinvestPrices(
     if (!inst || !last.price) continue;
     const price = priceInMoney(quotation(last.price), inst);
     if (!price || price.lte(0)) continue;
-    setLastPrice(db, inst.id, price.toString(), inst.currency, 'tinvest', now);
-    upsertPrices(db, inst.id, inst.currency, 'tinvest', [{ date: today, close: price.toString() }]);
+    const currency = priceCurrency(inst);
+    setLastPrice(db, inst.id, price.toString(), currency, 'tinvest', now);
+    upsertPrices(db, inst.id, currency, 'tinvest', [{ date: today, close: price.toString() }]);
     priced.add(inst.id);
   }
   return priced;
@@ -110,6 +131,6 @@ export async function tinvestHistory(
         rows.push({ date: c.time.toISOString().slice(0, 10), close: close.toString() });
     }
   }
-  upsertPrices(db, inst.id, inst.currency, 'tinvest', rows);
+  upsertPrices(db, inst.id, priceCurrency({ ...inst, meta }), 'tinvest', rows);
   return rows.length;
 }
