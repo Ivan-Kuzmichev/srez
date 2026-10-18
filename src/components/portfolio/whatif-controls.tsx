@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Popover } from 'radix-ui';
 import { useState } from 'react';
 import { IconMore } from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { ru } from '@/lib/i18n/ru';
@@ -98,11 +99,15 @@ export function WhatIfOptionsMenu({
   const adjustable = choice !== 'deposit';
   return (
     <Popover.Root>
-      <Popover.Trigger
-        aria-label={t.open}
-        className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control border-0 bg-transparent text-muted hover:text-text data-[state=open]:text-text"
-      >
-        <IconMore size={18} />
+      <Popover.Trigger asChild>
+        {/* A bordered button, as the other actions inside a card. */}
+        <Button
+          variant="secondary-raised"
+          aria-label={t.open}
+          className="size-11 shrink-0 px-0 max-wide:size-12 data-[state=open]:bg-pressed"
+        >
+          <IconMore size={18} />
+        </Button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
