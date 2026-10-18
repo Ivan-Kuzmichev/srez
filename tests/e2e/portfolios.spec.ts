@@ -85,6 +85,10 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(page).toHaveURL(/rate=18/);
   await expect(whatIf).toContainText('Было бы');
   await expect(whatIf).toContainText('На вкладе');
+  // «⋯»: the deposit without capitalization.
+  await whatIf.getByRole('button', { name: 'Настройки сравнения' }).click();
+  await page.getByLabel('Проценты по вкладу — с капитализацией').uncheck();
+  await expect(page).toHaveURL(/wc=0/);
 
   // Rebalance: a hint without targets; with them, classes, orders from held stocks and a saved plan.
   const whole = page.url().split('?')[0]!;

@@ -69,3 +69,37 @@ describe('эталон 15.2: на вклад', () => {
     expect(v.at(-1)!.value.toFixed()).toBe('260');
   });
 });
+
+describe('«А если бы»: поправки', () => {
+  it('an index fee of 1 % a year takes 1 % over a year of a flat price', () => {
+    const v = intoIndex(
+      [{ date: '2025-01-01', amount: D(100000) }],
+      [{ date: '2025-01-01', close: '100' }],
+      days('2025-01-01', '2026-01-01'),
+      D(1),
+    );
+    expect(v.at(-1)!.value.toFixed(2)).toBe('99000.00');
+  });
+
+  it('without capitalization the interest earns nothing; a negative rate counts as none', () => {
+    const simple = intoDeposit(
+      [{ date: '2026-01-01', amount: D(100000) }],
+      () => D(12),
+      days('2026-01-01', '2026-03-31'),
+      false,
+    );
+    // 89 days at 12 % on 100 000, never on the interest.
+    expect(simple.at(-1)!.value.toFixed(2)).toBe('102926.03');
+    const compound = intoDeposit(
+      [{ date: '2026-01-01', amount: D(100000) }],
+      () => D(12),
+      days('2026-01-01', '2026-03-31'),
+    );
+    expect(compound.at(-1)!.value.gt(simple.at(-1)!.value)).toBe(true);
+    expect(
+      intoDeposit([{ date: '2026-01-01', amount: D(100) }], () => D(-3), days('2026-01-01', '2026-01-10'))
+        .at(-1)!
+        .value.toFixed(),
+    ).toBe('100');
+  });
+});

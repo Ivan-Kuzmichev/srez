@@ -76,4 +76,42 @@ describe('«А если бы»', () => {
     db.insert(keyRates).values({ date: '2025-12-19', rate: '14.6' }).run();
     expect(run(db, 'key').alt.toFixed()).toBe(own.alt.toFixed());
   });
+
+  it("options: a payout sent to a card stays the portfolio's; the key rate less the bank gap", () => {
+    const db = setup();
+    // 10 Jan: a dividend of 1 000 the broker sent straight to a card.
+    insertOperation(db, {
+      type: 'withdrawal',
+      amount: '-1000',
+      executedAt: new Date('2026-01-10T10:00:00Z'),
+      origin: 'tinvest',
+      externalId: '2000000001:div-1:card',
+    });
+    db.insert(keyRates).values({ date: '2025-12-19', rate: '14.6' }).run();
+    const ledger = loadUserLedger(db, 'u1');
+    const base = (options: Parameters<typeof whatIfData>[10]) =>
+      whatIfData(
+        db,
+        'u1',
+        everything,
+        ledger,
+        loadFx(db),
+        new Decimal(128000),
+        tz,
+        'key',
+        null,
+        now,
+        options,
+      )!;
+    const plain = base(undefined);
+    const kept = base({ payoutsToCard: true, compound: true, adjustPct: new Decimal(0) });
+    // The portfolio is worth 1 000 more, the deposit withdrew 1 000 less (plus the interest on it).
+    expect(kept.keptPayouts.toFixed()).toBe('1000');
+    expect(kept.actual.minus(plain.actual).toFixed()).toBe('1000');
+    expect(kept.alt.gt(plain.alt.plus(1000))).toBe(true);
+    // 2 points under the key rate and no capitalization: less than the plain key rate.
+    const bank = base({ payoutsToCard: false, compound: false, adjustPct: new Decimal(2) });
+    expect(bank.alt.lt(plain.alt)).toBe(true);
+    expect(bank.keptPayouts.toFixed()).toBe('0');
+  });
 });

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ReturnsChart } from '@/components/charts/returns-chart';
 import { ValueChart } from '@/components/charts/value-chart';
-import { WhatIfControls } from '@/components/portfolio/whatif-controls';
+import { WhatIfControls, WhatIfOptionsMenu } from '@/components/portfolio/whatif-controls';
 import { eq } from 'drizzle-orm';
 import { instruments } from '@/db/schema';
 import { PositionsTable, type PositionItem } from '@/components/portfolio/positions-table';
@@ -94,9 +94,16 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
     : 'MCFTR';
   const rateText =
     typeof sp.rate === 'string' && /^\d{1,2}(\.\d{1,4})?$|^100$/.test(sp.rate) ? sp.rate : '12';
+  // The menu «⋯»: payouts to a card kept, a deposit without capitalization, an adjustment of 0–20 % a year.
+  const adjustText =
+    typeof sp.wa === 'string' && /^\d{1,2}(\.\d{1,4})?$/.test(sp.wa) && Number(sp.wa) <= 20 ? sp.wa : '0';
   const whatIf = date
     ? null
-    : whatIfData(db(), userId, scope, ledger, fx, s.value, tz, choice, new Decimal(rateText));
+    : whatIfData(db(), userId, scope, ledger, fx, s.value, tz, choice, new Decimal(rateText), new Date(), {
+        payoutsToCard: sp.wd === '1',
+        compound: sp.wc !== '0',
+        adjustPct: new Decimal(adjustText),
+      });
   const dateText = date ? formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC') : '';
   const split = profitSplit(db(), userId, scope, cells, fx);
   const settings = getSettings(db(), userId);
@@ -396,10 +403,19 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="m-0 text-card font-semibold">{ru.whatIf.title}</h2>
-            <WhatIfControls choice={choice} rate={rateText} />
+            <div className="flex w-full items-center gap-1 wide:w-auto">
+              <WhatIfControls choice={choice} rate={rateText} />
+              <WhatIfOptionsMenu
+                choice={choice}
+                payoutsToCard={sp.wd === '1'}
+                compound={sp.wc !== '0'}
+                adjust={adjustText}
+              />
+            </div>
           </div>
           <div className="text-caption text-pretty text-muted">
             {ru.whatIf.text(formatDateLong(new Date(`${whatIf.from}T12:00:00Z`), 'UTC'))}
+            {whatIf.keptPayouts.gt(0) ? ` ${ru.whatIf.keptPayouts(rub(whatIf.keptPayouts))}` : ''}
           </div>
           {whatIf.missing ? (
             <div className="rounded-control bg-surface-2 px-4 py-3.5 text-caption text-muted">
