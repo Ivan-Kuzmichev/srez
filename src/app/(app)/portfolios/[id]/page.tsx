@@ -10,6 +10,9 @@ import { PositionsTable, type PositionItem } from '@/components/portfolio/positi
 import { SnapshotBanner, SnapshotPicker } from '@/components/portfolio/snapshot-date';
 import { PortfolioMap, type MapTileView } from '@/components/portfolio/portfolio-map';
 import { TargetsCard, type TargetRow } from '@/components/portfolio/targets-card';
+import { DepositsCard } from '@/components/portfolio/deposits-card';
+import { depositView } from '@/domain/deposit-goal';
+import { holdsIis, portfolioDeposits } from '@/server/deposits-data';
 import { MAP_PERIODS, mapTiles } from '@/server/map-data';
 import { sectorAllocation } from '@/domain/sectors';
 import { Button } from '@/components/ui/button';
@@ -104,6 +107,18 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
         compound: sp.wc !== '0',
         adjustPct: new Decimal(adjustText),
       });
+  // «Пополнения» (FR-PRT-12): today's view only, the goal year to date.
+  const depositGoal = portfolio.depositGoal.amount
+    ? { ...portfolio.depositGoal, amount: portfolio.depositGoal.amount }
+    : null;
+  const deposits = date
+    ? null
+    : depositView(
+        portfolioDeposits(db(), userId, scope, ledger, fx, tz),
+        depositGoal,
+        today,
+        portfolio.depositGoal.yearStart,
+      );
   const dateText = date ? formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC') : '';
   const split = profitSplit(db(), userId, scope, cells, fx);
   const settings = getSettings(db(), userId);
@@ -384,14 +399,28 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
             selectDate
           />
         </section>
-        <TargetsCard
-          classes={classRows}
-          sectors={sectorRows}
-          classesEnabled={portfolio.targetsEnabled}
-          sectorTargets={portfolio.sectorTargets.size > 0}
-          rebalanceHref={date ? null : `/portfolios/${id}/rebalance`}
-          editHref={`/portfolios/${id}/edit`}
-        />
+        <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-3 wide:gap-4">
+          <TargetsCard
+            classes={classRows}
+            sectors={sectorRows}
+            classesEnabled={portfolio.targetsEnabled}
+            sectorTargets={portfolio.sectorTargets.size > 0}
+            rebalanceHref={date ? null : `/portfolios/${id}/rebalance`}
+            editHref={`/portfolios/${id}/edit`}
+          />
+          {deposits ? (
+            <DepositsCard
+              view={deposits}
+              goal={depositGoal}
+              iis={holdsIis(
+                db(),
+                userId,
+                portfolio.rules.map((r) => r.accountId),
+              )}
+              editHref={`/portfolios/${id}/edit`}
+            />
+          ) : null}
+        </div>
       </div>
 
       {mapView.length > 0 ? <PortfolioMap tiles={mapView} /> : null}

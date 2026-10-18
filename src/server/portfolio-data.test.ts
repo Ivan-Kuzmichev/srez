@@ -109,6 +109,38 @@ describe('areas', () => {
     expect(p.targets.get('stocks')!.toFixed()).toBe('60');
   });
 
+  it('keeps the deposit goal; a save without one leaves it, a zero is refused', () => {
+    const db = setup();
+    const base = {
+      name: 'Копилка',
+      rules: [{ accountId: 'a1', mode: 'all' as const, tagId: null }],
+      targetsEnabled: false,
+      targets: {},
+      deviationThreshold: new Decimal(5),
+    };
+    const id = savePortfolio(db, 'u1', {
+      ...base,
+      depositGoal: { amount: new Decimal(30000), period: 'year', yearStart: 9 },
+    });
+    const goal = () => listPortfolios(db, 'u1')[0]!.depositGoal;
+    expect([goal().amount?.toFixed(), goal().period, goal().yearStart]).toEqual(['30000', 'year', 9]);
+    savePortfolio(db, 'u1', base, id);
+    expect(goal().amount?.toFixed()).toBe('30000');
+    savePortfolio(db, 'u1', { ...base, depositGoal: { amount: null, period: 'month', yearStart: 1 } }, id);
+    expect([goal().amount, goal().period]).toEqual([null, 'month']);
+    expect(() =>
+      savePortfolio(
+        db,
+        'u1',
+        { ...base, depositGoal: { amount: new Decimal(0), period: 'day', yearStart: 1 } },
+        id,
+      ),
+    ).toThrow(/DEPOSIT_GOAL/);
+    expect(() =>
+      savePortfolio(db, 'u1', { ...base, depositGoal: { amount: null, period: 'day', yearStart: 13 } }, id),
+    ).toThrow(/DEPOSIT_GOAL/);
+  });
+
   it('checks targets, tags and ownership, and deleting leaves operations alone', () => {
     const db = setup();
     const base = { name: 'X', targetsEnabled: true, deviationThreshold: new Decimal(5) };

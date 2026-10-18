@@ -11,12 +11,20 @@ import {
 } from '@/db/schema';
 import { ASSET_CLASS_ORDER, targetsValid, type AssetClass } from '@/domain/allocation';
 import { Decimal, toDbDecimal } from '@/domain/decimal';
+import type { DepositPeriod } from '@/domain/deposit-goal';
 
 export class PortfolioError extends Error {
   override name = 'PortfolioError';
   constructor(
     readonly code:
-      'NOT_FOUND' | 'ACCOUNT' | 'TAG' | 'TARGETS' | 'SECTOR_TARGETS' | 'NO_ACCOUNTS' | 'BENCHMARK',
+      | 'NOT_FOUND'
+      | 'ACCOUNT'
+      | 'TAG'
+      | 'TARGETS'
+      | 'SECTOR_TARGETS'
+      | 'NO_ACCOUNTS'
+      | 'BENCHMARK'
+      | 'DEPOSIT_GOAL',
   ) {
     super(code);
   }
@@ -32,6 +40,8 @@ export interface PortfolioInput {
   benchmarkId?: string | null;
   /** Target shares by sector, percent of shares and funds; absent sectors have none (FR-PRT-10). */
   sectorTargets?: Record<string, Decimal>;
+  /** «Цель пополнений» (FR-PRT-12): rubles a period, null — none; absent keeps what is stored. */
+  depositGoal?: { amount: Decimal | null; period: DepositPeriod; yearStart: number };
 }
 
 function check(db: Db, userId: string, input: PortfolioInput) {
@@ -72,6 +82,15 @@ function check(db: Db, userId: string, input: PortfolioInput) {
     sectors.reduce((s, v) => s.plus(v), new Decimal(0)).gt(100)
   )
     throw new PortfolioError('SECTOR_TARGETS');
+  const goal = input.depositGoal;
+  if (
+    goal &&
+    ((goal.amount !== null && !goal.amount.gt(0)) ||
+      !Number.isInteger(goal.yearStart) ||
+      goal.yearStart < 1 ||
+      goal.yearStart > 12)
+  )
+    throw new PortfolioError('DEPOSIT_GOAL');
 }
 
 /** Creates or updates a portfolio with its rules and targets, all or nothing (FR-PRT-2, 4). */
@@ -84,6 +103,13 @@ export function savePortfolio(db: Db, userId: string, input: PortfolioInput, id?
       targetsEnabled: input.targetsEnabled,
       deviationThreshold: toDbDecimal(input.deviationThreshold),
       benchmarkInstrumentId: input.benchmarkId ?? null,
+      ...(input.depositGoal
+        ? {
+            depositGoal: input.depositGoal.amount ? toDbDecimal(input.depositGoal.amount) : null,
+            depositPeriod: input.depositGoal.period,
+            depositYearStart: input.depositGoal.yearStart,
+          }
+        : {}),
     };
     if (portfolioId) {
       const updated = db

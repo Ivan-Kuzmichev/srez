@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
+import { DEPOSIT_PERIODS } from '@/db/schema';
 import {
   deletePortfolio as removePortfolio,
   PortfolioError,
@@ -39,6 +40,17 @@ const PortfolioInput = z.object({
   benchmarkId: z.string().max(64).default(''),
   /** Percent of shares and funds by sector code (FR-PRT-10). */
   sectorTargets: z.record(z.string().regex(/^[a-z_]{1,32}$/), percent).default({}),
+  /** «Цель пополнений» (FR-PRT-12); amount '' — no goal. */
+  depositGoal: z
+    .object({
+      amount: z.preprocess(
+        (v) => (typeof v === 'string' ? (v.trim() === '' ? '' : (parseDecimalInput(v) ?? v)) : v),
+        z.union([z.literal(''), z.string().regex(/^\d{1,12}(\.\d{1,2})?$/)]),
+      ),
+      period: z.enum(DEPOSIT_PERIODS),
+      yearStart: z.number().int().min(1).max(12),
+    })
+    .optional(),
 });
 
 function refused(err: unknown): ActionResult<never> {
@@ -63,6 +75,15 @@ export const savePortfolio = authedAction(PortfolioInput, async (input, session)
         sectorTargets: Object.fromEntries(
           Object.entries(input.sectorTargets).map(([k, v]) => [k, new Decimal(v)]),
         ),
+        ...(input.depositGoal
+          ? {
+              depositGoal: {
+                amount: input.depositGoal.amount ? new Decimal(input.depositGoal.amount) : null,
+                period: input.depositGoal.period,
+                yearStart: input.depositGoal.yearStart,
+              },
+            }
+          : {}),
       },
       input.id,
     );

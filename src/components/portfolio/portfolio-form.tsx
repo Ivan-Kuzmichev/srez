@@ -16,7 +16,14 @@ import { useToast } from '@/components/ui/toast';
 import { Decimal } from '@/domain/decimal';
 import { Money } from '@/domain/money';
 import { cn } from '@/lib/cn';
-import { approx, formatMoney, formatPercent, formatPlain, formatShareOfTarget } from '@/lib/format';
+import {
+  approx,
+  formatMoney,
+  formatMonthGenitive,
+  formatPercent,
+  formatPlain,
+  formatShareOfTarget,
+} from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 import { parseDecimalInput } from '@/lib/parse';
 import { deletePortfolio, previewPortfolio, savePortfolio } from '@/server/actions/portfolios';
@@ -40,6 +47,8 @@ export interface PortfolioFormValues {
   benchmarkId: string;
   /** Percent of shares and funds by sector code; '' has no target (FR-PRT-10). */
   sectorTargets: Record<string, string>;
+  /** «Цель пополнений» (FR-PRT-12): rubles as typed, the period and the month a year starts with. */
+  deposit: { amount: string; period: 'day' | 'month' | 'year'; yearStart: number; off: boolean };
 }
 
 interface Preview {
@@ -125,7 +134,14 @@ export function PortfolioForm({
       },
     }));
 
+  const setDeposit = (patch: Partial<PortfolioFormValues['deposit']>) =>
+    setValues((v) => ({ ...v, deposit: { ...v.deposit, ...patch } }));
+
   async function save() {
+    if (!values.deposit.off && values.deposit.amount.trim() === '') {
+      setError(ru.portfolios.errors.DEPOSIT_GOAL!);
+      return;
+    }
     setBusy(true);
     setError(null);
     const result = await savePortfolio(null, {
@@ -139,6 +155,11 @@ export function PortfolioForm({
       sectorTargets: Object.fromEntries(
         Object.entries(values.sectorTargets).filter(([, v]) => v.trim() !== ''),
       ),
+      depositGoal: {
+        amount: values.deposit.off ? '' : values.deposit.amount,
+        period: values.deposit.period,
+        yearStart: values.deposit.yearStart,
+      },
     });
     setBusy(false);
     if (!result.ok) {
@@ -330,6 +351,61 @@ export function PortfolioForm({
               </Field>
             ))}
           </div>
+        </section>
+
+        <section
+          id="deposit-goal"
+          className="flex scroll-mt-6 flex-col gap-4 rounded-card border border-border bg-surface p-4 wide:p-6"
+          data-testid="deposit-goal"
+        >
+          <h2 className="m-0 text-card font-semibold">{ru.portfolios.depositGoal}</h2>
+          {values.deposit.off ? null : (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(150px,100%),1fr))] gap-3">
+              <Field label={ru.portfolios.depositAmount}>
+                {(f) => (
+                  <Input
+                    id={f.id}
+                    inputMode="decimal"
+                    mono
+                    value={values.deposit.amount}
+                    onChange={(e) => setDeposit({ amount: e.target.value })}
+                  />
+                )}
+              </Field>
+              <Field label={ru.portfolios.depositPeriod}>
+                {(f) => (
+                  <Select
+                    id={f.id}
+                    value={values.deposit.period}
+                    onValueChange={(p) => setDeposit({ period: p as 'day' | 'month' | 'year' })}
+                    options={(['day', 'month', 'year'] as const).map((p) => ({
+                      value: p,
+                      label: ru.portfolios.depositPeriods[p]!,
+                    }))}
+                  />
+                )}
+              </Field>
+              <Field label={ru.portfolios.depositYearStart}>
+                {(f) => (
+                  <Select
+                    id={f.id}
+                    value={String(values.deposit.yearStart)}
+                    onValueChange={(m) => setDeposit({ yearStart: Number(m) })}
+                    options={Array.from({ length: 12 }, (_, i) => ({
+                      value: String(i + 1),
+                      label: ru.portfolios.depositYearStartOption(formatMonthGenitive(i + 1)),
+                    }))}
+                  />
+                )}
+              </Field>
+            </div>
+          )}
+          <div className="text-caption text-pretty text-muted">{ru.portfolios.depositHint}</div>
+          <Checkbox
+            label={ru.portfolios.depositNoGoal}
+            checked={values.deposit.off}
+            onChange={(e) => setDeposit({ off: e.target.checked })}
+          />
         </section>
 
         <div className="hidden flex-wrap items-center justify-between gap-2 wide:flex">

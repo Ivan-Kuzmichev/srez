@@ -51,6 +51,17 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(all).toContainText('LKOH');
   await expect(all).toContainText('RUB');
 
+  // «Цель пополнений»: none by default, then 30 000 a month.
+  const deposits = page.getByTestId('deposits');
+  await expect(deposits).toContainText('Задать цель');
+  await deposits.getByRole('link', { name: 'Задать цель' }).click();
+  const goal = page.getByTestId('deposit-goal');
+  await goal.getByLabel('Без цели, только график пополнений').uncheck();
+  await goal.getByLabel('Сумма, ₽').fill('30 000');
+  await page.getByRole('button', { name: 'Сохранить' }).last().click();
+  await expect(deposits).toContainText('30 000 ₽ в месяц');
+  await expect(deposits).toContainText(/\d+ из \d+ месяц/);
+
   // «Срез на дату»: a day before anything happened, then back to today.
   await page.getByRole('button', { name: 'Срез на дату' }).click();
   await page.getByLabel('Дата среза').fill('2001-01-01');
@@ -68,9 +79,9 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(map).toContainText('с первой покупки');
   // Every tile inside the map, the thinnest too (padding once stretched them past its edge).
   const mapBox = (await map.getByRole('list').boundingBox())!;
-  for (const r of await map.getByRole('listitem').evaluateAll((els) =>
-    els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect),
-  )) {
+  for (const r of await map
+    .getByRole('listitem')
+    .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect))) {
     expect(r.bottom).toBeLessThanOrEqual(mapBox.y + mapBox.height + 0.5);
     expect(r.right).toBeLessThanOrEqual(mapBox.x + mapBox.width + 0.5);
   }

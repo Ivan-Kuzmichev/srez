@@ -38,7 +38,7 @@ export function TargetsCard({
   const scaleMax = Math.max(50, ...rows.map((r) => Math.max(r.actual, r.target ?? 0) * 1.1));
   return (
     <section
-      className="flex min-w-0 flex-[2_1_300px] flex-col gap-[18px] rounded-card border border-border bg-surface p-4 wide:p-6"
+      className="flex min-w-0 flex-col gap-[18px] rounded-card border border-border bg-surface p-4 wide:p-6"
       data-testid="targets"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">

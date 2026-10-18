@@ -72,6 +72,12 @@ export function portfolioFormValues(p: PortfolioRow | null, accounts: AccountCho
     threshold: p ? text(p.deviationThreshold) : '5',
     sectorTargets: Object.fromEntries([...(p?.sectorTargets ?? new Map())].map(([k, v]) => [k, text(v)])),
     benchmarkId: p?.benchmarkId ?? '',
+    deposit: {
+      amount: text(p?.depositGoal.amount ?? undefined),
+      period: p?.depositGoal.period ?? 'month',
+      yearStart: p?.depositGoal.yearStart ?? 1,
+      off: !p?.depositGoal.amount,
+    },
   };
 }
 

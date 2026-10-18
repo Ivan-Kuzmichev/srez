@@ -201,6 +201,36 @@ export function formatMonthRange(from: string, to: string): string {
   return from.slice(0, 7) === to.slice(0, 7) ? capital(a) : `${capital(a)}–${b}`;
 }
 
+const MONTHS_PREPOSITIONAL = [
+  'январе',
+  'феврале',
+  'марте',
+  'апреле',
+  'мае',
+  'июне',
+  'июле',
+  'августе',
+  'сентябре',
+  'октябре',
+  'ноябре',
+  'декабре',
+];
+
+/** «Январь» from «2026-01» or «2026-01-15». */
+export function formatMonthName(isoDate: string): string {
+  return capital(MONTHS_NOMINATIVE[monthOf(isoDate)]!);
+}
+
+/** «в октябре». */
+export function formatInMonth(isoDate: string): string {
+  return `в${NBSP}${MONTHS_PREPOSITIONAL[monthOf(isoDate)]}`;
+}
+
+/** «января» for «с 1 января»: the month by its number, 1–12. */
+export function formatMonthGenitive(month: number): string {
+  return MONTHS_FULL[month - 1]!;
+}
+
 /** «май» for chart axes. */
 export function formatMonthAxis(isoDate: string): string {
   return MONTHS_AXIS[monthOf(isoDate)]!;

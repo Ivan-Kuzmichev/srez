@@ -20,6 +20,7 @@ import {
   tags,
 } from '@/db/schema';
 import { allocation, type AssetClass, type ClassShare } from '@/domain/allocation';
+import type { DepositPeriod } from '@/domain/deposit-goal';
 import { Decimal } from '@/domain/decimal';
 import { dayChange, externalFlows, type ExternalFlow, type FlowOperation } from '@/domain/flows';
 import type { LedgerContext } from '@/domain/ledger-types';
@@ -491,6 +492,8 @@ export interface PortfolioRow {
   targets: Map<AssetClass, Decimal>;
   /** Target shares by sector, percent of shares and funds (FR-PRT-10); empty when none is set. */
   sectorTargets: Map<string, Decimal>;
+  /** «Цель пополнений» (FR-PRT-12); null amount — no goal. */
+  depositGoal: { amount: Decimal | null; period: DepositPeriod; yearStart: number };
 }
 
 export function listPortfolios(db: Db, userId: string): PortfolioRow[] {
@@ -526,6 +529,11 @@ export function listPortfolios(db: Db, userId: string): PortfolioRow[] {
     sectorTargets: new Map(
       sectorTargets.filter((t) => t.portfolioId === p.id).map((t) => [t.sector, new Decimal(t.targetPct)]),
     ),
+    depositGoal: {
+      amount: p.depositGoal ? new Decimal(p.depositGoal) : null,
+      period: p.depositPeriod,
+      yearStart: p.depositYearStart,
+    },
   }));
 }
 

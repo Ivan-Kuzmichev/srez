@@ -86,6 +86,8 @@ export const positionSnapshots = sqliteTable(
   ],
 );
 
+export const DEPOSIT_PERIODS = ['day', 'month', 'year'] as const;
+
 export const portfolios = sqliteTable(
   'portfolios',
   {
@@ -100,6 +102,11 @@ export const portfolios = sqliteTable(
     /** Percentage points; a class further off its target than this is flagged. */
     deviationThreshold: decimal('deviation_threshold').notNull().default('5'),
     targetsEnabled: integer('targets_enabled', { mode: 'boolean' }).notNull().default(true),
+    /** «Цель пополнений» (FR-PRT-12): rubles a period; null — no goal, only the deposits. */
+    depositGoal: decimal('deposit_goal'),
+    depositPeriod: text('deposit_period', { enum: DEPOSIT_PERIODS }).notNull().default('month'),
+    /** The month (1–12) a goal year starts with. */
+    depositYearStart: integer('deposit_year_start').notNull().default(1),
     sort: integer('sort').notNull().default(0),
     createdAt: createdAt(),
   },
