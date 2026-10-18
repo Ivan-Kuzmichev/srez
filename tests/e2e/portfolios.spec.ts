@@ -51,12 +51,13 @@ test('a tag portfolio shows only its positions, a whole-account one shows all; d
   await expect(all).toContainText('LKOH');
   await expect(all).toContainText('RUB');
 
-  // «Цель пополнений»: none by default, then 30 000 a month.
+  // «Цель пополнений»: no goal, no widget; then 30 000 a month.
   const deposits = page.getByTestId('deposits');
-  await expect(deposits).toContainText('Задать цель');
-  await deposits.getByRole('link', { name: 'Задать цель' }).click();
+  await expect(page.getByTestId('portfolio-stats')).toBeVisible();
+  await expect(deposits).toHaveCount(0);
+  await page.getByRole('link', { name: 'Состав и цели' }).click();
   const goal = page.getByTestId('deposit-goal');
-  await goal.getByLabel('Без цели, только график пополнений').uncheck();
+  await goal.getByLabel('Без цели пополнений').uncheck();
   await goal.getByLabel('Сумма, ₽').fill('30 000');
   await page.getByRole('button', { name: 'Сохранить' }).last().click();
   await expect(deposits).toContainText('30 000 ₽ в месяц');

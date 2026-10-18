@@ -107,18 +107,19 @@ export default async function PortfolioPage({ params, searchParams }: PageProps<
         compound: sp.wc !== '0',
         adjustPct: new Decimal(adjustText),
       });
-  // «Пополнения» (FR-PRT-12): today's view only, the goal year to date.
+  // «Пополнения» (FR-PRT-12): today's view only, the goal year to date; no goal, no widget.
   const depositGoal = portfolio.depositGoal.amount
     ? { ...portfolio.depositGoal, amount: portfolio.depositGoal.amount }
     : null;
-  const deposits = date
-    ? null
-    : depositView(
-        portfolioDeposits(db(), userId, scope, ledger, fx, tz),
-        depositGoal,
-        today,
-        portfolio.depositGoal.yearStart,
-      );
+  const deposits =
+    date || !depositGoal
+      ? null
+      : depositView(
+          portfolioDeposits(db(), userId, scope, ledger, fx, tz),
+          depositGoal,
+          today,
+          portfolio.depositGoal.yearStart,
+        );
   const dateText = date ? formatDateLong(new Date(`${date}T12:00:00Z`), 'UTC') : '';
   const split = profitSplit(db(), userId, scope, cells, fx);
   const settings = getSettings(db(), userId);
