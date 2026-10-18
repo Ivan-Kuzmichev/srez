@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useDateHref } from '@/components/portfolio/snapshot-date';
 import { useMemo, useRef, useState } from 'react';
 import { Segmented } from '@/components/ui/segmented';
-import { formatDate as formatDay, formatPercent } from '@/lib/format';
+import { formatDate as formatDay, formatDateYear, formatPercent } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 
 export interface ReturnsPoint {
@@ -105,6 +105,8 @@ export function ReturnsChart({
           Math.round((k * (lines.rows.length - 1)) / (tickCount - 1)),
         );
   const day = (date: string) => formatDay(new Date(`${date}T12:00:00Z`), 'UTC');
+  // The tooltip names the year: the axis is short, a chart can span several years.
+  const fullDay = (date: string) => formatDateYear(new Date(`${date}T12:00:00Z`), 'UTC');
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -205,7 +207,7 @@ export function ReturnsChart({
                   : { left: `${(lines.x(hover) / W) * 100 + 2}%` }
               }
             >
-              <span className="text-muted">{day(point.date)}</span>
+              <span className="text-muted">{fullDay(point.date)}</span>
               <span className="num">
                 {name}: {pct(point.p)}
               </span>

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Segmented } from '@/components/ui/segmented';
 import { Decimal } from '@/domain/decimal';
 import { drawdownSeries } from '@/domain/risk';
-import { formatDate as formatDay, formatMonthAxis, formatPercent } from '@/lib/format';
+import { formatDate as formatDay, formatDateYear, formatMonthAxis, formatPercent } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 
 const PERIODS = ['1y', '3y', 'all'] as const;
@@ -48,6 +48,10 @@ export function DrawdownChart({ points }: { points: { date: string; index: strin
   }, [rows]);
 
   const day = (date: string) => formatDay(new Date(`${date}T12:00:00Z`), 'UTC');
+
+  // The tooltip names the year: the axis is short, a chart can span several years.
+
+  const fullDay = (date: string) => formatDateYear(new Date(`${date}T12:00:00Z`), 'UTC');
   const pct = (v: number) => formatPercent(v.toFixed(1));
   const low = rows[geo.bottom];
   const point = hover !== null ? rows[hover] : null;
@@ -154,7 +158,7 @@ export function DrawdownChart({ points }: { points: { date: string; index: strin
                   : { left: `${(geo.x(hover) / W) * 100 + 2}%` }
               }
             >
-              <span className="text-muted">{day(point.date)}</span>
+              <span className="text-muted">{fullDay(point.date)}</span>
               <span className="num">{pct(point.dd)}</span>
             </div>
           ) : null}

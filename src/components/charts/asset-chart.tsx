@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { Segmented } from '@/components/ui/segmented';
-import { formatDate as formatDay, formatTradeAmount } from '@/lib/format';
+import { formatDate as formatDay, formatDateYear, formatTradeAmount } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 
 const PERIODS = ['6m', '1y', 'buy'] as const;
@@ -70,6 +70,8 @@ export function AssetChart({
     setHover(Math.round(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) * (shown.length - 1)));
   };
   const day = (date: string) => formatDay(new Date(`${date}T12:00:00Z`), 'UTC');
+  // The tooltip names the year: the axis is short, a chart can span several years.
+  const fullDay = (date: string) => formatDateYear(new Date(`${date}T12:00:00Z`), 'UTC');
   const tickCount = Math.min(6, shown.length);
   const ticks =
     shown.length < 2
@@ -184,7 +186,7 @@ export function AssetChart({
                   : { left: `${(geo.x(hover) / W) * 100 + 2}%` }
               }
             >
-              <span className="text-muted">{day(point.date)}</span>
+              <span className="text-muted">{fullDay(point.date)}</span>
               <span className="num">{formatTradeAmount(point.price.toString())}</span>
             </div>
           ) : null}

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Segmented } from '@/components/ui/segmented';
 import { Money } from '@/domain/money';
-import { formatDate as formatDay, formatMoney } from '@/lib/format';
+import { formatDate as formatDay, formatDateYear, formatMoney } from '@/lib/format';
 import { ru } from '@/lib/i18n/ru';
 
 export interface ChartPoint {
@@ -49,6 +49,8 @@ export function ValueChart({
 }) {
   const format = (v: number) => formatMoney(Money.of(v.toFixed(currency === 'BTC' ? 8 : 2), currency));
   const formatDate = (date: string) => formatDay(new Date(`${date}T12:00:00Z`), 'UTC');
+  // The tooltip names the year: the axis is short, a chart can span several years.
+  const fullDay = (date: string) => formatDateYear(new Date(`${date}T12:00:00Z`), 'UTC');
   const [period, setPeriod] = useState<Period>('1y');
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -182,7 +184,7 @@ export function ValueChart({
                     : { left: `${(x(hover) / W) * 100 + 2}%` }
                 }
               >
-                <span className="text-muted">{formatDate(point.date)}</span>
+                <span className="text-muted">{fullDay(point.date)}</span>
                 <span className="num">
                   {names.value}: {format(point.value)}
                 </span>
